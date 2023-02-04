@@ -162,40 +162,4 @@ clean_up
 
 main
 
-
-# function get_variables () {
-
-# local IFS="|"
-
-# count=0
-
-# while read lines; do 
-#     echo line $count
-#     #get_variables $lines
-#     line=($lines)
-#     filename=${line[0]}
-#     echo filename = $filename
-#     created_date=${line[1]}
-#     echo created_date = $created_date
-#     fan_ip=${line[2]}
-#     echo fan_ip = $fan_ip
-#     fan_uri=$(echo ${line[3]} | sed "s;${ftp}${fanstagingtype[i]}${NMR};${stagingpath[i]}/;g")
-#     echo fan_uri = $fan_uri
-#     file_size=${line[4]}
-#     echo file_size = $file_size
-#     is_backup_file=${line[5]}
-#     echo is_backup_file = $is_backup_file
-#     file_id=${line[6]}
-#     echo file_id = $file_id
-#     file_hash=${line[7]}
-#     echo file_hash = $file_hash
-#     has_backup_info=${line[8]}
-#     echo has_backup_info = $has_backup_info
-
-#     let count=(count+1)
-
-# done < $1
-
-# }
-
-# get_variables $file
+#find $pwd/shell/process_async_processed/ -print0 -printf "|%TY-%Tm-%Td %TT|%b|id\n"
