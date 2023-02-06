@@ -1,12 +1,14 @@
 #!/bin/bash
 
+# Purpose: This script processes a list of files in the async_processed dataset
+
 # Vars
 test=1
 user=nmr
 dir="/home/JLCodeSource/shell/process_async_ds"
 outdir=$dir/out
-testfile=test_processed_files.out
-file=async_processed_files.out
+testfile=p1testout.out
+file=p1test_async_processed_files.out
 
 
 # Consts
@@ -55,7 +57,7 @@ done;
 ## --- Verifying nodes hashmap
 echo "---Hashmap nodes"
 echo "---Hashmap size ${#nodes[@]}" 
-for ip in "${!nodes[@]}"; do echo "$ip - ${nodes[$node]}"; done
+for ip in "${!nodes[@]}"; do echo "$ip - ${nodes[$ip]}"; done
 
 ## --- Creating fan_to_staging hashmap
 
