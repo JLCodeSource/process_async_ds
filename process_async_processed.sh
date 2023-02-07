@@ -58,6 +58,7 @@ echo "---Hashmap nodes"
 echo "---Hashmap size ${#nodes[@]}" 
 for ip in "${!nodes[@]}"; do echo "$ip - ${nodes[$ip]}"; done
 
+
 # --- Data cleansing
 function data_cleanse_file () {
 
@@ -148,6 +149,10 @@ function clean_up () {
 
 
 function main () {
+
+# Make copy of file
+cp $file $outdir/$file
+file=$outdir/$file
 
 data_cleanse_file $file
 
