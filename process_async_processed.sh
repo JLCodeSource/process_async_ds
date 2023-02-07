@@ -65,7 +65,7 @@ function data_cleanse_file () {
     local file=$1
 
     # -- Drop Unnecessary Files
-    # N.B. Remove top line
+    # N.B. Preprocess to remove top line
     echo Total Files: $(wc -l $file)
 
     ## Drop files that aren't backup guids
