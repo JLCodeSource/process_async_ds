@@ -20,6 +20,8 @@ fi
 
 function get_lines () {
 
+processed_file_list=$1
+
 while read line;
 do
    echo INFO: Processing $line
@@ -30,7 +32,7 @@ do
 
    # echo Target File: $target_file
    create_time=$(echo $line | cut -d"|" -f2)
-   create_time_formatted=$(date -d "$create_time" +"%Y-%m-%dT%H:%M:%S%z")
+   create_time_formatted=$(date --date "$create_time" +"%s")
    # echo Create Time: $create_time_formatted
    file_size=$(echo $line | cut -d"|" -f3)
    # echo File Size: $file_size
@@ -60,7 +62,7 @@ do
    fi
 
    # Check file size matches
-   staging_file_size=$(ls -l $target_file | cut -d" " -f5)
+   staging_file_size=$(stat --format='%s' $target_file)
    # echo Staging File Size: $staging_file_size
 
    if [ "$file_size" -eq "$staging_file_size" ]
@@ -72,7 +74,7 @@ do
    fi
 
    # Check file time matches
-   staging_create_time=$(ls -l --time-style="+%Y-%m-%dT%H:%M:%S%z" $target_file | cut -d" " -f6)
+   staging_create_time=$(stat --format='%Y' $target_file)
    # echo Staging Create Time: $staging_create_time
 
    if [ "$create_time_formatted" = "$staging_create_time" ]
@@ -148,7 +150,7 @@ do
    fi
 
 
-done < $1
+done < $processed_file_list
 
 }
 
