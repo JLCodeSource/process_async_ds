@@ -96,7 +96,7 @@ do
       continue
    fi
 
-   echo "INFO: $target_file verified as ready for removal"
+   echo "INFO: $target_file verified as ready to be migrated in preparation for removal"
 
 
    # Hash file
@@ -143,7 +143,7 @@ do
    then
        echo "INFO: $orig_basename hash after move $moved_file_hash matches original hash $staging_file_hash"
        # Confirm ready for process
-       echo "INFO: $target_file is ready for processing"
+       echo "INFO: $new_path_name/$basename is ready for processing"
    else
        echo "ERROR: $orig_basename hash after move $moved_file_hash does not match original hash $staging_file_hash"
        exit
