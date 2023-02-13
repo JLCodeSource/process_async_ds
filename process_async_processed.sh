@@ -65,6 +65,11 @@ function data_cleanse_file () {
     # Working File
     local file=$1
 
+    # -- Drop first line
+    echo Total Lines: $(wc -l $file)
+    tail -n+2 $file > tmp_file
+    mv tmp_file $file
+
     # -- Drop Unnecessary Files
     # N.B. Preprocess to remove top line
     echo Total Files: $(wc -l $file)
