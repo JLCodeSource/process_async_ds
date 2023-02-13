@@ -49,7 +49,7 @@ do
 		# echo $lastoctet
 		ipaddr="10.${segment[i]}.28.${lastoctet}"
 		# echo $ipaddr
-		nodes["${ipaddr}"]="${node}"
+		nodes[${ipaddr}]="${node}"
         done;
 done;
 
@@ -117,10 +117,18 @@ function data_cleanse_file () {
         echo swap: "${fanstaging_type[$i]}" fan_to_staging: "${staging_path[$i]}"
         sed -i "s;${fanstaging_type[$i]};${staging_path[$i]};g" $file
     done
+    echo Swapped fanpath to stagingpath
 
     # Reorder & drop unnecessary fields
     awk -F'|' '{ print $4 "|" $2 "|" $5 "|" $7 "|" $3 }' $file > tmp_file
     mv tmp_file $file
+    echo Reordered and removed fields
+
+    # Sort by file size
+    sort -t'|' -rnk3 $file > tmp_file
+    mv tmp_file $file
+    echo Ordered list by size - largest first
+
 
     echo Cleaned File
 }
