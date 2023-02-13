@@ -5,10 +5,25 @@ in_file=/home/admin/10.49.28.170.out
 cqlsh=/usr/lib64/GB/DCF/JServices/MbService/bin/cqlsh
 select="select * from storage.datasets_by_name"
 async_processed_files_dataset=$($cqlsh $(hostname -I) 21205 -e "$select" | grep "ASYNCH PROCESSED FILES FOR" | cut -d"|" -f2 | xargs)
-
+now=$(date +"%s")
 
 # Args
-if [ "$1" = "Execute_Move" ]
+if [ ! -z "$1" ]
+then
+   re='^[0-9]+$'
+   if ! [[ "$1" =~ $re ]]
+   then
+      echo "ERROR: Days time limit not a number"
+      exit
+   else
+      let time_limit=($now-($1*86400))
+   fi
+   echo "INFO: Time limit set to $1 days ago which is $time_limit in epoch time" 
+else
+   echo "WARN: No time limit set; processing all processed files"
+fi
+
+if [ "$2" = "Execute_Move" ]
 then
    echo "WARN: Argument Execute_Move; setting dryrun to false" 
    dryrun=
@@ -32,8 +47,19 @@ do
 
    # echo Target File: $target_file
    create_time=$(echo $line | cut -d"|" -f2)
-   create_time_formatted=$(date --date "$create_time" +"%s")
-   # echo Create Time: $create_time_formatted
+   create_time_epoch=$(date --date "$create_time" +"%s")
+   # echo Create Time: $create_time_epoch
+   
+   # Filter files from before time_limit
+
+   if [[ $create_time_epoch -lt $time_limit ]]
+   then
+      echo "WARN: Create time (epoch) $create_time_epoch for $target_file is before time limit (epoch) $time_limit; skipping file"
+      continue
+   else
+      echo "INFO: Create time (epoch) $create_time_epoch for $target_file is after time limit (epoch) $time_limit" 
+   fi
+
    file_size=$(echo $line | cut -d"|" -f3)
    # echo File Size: $file_size
    file_id=$(echo $line | cut -d"|" -f4)
@@ -77,11 +103,11 @@ do
    staging_create_time=$(stat --format='%Y' $target_file)
    # echo Staging Create Time: $staging_create_time
 
-   if [ "$create_time_formatted" = "$staging_create_time" ]
+   if [ "$create_time_epoch" = "$staging_create_time" ]
    then
-      echo "INFO: $orig_basename create time $create_time_formatted matches staging create time $staging_create_time"
+      echo "INFO: $orig_basename create time $create_time_epoch matches staging create time $staging_create_time"
    else
-      echo "WARN: $orig_basename create time $create_time_formatted does not match staging create time $staging_create_time; skipping file"
+      echo "WARN: $orig_basename create time $create_time_epoch does not match staging create time $staging_create_time; skipping file"
       continue
    fi
 
