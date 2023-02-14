@@ -1,7 +1,7 @@
 #/bin/bash
 
 # Vars
-in_file=/home/admin/10.49.28.170.out
+in_file=/home/admin/10.41.28.170.out
 cqlsh=/usr/lib64/GB/DCF/JServices/MbService/bin/cqlsh
 select="select * from storage.datasets_by_name"
 async_processed_files_dataset=$($cqlsh $(hostname -I) 21205 -e "$select" | grep "ASYNCH PROCESSED FILES FOR" | cut -d"|" -f2 | xargs)
@@ -10,15 +10,16 @@ now=$(date +"%s")
 # Args
 if [ ! -z "$1" ]
 then
+   days="$1"
    re='^[0-9]+$'
-   if ! [[ "$1" =~ $re ]]
+   if ! [[ "$days" =~ $re ]]
    then
-      echo "ERROR: Days time limit not a number"
+      echo "Usage: Arg1 - number of days ago to process (integer); Arg2 - use 'Execute_Move' to cancel dry run default"
       exit
    else
-      let time_limit=($now-($1*86400))
+      time_limit=$(("$now"-("$days"*86400)))
    fi
-   echo "INFO: Time limit set to $1 days ago which is $time_limit in epoch time" 
+   echo "INFO: Time limit set to $days days ago which is $time_limit in epoch time" 
 else
    echo "WARN: No time limit set; processing all processed files"
 fi
@@ -49,15 +50,15 @@ do
    create_time=$(echo $line | cut -d"|" -f2)
    create_time_epoch=$(date --date "$create_time" +"%s")
    # echo Create Time: $create_time_epoch
-   
+
    # Filter files from before time_limit
 
    if [[ $create_time_epoch -lt $time_limit ]]
    then
-      echo "WARN: Create time (epoch) $create_time_epoch for $target_file is before time limit (epoch) $time_limit; skipping file"
+      echo "WARN: Create time (epoch) $create_time_epoch is before time limit (epoch) $time_limit; skipping file $target_file"
       continue
    else
-      echo "INFO: Create time (epoch) $create_time_epoch for $target_file is after time limit (epoch) $time_limit" 
+      echo "INFO: Create time (epoch) $create_time_epoch is after time limit (epoch) $time_limit for $target_file"
    fi
 
    file_size=$(echo $line | cut -d"|" -f3)
@@ -70,9 +71,9 @@ do
    dataset=$(gbr file ls -i $file_id -d | grep "parent id" | cut -c25-)
    if [ "$dataset" = "$async_processed_files_dataset" ]
    then
-      echo "INFO: file id $file_id for $target_file is in async processed files dataset $async_processed_files_dataset"
+      echo "INFO: file id $file_id is in async processed files dataset $async_processed_files_dataset for $target_file"
    else
-      echo "WARN: file id $file_id for $target_file is in dataset $dataset, rather than the async processed files dataset $async_processed_files_dataset; skipping file"
+      echo "WARN: file id $file_id is in dataset $dataset, rather than the async processed files dataset $async_processed_files_dataset; skipping file $target_file"
       continue
    fi
 
@@ -81,9 +82,9 @@ do
 
    if [ -f "$target_file" ]
    then
-      echo "INFO: $target_file exists"
+      echo "INFO: file $target_file exists"
    else
-      echo "WARN: $target_file does not exist; skipping file"
+      echo "WARN: file does not exist; skipping file $target_file"
       continue
    fi
 
@@ -93,9 +94,9 @@ do
 
    if [ "$file_size" -eq "$staging_file_size" ]
    then
-      echo "INFO: $orig_basename file size $file_size matches staging file size $staging_file_size"
+      echo "INFO: file size $file_size matches staging file size $staging_file_size for $orig_basename"
    else
-      echo "WARN: $orig_basename file size $file_size does not match staging file size $staging_file_size; skipping file"
+      echo "WARN: file size $file_size does not match staging file size $staging_file_size; skipping file $orig_basename"
       continue
    fi
 
@@ -105,9 +106,9 @@ do
 
    if [ "$create_time_epoch" = "$staging_create_time" ]
    then
-      echo "INFO: $orig_basename create time $create_time_epoch matches staging create time $staging_create_time"
+      echo "INFO: create time $create_time_epoch matches staging create time $staging_create_time for $orig_basename"
    else
-      echo "WARN: $orig_basename create time $create_time_epoch does not match staging create time $staging_create_time; skipping file"
+      echo "WARN: create time $create_time_epoch does not match staging create time $staging_create_time; skipping file $orig_basename"
       continue
    fi
 
