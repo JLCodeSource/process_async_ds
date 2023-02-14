@@ -4,17 +4,22 @@
 # it reports the command it will execute; if on Execute_Move, it moves files from /mount/current_dir
 # to /mount/current_dir.processed
 # Input: Pipe separated file with local staging path|human readable date|file size|file id
-# Usage: 
+# Usage:
+## Set in_file parameter
 ## Default - dry run on all lines
 ## Argument 1 - number of days ago time limit
 ## Argument 2 - set to Execute_Move to move
 
 
-# Vars
+# Parameters
 in_file=/home/admin/10.41.28.170.out
+
+# Constants
 cqlsh=/usr/lib64/GB/DCF/JServices/MbService/bin/cqlsh
 select="select * from storage.datasets_by_name"
 async_processed_files_dataset=$($cqlsh $(hostname -I) 21205 -e "$select" | grep "ASYNCH PROCESSED FILES FOR" | cut -d"|" -f2 | xargs)
+
+# Variables
 now=$(date +"%s")
 
 # Arguments
