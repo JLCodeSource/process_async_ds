@@ -11,7 +11,7 @@
 # Parameters
 ## Set to work on testing
 test=
-## Set to input file user id, including the @
+## Set to input file user id
 user=
 dir="/home/JLCodeSource/shell/process_async_ds"
 outdir=$dir/out
@@ -22,9 +22,9 @@ file=async_processed_files.out
 # Constants
 ftp='ftp://'
 ## Regex for ip address & port 2121
-ftp_ip_and_port=([0-9]{1,3}\.){3}[0-9]{1,3}:2121
+ftp_ip_and_port='@([0-9]{1,3}\.){3}[0-9]{1,3}:2121'
 ## Regex for backup name guid
-backup_guid='[a-fA-F0-9]{8}(-[a-fA-F0-9]{8}){5}'
+backup_guid='^[a-fA-F0-9]{8}(-[a-fA-F0-9]{8}){5}\|'
 ## fanstaging_type ordered by last to first
 fanstaging_type=("fan_c2:" "fan_c1:" "fan_c0:" "fan:")
 ## staging_path ordered by last to first 
@@ -91,7 +91,7 @@ function data_cleanse_file () {
 
     ## Drop files that aren't backup guids
     ### Dump non backup guid files to outdir
-    cat $file | grep -v -E "$backup_guid" > $outdir/dumped_non_backup_guids.out
+    cat $file | grep -v -E "$backup_guid" >> $outdir/dumped_non_backup_guids.out
     ### Filter out non backup guids
     cat $file | grep -E "$backup_guid" > tmp_file
     mv tmp_file $file
@@ -100,7 +100,7 @@ function data_cleanse_file () {
     ## Drop files with a hash (and therefore in gbfs)
     ### Column 8 is hash
     ### Dump files with hash to outdir
-    awk -F'|' '$8!="" {print}' $file > $outdir/dumped_files_with_hash.out
+    awk -F'|' '$8!="" {print}' $file >> $outdir/dumped_files_with_hash.out
     ### Filter out files with hash
     awk -F'|' '$8=="" {print}' $file > tmp_file
     mv tmp_file $file
@@ -109,7 +109,7 @@ function data_cleanse_file () {
     ## Drop files with no fanip
     ### Column 3 is fan ip
     ### Dump files with null in fan ip to outdir
-    awk -F'|' '$3=="null" { print }' $file > $outdir/dumped_files_with_no_fanip.out 
+    awk -F'|' '$3=="null" { print }' $file >> $outdir/dumped_files_with_no_fanip.out 
     ### Filter out files with null in fan ip
     awk -F'|' '$3!="null" { print }' $file > tmp_file
     mv tmp_file $file
@@ -118,7 +118,7 @@ function data_cleanse_file () {
     ## Drop files with no fanuri
     ### Column 4 is fan uri
     ### Dump files with null in fan uri to outdir
-    awk -F'|' '$4=="null" { print }' $file > $outdir/dumped_files_with_no_fanuri.out
+    awk -F'|' '$4=="null" { print }' $file >> $outdir/dumped_files_with_no_fanuri.out
     ### Filter out files with null in fan ip
     awk -F'|' '$4!="null" { print }' $file > tmp_file
     mv tmp_file $file
@@ -126,7 +126,7 @@ function data_cleanse_file () {
 
     ## Drop files with Extracted in backupkv (set based on the existence or not of backupkv data object)
     ### Dump files with extracted set to outdir
-    cat $file | grep "backupkv Extracted" > $outdir/dumped_files_with_extracted.out
+    cat $file | grep "backupkv Extracted" >> $outdir/dumped_files_with_extracted.out
     ### Filter out files with backupkv Extracted
     cat $file | grep -v "backupkv Extracted" > tmp_file
     mv tmp_file $file
@@ -138,7 +138,7 @@ function data_cleanse_file () {
     ## Strip ftp://
     sed -i "s;$ftp;;g" $file
 
-    ## Strip user id (needs to include the @ in variable)
+    ## Strip user id
     sed -i "s;$user;;g" $file
 
     ## Strip ip and port
