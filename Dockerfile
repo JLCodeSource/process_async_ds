@@ -2,12 +2,13 @@ FROM golang:alpine AS build
 
 WORKDIR /usr/src/app
 
-copy . .
+COPY . .
 
 RUN go mod download
 
 RUN go build -o /usr/src/app/process_processed
 
+RUN go test -v ./...
 
 FROM gcr.io/distroless/base-debian10
 
