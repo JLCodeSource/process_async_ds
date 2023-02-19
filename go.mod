@@ -1,3 +1,3 @@
-module github.com/process_async_processed
+module github.com/JLCodeSource/process_async_ds
 
 go 1.20
