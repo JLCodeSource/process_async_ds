@@ -12,7 +12,11 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const ()
+var (
+	dataset   string
+	days      int64
+	nondryrun bool
+)
 
 func getAsyncProcessedFolderId(id string, logger *logrus.Logger) string {
 	match, err := regexp.MatchString("^[A-F0-9]{32}$", id)
@@ -59,20 +63,25 @@ func getNonDryRun(nondryrun bool, logger *logrus.Logger) bool {
 	return nondryrun
 }
 
-func main() {
+func init() {
 
 	log.Init()
 	log.GetLogger()
-	logger := log.GetLogger()
 
-	datasetPtr := flag.String("dataset", "", "async processed dataset id (default '')")
-	limitPtr := flag.Int64("days", 0, "number of days ago (default 0)")
-	nonDryRunPtr := flag.Bool("non-dryrun", false, "execute non dry run (default false)")
+	flag.StringVar(&dataset, "dataset", "", "async processed dataset id (default '')")
+	flag.Int64Var(&days, "days", 0, "number of days ago (default 0)")
+	flag.BoolVar(&nondryrun, "non-dryrun", false, "execute non dry run (default false)")
+
+}
+
+func main() {
+
+	logger := log.GetLogger()
 
 	flag.Parse()
 
-	getAsyncProcessedFolderId(*datasetPtr, logger)
-	getTimeLimit(*limitPtr, logger)
-	getNonDryRun(*nonDryRunPtr, logger)
+	getAsyncProcessedFolderId(dataset, logger)
+	getTimeLimit(days, logger)
+	getNonDryRun(nondryrun, logger)
 
 }
