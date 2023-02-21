@@ -1,6 +1,8 @@
 package main
 
 import (
+	"os"
+
 	log "github.com/JLCodeSource/process_async_ds/logger"
 
 	"strconv"
@@ -14,6 +16,21 @@ import (
 const (
 	testDatasetId = "41545AB0788A11ECBD0700155D014E0D"
 )
+
+func TestMainFunc(t *testing.T) {
+	_, hook := setupLogs(t)
+
+	os.Args = append(os.Args, "-dataset=41545AB0788A11ECBD0700155D014E0D")
+	os.Args = append(os.Args, "-days=123")
+
+	main()
+
+	gotLogMsg := hook.LastEntry().Message
+	wantLogMsg := "Setting dryrun to true; skipping exeecute move"
+
+	assertCorrectString(t, gotLogMsg, wantLogMsg)
+
+}
 
 func TestGetAsyncProcessedFolderId(t *testing.T) {
 
