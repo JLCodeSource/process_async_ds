@@ -18,17 +18,20 @@ const (
 )
 
 func TestMainFunc(t *testing.T) {
-	_, hook := setupLogs(t)
 
-	os.Args = append(os.Args, "-dataset=41545AB0788A11ECBD0700155D014E0D")
-	os.Args = append(os.Args, "-days=123")
+	t.Run("verify main args work", func(t *testing.T) {
+		_, hook := setupLogs(t)
 
-	main()
+		os.Args = append(os.Args, "-dataset=41545AB0788A11ECBD0700155D014E0D")
+		os.Args = append(os.Args, "-days=123")
 
-	gotLogMsg := hook.LastEntry().Message
-	wantLogMsg := "Setting dryrun to true; skipping exeecute move"
+		main()
 
-	assertCorrectString(t, gotLogMsg, wantLogMsg)
+		gotLogMsg := hook.LastEntry().Message
+		wantLogMsg := "Setting dryrun to true; skipping exeecute move"
+
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
+	})
 
 }
 
