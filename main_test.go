@@ -15,6 +15,7 @@ import (
 
 const (
 	testDatasetId = "41545AB0788A11ECBD0700155D014E0D"
+	testFileId    = "D5B58980A3E311EBBA0AB026285E5610"
 )
 
 func TestMainFunc(t *testing.T) {
@@ -142,7 +143,88 @@ func TestGetNonDryRun(t *testing.T) {
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 
 	})
+}
 
+func TestFileMetadata(t *testing.T) {
+	t.Run("Initial struct test", func(t *testing.T) {
+		loc, err := time.LoadLocation("America/New_York")
+		datestring := "Wed Apr 28 20:41:34 EDT 2021"
+		if err != nil {
+			t.Fatalf(err.Error())
+		}
+		datetime, _ := time.ParseInLocation(time.UnixDate, datestring, loc)
+		file := File{
+			path:       "/path/file",
+			createTime: datetime,
+			size:       int64(1024),
+			id:         testFileId}
+
+		gotPath := file.path
+		wantPath := "/path/file"
+		assertCorrectString(t, gotPath, wantPath)
+
+		// N.B. Need to sort out time zones
+		gotCreateTime := file.createTime.String()
+		wantCreateTime := "2021-04-28 20:41:34 -0400 EDT"
+		assertCorrectString(t, gotCreateTime, wantCreateTime)
+
+		gotCreateTimeUnix := strconv.FormatInt(file.createTime.Unix(), 10)
+		wantCreateTimeUnix := strconv.FormatInt(1619656894, 10)
+		assertCorrectString(t, gotCreateTimeUnix, wantCreateTimeUnix)
+
+		gotCreateTimeUTC := file.createTime.UTC()
+		wantCreateTimeUTC := "2021-04-29 00:41:34 +0000 UTC"
+		assertCorrectString(t, gotCreateTimeUTC.String(), wantCreateTimeUTC)
+
+		gotSize := strconv.FormatInt(file.size, 10)
+		wantSize := strconv.FormatInt(1024, 10)
+		assertCorrectString(t, gotSize, wantSize)
+
+		gotId := file.id
+		wantId := testFileId
+		assertCorrectString(t, gotId, wantId)
+
+	})
+
+	t.Run("PKT struct test", func(t *testing.T) {
+		loc, err := time.LoadLocation("Asia/Karachi")
+		datestring := "Mon Jan 30 17:55:14 PKT 2023"
+		if err != nil {
+			t.Fatalf(err.Error())
+		}
+		datetime, _ := time.ParseInLocation(time.UnixDate, datestring, loc)
+		file := File{
+			path:       "/path/file",
+			createTime: datetime,
+			size:       int64(85512264),
+			id:         testFileId}
+
+		gotPath := file.path
+		wantPath := "/path/file"
+		assertCorrectString(t, gotPath, wantPath)
+
+		// N.B. Need to sort out time zones
+		gotCreateTime := file.createTime.String()
+		wantCreateTime := "2023-01-30 17:55:14 +0500 PKT"
+		assertCorrectString(t, gotCreateTime, wantCreateTime)
+
+		gotCreateTimeUnix := strconv.FormatInt(file.createTime.Unix(), 10)
+		wantCreateTimeUnix := strconv.FormatInt(1675083314, 10)
+		assertCorrectString(t, gotCreateTimeUnix, wantCreateTimeUnix)
+
+		gotCreateTimeUTC := file.createTime.UTC()
+		wantCreateTimeUTC := "2023-01-30 12:55:14 +0000 UTC"
+		assertCorrectString(t, gotCreateTimeUTC.String(), wantCreateTimeUTC)
+
+		gotSize := strconv.FormatInt(file.size, 10)
+		wantSize := strconv.FormatInt(85512264, 10)
+		assertCorrectString(t, gotSize, wantSize)
+
+		gotId := file.id
+		wantId := testFileId
+		assertCorrectString(t, gotId, wantId)
+
+	})
 }
 
 func assertCorrectString(t testing.TB, got, want string) {
