@@ -27,6 +27,7 @@ type File struct {
 }
 
 func getSourceFile(file string, logger *logrus.Logger) string {
+	logger.Info("SourceFile: " + file)
 	return file
 }
 
