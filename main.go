@@ -13,6 +13,7 @@ import (
 )
 
 var (
+	file      string
 	dataset   string
 	days      int64
 	nondryrun bool
@@ -23,6 +24,10 @@ type File struct {
 	createTime time.Time
 	size       int64
 	id         string
+}
+
+func getSourceFile(file string, logger *logrus.Logger) string {
+	return file
 }
 
 func getAsyncProcessedFolderId(id string, logger *logrus.Logger) string {
@@ -75,6 +80,7 @@ func init() {
 	log.Init()
 	log.GetLogger()
 
+	flag.StringVar(&file, "file", "", "source file (default '')")
 	flag.StringVar(&dataset, "dataset", "", "async processed dataset id (default '')")
 	flag.Int64Var(&days, "days", 0, "number of days ago (default 0)")
 	flag.BoolVar(&nondryrun, "non-dryrun", false, "execute non dry run (default false)")

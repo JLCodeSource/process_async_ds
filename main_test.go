@@ -145,6 +145,18 @@ func TestGetNonDryRun(t *testing.T) {
 	})
 }
 
+func TestGetSourceFile(t *testing.T) {
+	t.Run("get source file", func(t *testing.T) {
+		testLogger, _ := setupLogs(t)
+
+		got := getSourceFile("/path/file.txt", testLogger)
+		want := "/path/file.txt"
+
+		assertCorrectString(t, got, want)
+
+	})
+}
+
 func TestFileMetadata(t *testing.T) {
 	t.Run("Initial struct test", func(t *testing.T) {
 		loc, err := time.LoadLocation("America/New_York")
