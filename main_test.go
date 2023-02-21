@@ -147,12 +147,16 @@ func TestGetNonDryRun(t *testing.T) {
 
 func TestGetSourceFile(t *testing.T) {
 	t.Run("get source file", func(t *testing.T) {
-		testLogger, _ := setupLogs(t)
+		testLogger, hook := setupLogs(t)
 
 		got := getSourceFile("/path/file.txt", testLogger)
 		want := "/path/file.txt"
 
 		assertCorrectString(t, got, want)
+
+		gotLogMsg := hook.LastEntry().Message
+		wantLogMsg := "SourceFile: /path/file.txt"
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
 
 	})
 }
