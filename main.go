@@ -18,6 +18,13 @@ var (
 	nondryrun bool
 )
 
+type File struct {
+	path       string
+	createTime time.Time
+	size       int64
+	id         string
+}
+
 func getAsyncProcessedFolderId(id string, logger *logrus.Logger) string {
 	match, err := regexp.MatchString("^[A-F0-9]{32}$", id)
 	if err != nil {
