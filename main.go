@@ -1,6 +1,7 @@
 package main
 
 import (
+	"io/fs"
 	"regexp"
 
 	log "github.com/JLCodeSource/process_async_ds/logger"
@@ -26,9 +27,13 @@ type File struct {
 	id         string
 }
 
-func getSourceFile(file string, logger *logrus.Logger) string {
-	logger.Info("SourceFile: " + file)
-	return file
+func getSourceFile(filesystem fs.FS, f string, logger *logrus.Logger) (fs.FileInfo, error) {
+	file, err := fs.Stat(filesystem, f)
+	if err != nil {
+		logger.Fatal(err.Error())
+	}
+	logger.Info("SourceFile: " + f)
+	return file, err
 }
 
 func getAsyncProcessedFolderId(id string, logger *logrus.Logger) string {
