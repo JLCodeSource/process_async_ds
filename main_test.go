@@ -1,7 +1,9 @@
 package main
 
 import (
+	"errors"
 	"os"
+	"regexp"
 	"testing/fstest"
 
 	"github.com/stretchr/testify/assert"
@@ -39,6 +41,52 @@ func TestMainFunc(t *testing.T) {
 
 }
 
+func TestGetSourceFile(t *testing.T) {
+	t.Run("check for source file", func(t *testing.T) {
+		testLogger, hook := setupLogs(t)
+		fs := fstest.MapFS{
+			"path/file.txt": {Data: []byte("test")},
+		}
+		file, err := getSourceFile(fs, "path/file.txt", testLogger)
+
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		got := file.Name()
+		want := "file.txt"
+		assertCorrectString(t, got, want)
+
+		gotLogMsg := hook.LastEntry().Message
+		wantLogMsg := "SourceFile: path/file.txt"
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
+	})
+	t.Run("error if file does not exist", func(t *testing.T) {
+		fakeExit := func(int) {
+			panic("os.Exit called")
+		}
+		patch := monkey.Patch(os.Exit, fakeExit)
+		defer patch.Unpatch()
+
+		testLogger, hook := setupLogs(t)
+
+		fs := fstest.MapFS{
+			"notapath/file.txt": {Data: []byte("test")},
+		}
+
+		panic := func() {
+			out, _ := getSourceFile(fs, "doesnotexist.txt", testLogger)
+			println(out)
+		}
+
+		assert.PanicsWithValue(t, "os.Exit called", panic, "os.Exit was not called")
+		gotLogMsg := hook.LastEntry().Message
+		wantLogMsg := "open doesnotexist.txt: file does not exist"
+
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
+	})
+}
+
 func TestGetAsyncProcessedFolderId(t *testing.T) {
 
 	t.Run("verify it returns the right dataset id", func(t *testing.T) {
@@ -73,6 +121,30 @@ func TestGetAsyncProcessedFolderId(t *testing.T) {
 		assert.PanicsWithValue(t, "os.Exit called", panic, "os.Exit was not called")
 		gotLogMsg := hook.LastEntry().Message
 		err := "DatasetId: 123 not of the form ^[A-F0-9]{32}$"
+		wantLogMsg := err
+
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
+	})
+
+	t.Run("verify that it exits if the regex fails", func(t *testing.T) {
+		fakeExit := func(int) {
+			panic("os.Exit called")
+		}
+		patch := monkey.Patch(os.Exit, fakeExit)
+		defer patch.Unpatch()
+		fakeRegexMatch := func(string, string) (bool, error) {
+			err := errors.New("error")
+			return false, err
+		}
+		patch2 := monkey.Patch(regexp.MatchString, fakeRegexMatch)
+		defer patch2.Unpatch()
+
+		testLogger, hook := setupLogs(t)
+		panic := func() { getAsyncProcessedFolderId("not_a_dataset", testLogger) }
+
+		assert.PanicsWithValue(t, "os.Exit called", panic, "os.Exit was not called")
+		gotLogMsg := hook.LastEntry().Message
+		err := "DatasetId: not_a_dataset not of the form ^[A-F0-9]{32}$"
 		wantLogMsg := err
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
@@ -146,52 +218,6 @@ func TestGetNonDryRun(t *testing.T) {
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 
-	})
-}
-
-func TestGetSourceFile(t *testing.T) {
-	t.Run("check for source file", func(t *testing.T) {
-		testLogger, hook := setupLogs(t)
-		fs := fstest.MapFS{
-			"path/file.txt": {Data: []byte("test")},
-		}
-		file, err := getSourceFile(fs, "path/file.txt", testLogger)
-
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		got := file.Name()
-		want := "file.txt"
-		assertCorrectString(t, got, want)
-
-		gotLogMsg := hook.LastEntry().Message
-		wantLogMsg := "SourceFile: path/file.txt"
-		assertCorrectString(t, gotLogMsg, wantLogMsg)
-	})
-	t.Run("error if file does not exist", func(t *testing.T) {
-		fakeExit := func(int) {
-			panic("os.Exit called")
-		}
-		patch := monkey.Patch(os.Exit, fakeExit)
-		defer patch.Unpatch()
-
-		testLogger, hook := setupLogs(t)
-
-		fs := fstest.MapFS{
-			"notapath/file.txt": {Data: []byte("test")},
-		}
-
-		panic := func() {
-			out, _ := getSourceFile(fs, "doesnotexist.txt", testLogger)
-			println(out)
-		}
-
-		assert.PanicsWithValue(t, "os.Exit called", panic, "os.Exit was not called")
-		gotLogMsg := hook.LastEntry().Message
-		wantLogMsg := "open doesnotexist.txt: file does not exist"
-
-		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
 }
 

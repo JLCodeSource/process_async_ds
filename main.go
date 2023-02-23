@@ -46,7 +46,7 @@ func getAsyncProcessedFolderId(id string, logger *logrus.Logger) string {
 		logger.Info("DatasetId set to " + id)
 		return id
 	} else {
-		logger.Fatal("DatasetId: 123 not of the form ^[A-F0-9]{32}$")
+		logger.Fatal("DatasetId: " + id + " not of the form ^[A-F0-9]{32}$")
 		return id
 	}
 
