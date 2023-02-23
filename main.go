@@ -41,8 +41,7 @@ func getSourceFile(filesystem fs.FS, f string, logger *logrus.Logger) fs.FileInf
 func getAsyncProcessedFolderId(id string, logger *logrus.Logger) string {
 	match, err := regexp.MatchString("^[A-F0-9]{32}$", id)
 	if err != nil {
-		logger.Errorf("DatasetId " + id + " & regex error ^[A-F0-9]{32}$")
-		logger.Errorf(err.Error())
+		logger.Fatal(err.Error())
 	}
 	if match {
 		logger.Info("DatasetId set to " + id)
