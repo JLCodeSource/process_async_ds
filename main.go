@@ -15,7 +15,7 @@ import (
 
 var (
 	file      string
-	dataset   string
+	datasetid string
 	days      int64
 	nondryrun bool
 )
@@ -87,7 +87,7 @@ func init() {
 	log.GetLogger()
 
 	flag.StringVar(&file, "file", "", "source file (default '')")
-	flag.StringVar(&dataset, "dataset", "", "async processed dataset id (default '')")
+	flag.StringVar(&datasetid, "datasetid", "", "async processed dataset id (default '')")
 	flag.Int64Var(&days, "days", 0, "number of days ago (default 0)")
 	flag.BoolVar(&nondryrun, "non-dryrun", false, "execute non dry run (default false)")
 
@@ -99,7 +99,7 @@ func main() {
 
 	flag.Parse()
 
-	getAsyncProcessedFolderId(dataset, logger)
+	getAsyncProcessedFolderId(datasetid, logger)
 	getTimeLimit(days, logger)
 	getNonDryRun(nondryrun, logger)
 
