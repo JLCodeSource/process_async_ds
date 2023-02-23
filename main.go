@@ -29,13 +29,13 @@ type File struct {
 	id         string
 }
 
-func getSourceFile(filesystem fs.FS, f string, logger *logrus.Logger) (fs.FileInfo, error) {
+func getSourceFile(filesystem fs.FS, f string, logger *logrus.Logger) fs.FileInfo {
 	file, err := fs.Stat(filesystem, f)
 	if err != nil {
 		logger.Fatal(err.Error())
 	}
 	logger.Info("SourceFile: " + f)
-	return file, err
+	return file
 }
 
 func getAsyncProcessedFolderId(id string, logger *logrus.Logger) string {

@@ -48,11 +48,7 @@ func TestGetSourceFile(t *testing.T) {
 		fs := fstest.MapFS{
 			"path/file.txt": {Data: []byte("test")},
 		}
-		file, err := getSourceFile(fs, "path/file.txt", testLogger)
-
-		if err != nil {
-			t.Fatal(err)
-		}
+		file := getSourceFile(fs, "path/file.txt", testLogger)
 
 		got := file.Name()
 		want := "file.txt"
@@ -76,8 +72,8 @@ func TestGetSourceFile(t *testing.T) {
 		}
 
 		panic := func() {
-			out, _ := getSourceFile(fs, "doesnotexist.txt", testLogger)
-			println(out)
+			file := getSourceFile(fs, "doesnotexist.txt", testLogger)
+			println(file)
 		}
 
 		assert.PanicsWithValue(t, "os.Exit called", panic, "os.Exit was not called")
