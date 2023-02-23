@@ -60,7 +60,7 @@ func TestGetAsyncProcessedFolderId(t *testing.T) {
 
 	})
 
-	t.Run("verify that the dataset id is of the right format", func(t *testing.T) {
+	t.Run("verify that it exits if the datasetid is not the right format", func(t *testing.T) {
 		fakeExit := func(int) {
 			panic("os.Exit called")
 		}
@@ -77,7 +77,6 @@ func TestGetAsyncProcessedFolderId(t *testing.T) {
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
-
 }
 
 func TestGetTimeLimit(t *testing.T) {
@@ -183,7 +182,10 @@ func TestGetSourceFile(t *testing.T) {
 			"notapath/file.txt": {Data: []byte("test")},
 		}
 
-		panic := func() { getSourceFile(fs, "doesnotexist.txt", testLogger) }
+		panic := func() {
+			out, _ := getSourceFile(fs, "doesnotexist.txt", testLogger)
+			println(out)
+		}
 
 		assert.PanicsWithValue(t, "os.Exit called", panic, "os.Exit was not called")
 		gotLogMsg := hook.LastEntry().Message
