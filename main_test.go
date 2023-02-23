@@ -58,6 +58,28 @@ func TestGetSourceFile(t *testing.T) {
 		wantLogMsg := "SourceFile: path/file.txt"
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
+	t.Run("check for empty root", func(t *testing.T) {
+		fakeExit := func(int) {
+			panic("os.Exit called")
+		}
+		patch := monkey.Patch(os.Exit, fakeExit)
+		defer patch.Unpatch()
+
+		testLogger, hook := setupLogs(t)
+		fsys := os.DirFS("")
+
+		panic := func() {
+			file := getSourceFile(fsys, "does_not_exist.file", testLogger)
+			println(file)
+		}
+
+		assert.PanicsWithValue(t, "os.Exit called", panic, "os.Exit was not called")
+		gotLogMsg := hook.LastEntry().Message
+		wantLogMsg := "stat does_not_exist.file: os: DirFS with empty root"
+
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
+
+	})
 	t.Run("error if file does not exist", func(t *testing.T) {
 		fakeExit := func(int) {
 			panic("os.Exit called")
@@ -130,7 +152,7 @@ func TestGetAsyncProcessedFolderId(t *testing.T) {
 		patch := monkey.Patch(os.Exit, fakeExit)
 		defer patch.Unpatch()
 		fakeRegexMatch := func(string, string) (bool, error) {
-			err := errors.New("error")
+			err := errors.New("Regex match errored")
 			return false, err
 		}
 		patch2 := monkey.Patch(regexp.MatchString, fakeRegexMatch)
@@ -141,7 +163,7 @@ func TestGetAsyncProcessedFolderId(t *testing.T) {
 
 		assert.PanicsWithValue(t, "os.Exit called", panic, "os.Exit was not called")
 		gotLogMsg := hook.LastEntry().Message
-		err := "DatasetId: not_a_dataset not of the form ^[A-F0-9]{32}$"
+		err := "Regex match errored"
 		wantLogMsg := err
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
