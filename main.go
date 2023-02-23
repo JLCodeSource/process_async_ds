@@ -2,6 +2,8 @@ package main
 
 import (
 	"io/fs"
+	"os"
+	"path/filepath"
 	"regexp"
 
 	log "github.com/JLCodeSource/process_async_ds/logger"
@@ -99,6 +101,10 @@ func main() {
 
 	flag.Parse()
 
+	dir, f := filepath.Split((file))
+	fsys := os.DirFS(dir)
+
+	getSourceFile(fsys, f, logger)
 	getAsyncProcessedFolderId(datasetid, logger)
 	getTimeLimit(days, logger)
 	getNonDryRun(nondryrun, logger)
