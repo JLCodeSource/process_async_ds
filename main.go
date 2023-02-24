@@ -87,7 +87,7 @@ func init() {
 	log.Init()
 	log.GetLogger()
 
-	flag.StringVar(&file, "file", "", "source file (default '')")
+	flag.StringVar(&file, "file", "", "source path/file (default '')")
 	flag.StringVar(&datasetid, "datasetid", "", "async processed dataset id (default '')")
 	flag.Int64Var(&days, "days", 0, "number of days ago (default 0)")
 	flag.BoolVar(&nondryrun, "non-dryrun", false, "execute non dry run (default false)")
