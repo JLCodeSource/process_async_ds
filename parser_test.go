@@ -1,8 +1,12 @@
 package main
 
 import (
+	"os"
 	"testing"
 	"testing/fstest"
+
+	"bou.ke/monkey"
+	"github.com/stretchr/testify/assert"
 )
 
 const (
@@ -56,6 +60,31 @@ func TestParseFile(t *testing.T) {
 			assertCorrectString(t, gotLogMsg, wantLogMsg)
 
 		}
+	})
+
+	t.Run("check it logs fsys error", func(t *testing.T) {
+		fakeExit := func(int) {
+			panic("os.Exit called")
+		}
+		patch := monkey.Patch(os.Exit, fakeExit)
+		defer patch.Unpatch()
+
+		testLogger, hook := setupLogs(t)
+		fsys := fstest.MapFS{
+			"path/processed_files.out": {
+				Data: []byte(multiline)},
+		}
+
+		panic := func() {
+			parseFile(fsys, "does_not_exist.file", testLogger)
+
+		}
+
+		assert.PanicsWithValue(t, "os.Exit called", panic, "os.Exit was not called")
+		gotLogMsg := hook.LastEntry().Message
+		wantLogMsg := "open does_not_exist.file: file does not exist"
+
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
 
 	})
 }

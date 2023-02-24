@@ -9,7 +9,11 @@ import (
 
 func parseFile(fsys fs.FS, f string, logger *logrus.Logger) []string {
 
-	file, _ := fsys.Open(f)
+	file, err := fsys.Open(f)
+
+	if err != nil {
+		logger.Fatal(err)
+	}
 
 	out := []string{}
 
