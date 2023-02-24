@@ -40,6 +40,19 @@ func TestMainFunc(t *testing.T) {
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
 
+	t.Run("verify main help out", func(t *testing.T) {
+		fakeExit := func(int) {
+			panic("help output")
+		}
+		patch := monkey.Patch(os.Exit, fakeExit)
+		defer patch.Unpatch()
+
+		os.Args = append(os.Args, "-help")
+
+		panic := func() { main() }
+		assert.PanicsWithValue(t, "help output", panic, "help output not called")
+	})
+
 }
 
 func TestGetSourceFile(t *testing.T) {
