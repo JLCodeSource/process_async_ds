@@ -18,9 +18,9 @@ func parseFile(fsys fs.FS, f string, logger *logrus.Logger) []string {
 
 	for scanner.Scan() {
 		out = append(out, scanner.Text())
+		logger.Info("Processing: " + scanner.Text())
 	}
 
-	logger.Info("Processing: " + out[0])
 	return out
 
 }

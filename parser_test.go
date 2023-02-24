@@ -38,22 +38,24 @@ func TestParseFile(t *testing.T) {
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
 	t.Run("parse multiline-file", func(t *testing.T) {
-		testLogger, _ := setupLogs(t)
+		testLogger, hook := setupLogs(t)
 		fs := fstest.MapFS{
 			"path/processed_files.out": {
 				Data: []byte(multiline)},
 		}
 		got := parseFile(fs, "path/processed_files.out", testLogger)
+		logs := hook.AllEntries()
 
 		want := multilineOut
 
 		for i := 0; i < len(want); i++ {
 			assertCorrectString(t, got[i], want[i])
 
+			gotLogMsg := logs[i].Message
+			wantLogMsg := "Processing: " + got[i]
+			assertCorrectString(t, gotLogMsg, wantLogMsg)
+
 		}
 
-		//gotLogMsg := hook.LastEntry().Message
-		//wantLogMsg := "Processing: " + out
-		//assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
 }
