@@ -7,16 +7,20 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func parseFile(fsys fs.FS, f string, logger *logrus.Logger) string {
+func parseFile(fsys fs.FS, f string, logger *logrus.Logger) []string {
 
 	file, _ := fsys.Open(f)
 
+	out := []string{}
+
 	scanner := bufio.NewScanner(file)
 	scanner.Split(bufio.ScanLines)
-	scanner.Scan()
-	out := scanner.Text()
 
-	logger.Info("Processing: " + out)
+	for scanner.Scan() {
+		out = append(out, scanner.Text())
+	}
+
+	logger.Info("Processing: " + out[0])
 	return out
 
 }
