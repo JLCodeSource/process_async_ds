@@ -29,7 +29,7 @@ func TestMainFunc(t *testing.T) {
 		_, hook := setupLogs(t)
 
 		os.Args = append(os.Args, "-file=./README.md")
-		os.Args = append(os.Args, "-datasetid=41545AB0788A11ECBD0700155D014E0D")
+		os.Args = append(os.Args, "-datasetid="+testDatasetId)
 		os.Args = append(os.Args, "-days=123")
 
 		main()
