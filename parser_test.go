@@ -30,17 +30,18 @@ func TestParseFile(t *testing.T) {
 			"path/processed_files.out": {
 				Data: []byte(oneline)},
 		}
-		onelineOut := oneline[0 : len(oneline)-1]
+		onelineParsed := oneline[0 : len(oneline)-1]
 		out := parseFile(fs, "path/processed_files.out", testLogger)
 
 		got := out[0]
-		want := onelineOut
+		want := onelineParsed
 		assertCorrectString(t, got, want)
 
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := "Processing: " + out[0]
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
+
 	t.Run("parse multiline-file", func(t *testing.T) {
 		testLogger, hook := setupLogs(t)
 		fs := fstest.MapFS{
@@ -85,6 +86,22 @@ func TestParseFile(t *testing.T) {
 		wantLogMsg := "open does_not_exist.file: file does not exist"
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
-
 	})
+}
+
+func TestParseLine(t *testing.T) {
+	t.Run("parse line", func(t *testing.T) {
+		testLogger, _ := setupLogs(t)
+		onelineParsed := oneline[0 : len(oneline)-1]
+		workingFile := parseLine(onelineParsed, testLogger)
+
+		got := workingFile.path
+		want := "/data2/staging/05043fe1-00000006-2f8630d0-608630d0-67d25000-ab66ac56{gbtmp-FD40CB70A63D11EBAB7FB02628E0E270}"
+		assertCorrectString(t, got, want)
+
+		//gotLogMsg := hook.LastEntry().Message
+		//wantLogMsg := "Processing: " + out[0]
+		//assertCorrectString(t, gotLogMsg, wantLogMsg)
+	})
+
 }

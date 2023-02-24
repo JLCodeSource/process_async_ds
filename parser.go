@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"io/fs"
+	"strings"
 
 	"github.com/sirupsen/logrus"
 )
@@ -27,4 +28,13 @@ func parseFile(fsys fs.FS, f string, logger *logrus.Logger) []string {
 
 	return lines
 
+}
+
+func parseLine(line string, logger *logrus.Logger) File {
+	vals := strings.SplitAfter(line, "|")
+	for i := 0; i < len(vals); i++ {
+		vals[i] = vals[i][0 : len(vals[i])-1]
+	}
+	file := File{path: vals[0]}
+	return file
 }
