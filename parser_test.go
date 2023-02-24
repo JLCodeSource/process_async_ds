@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"strconv"
 	"testing"
 	"testing/fstest"
 
@@ -97,6 +98,18 @@ func TestParseLine(t *testing.T) {
 
 		got := workingFile.path
 		want := "/data2/staging/05043fe1-00000006-2f8630d0-608630d0-67d25000-ab66ac56{gbtmp-FD40CB70A63D11EBAB7FB02628E0E270}"
+		assertCorrectString(t, got, want)
+
+		got = strconv.FormatInt(workingFile.createTime.Unix(), 10)
+		want = "1619407073"
+		assertCorrectString(t, got, want)
+
+		got = strconv.FormatInt(workingFile.size, 10)
+		want = strconv.FormatInt(0, 10)
+		assertCorrectString(t, got, want)
+
+		got = workingFile.id
+		want = "95BA50C0A64211EB8B73B026285E5DA0"
 		assertCorrectString(t, got, want)
 
 		//gotLogMsg := hook.LastEntry().Message
