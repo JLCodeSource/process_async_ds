@@ -15,16 +15,16 @@ func parseFile(fsys fs.FS, f string, logger *logrus.Logger) []string {
 		logger.Fatal(err)
 	}
 
-	out := []string{}
+	lines := []string{}
 
 	scanner := bufio.NewScanner(file)
 	scanner.Split(bufio.ScanLines)
 
 	for scanner.Scan() {
-		out = append(out, scanner.Text())
+		lines = append(lines, scanner.Text())
 		logger.Info("Processing: " + scanner.Text())
 	}
 
-	return out
+	return lines
 
 }
