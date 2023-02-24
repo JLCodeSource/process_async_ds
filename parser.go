@@ -41,14 +41,14 @@ func parseLine(line string, logger *logrus.Logger) File {
 	}
 
 	path := fileMetadata[0]
+	datestring := fileMetadata[1]
+	sizeStr := fileMetadata[2]
+	id := fileMetadata[3]
 
 	loc, _ := time.LoadLocation("America/New_York")
-	datestring := fileMetadata[1]
 	datetime, _ := time.ParseInLocation(time.UnixDate, datestring, loc)
 
-	size, _ := strconv.ParseInt(fileMetadata[2], 10, 64)
-
-	id := fileMetadata[3]
+	size, _ := strconv.ParseInt(sizeStr, 10, 64)
 
 	file := File{
 		path:       path,
