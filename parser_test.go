@@ -92,51 +92,53 @@ func TestParseFile(t *testing.T) {
 
 func TestParseLine(t *testing.T) {
 
-	testLogger, hook := setupLogs(t)
-	onelineParsed := oneline[0 : len(oneline)-1]
-	workingFile := parseLine(onelineParsed, testLogger)
+	t.Run("verify ParseLine", func(t *testing.T) {
+		testLogger, hook := setupLogs(t)
+		onelineParsed := oneline[0 : len(oneline)-1]
+		workingFile := parseLine(onelineParsed, testLogger)
 
-	parsingTests := []struct {
-		name string
-		got  string
-		want string
-		log  string
-	}{
-		{
-			"verify path",
-			workingFile.path,
-			"/data2/staging/05043fe1-00000006-2f8630d0-608630d0-67d25000-ab66ac56{gbtmp-FD40CB70A63D11EBAB7FB02628E0E270}",
-			"path: ",
-		},
-		{
-			"verify createTime",
-			strconv.FormatInt(workingFile.createTime.Unix(), 10),
-			"1619407073",
-			"createTime: ",
-		},
-		{
-			"verify size",
-			strconv.FormatInt(workingFile.size, 10),
-			"0",
-			"size: ",
-		},
-		{
-			"verify id",
-			workingFile.id,
-			"95BA50C0A64211EB8B73B026285E5DA0",
-			"id: ",
-		},
-	}
+		parsingTests := []struct {
+			name string
+			got  string
+			want string
+			log  string
+		}{
+			{
+				"verify path",
+				workingFile.path,
+				"/data2/staging/05043fe1-00000006-2f8630d0-608630d0-67d25000-ab66ac56{gbtmp-FD40CB70A63D11EBAB7FB02628E0E270}",
+				"path: ",
+			},
+			{
+				"verify createTime",
+				strconv.FormatInt(workingFile.createTime.Unix(), 10),
+				"1619407073",
+				"createTime: ",
+			},
+			{
+				"verify size",
+				strconv.FormatInt(workingFile.size, 10),
+				"0",
+				"size: ",
+			},
+			{
+				"verify id",
+				workingFile.id,
+				"95BA50C0A64211EB8B73B026285E5DA0",
+				"id: ",
+			},
+		}
 
-	for i, tt := range parsingTests {
+		for i, tt := range parsingTests {
 
-		t.Run(tt.name, func(t *testing.T) {
-			gotLogMsg := hook.Entries[i].Message
-			wantLogMsg := tt.log + tt.got
-			assertCorrectString(t, tt.got, tt.want)
-			assertCorrectString(t, gotLogMsg, wantLogMsg)
-		})
+			t.Run(tt.name, func(t *testing.T) {
+				gotLogMsg := hook.Entries[i].Message
+				wantLogMsg := tt.log + tt.got
+				assertCorrectString(t, tt.got, tt.want)
+				assertCorrectString(t, gotLogMsg, wantLogMsg)
+			})
 
-	}
+		}
+	})
 
 }
