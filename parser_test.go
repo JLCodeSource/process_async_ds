@@ -91,43 +91,52 @@ func TestParseFile(t *testing.T) {
 }
 
 func TestParseLine(t *testing.T) {
-	t.Run("parse line", func(t *testing.T) {
-		testLogger, hook := setupLogs(t)
-		onelineParsed := oneline[0 : len(oneline)-1]
-		workingFile := parseLine(onelineParsed, testLogger)
 
-		got := workingFile.path
-		want := "/data2/staging/05043fe1-00000006-2f8630d0-608630d0-67d25000-ab66ac56{gbtmp-FD40CB70A63D11EBAB7FB02628E0E270}"
-		assertCorrectString(t, got, want)
+	testLogger, hook := setupLogs(t)
+	onelineParsed := oneline[0 : len(oneline)-1]
+	workingFile := parseLine(onelineParsed, testLogger)
 
-		gotLogMsg := hook.Entries[0].Message
-		wantLogMsg := "path: " + want
-		assertCorrectString(t, gotLogMsg, wantLogMsg)
+	parsingTests := []struct {
+		name string
+		got  string
+		want string
+		log  string
+	}{
+		{
+			"verify path",
+			workingFile.path,
+			"/data2/staging/05043fe1-00000006-2f8630d0-608630d0-67d25000-ab66ac56{gbtmp-FD40CB70A63D11EBAB7FB02628E0E270}",
+			"path: ",
+		},
+		{
+			"verify createTime",
+			strconv.FormatInt(workingFile.createTime.Unix(), 10),
+			"1619407073",
+			"createTime: ",
+		},
+		{
+			"verify size",
+			strconv.FormatInt(workingFile.size, 10),
+			"0",
+			"size: ",
+		},
+		{
+			"verify id",
+			workingFile.id,
+			"95BA50C0A64211EB8B73B026285E5DA0",
+			"id: ",
+		},
+	}
 
-		got = strconv.FormatInt(workingFile.createTime.Unix(), 10)
-		want = "1619407073"
-		assertCorrectString(t, got, want)
+	for i, tt := range parsingTests {
 
-		gotLogMsg = hook.Entries[1].Message
-		wantLogMsg = "createTime: " + want
-		assertCorrectString(t, gotLogMsg, wantLogMsg)
+		t.Run(tt.name, func(t *testing.T) {
+			gotLogMsg := hook.Entries[i].Message
+			wantLogMsg := tt.log + tt.got
+			assertCorrectString(t, tt.got, tt.want)
+			assertCorrectString(t, gotLogMsg, wantLogMsg)
+		})
 
-		got = strconv.FormatInt(workingFile.size, 10)
-		want = strconv.FormatInt(0, 10)
-		assertCorrectString(t, got, want)
-
-		gotLogMsg = hook.Entries[2].Message
-		wantLogMsg = "size: " + want
-		assertCorrectString(t, gotLogMsg, wantLogMsg)
-
-		got = workingFile.id
-		want = "95BA50C0A64211EB8B73B026285E5DA0"
-		assertCorrectString(t, got, want)
-
-		gotLogMsg = hook.Entries[3].Message
-		wantLogMsg = "id: " + want
-		assertCorrectString(t, gotLogMsg, wantLogMsg)
-
-	})
+	}
 
 }
