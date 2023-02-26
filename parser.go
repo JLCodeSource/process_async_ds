@@ -35,18 +35,22 @@ func parseFile(fsys fs.FS, f string, logger *logrus.Logger) []string {
 func parseLine(line string, logger *logrus.Logger) File {
 	fileMetadata := strings.SplitAfter(line, "|")
 	for i := 0; i < len(fileMetadata); i++ {
+		// The first columns have a | after the content, the last one doesn't
 		if i < (len(fileMetadata) - 1) {
 			fileMetadata[i] = fileMetadata[i][0 : len(fileMetadata[i])-1]
 		}
 	}
 
 	path := fileMetadata[0]
+	logger.Info("path: " + path)
 	datestring := fileMetadata[1]
-	sizeStr := fileMetadata[2]
-	id := fileMetadata[3]
-
 	loc, _ := time.LoadLocation("America/New_York")
 	datetime, _ := time.ParseInLocation(time.UnixDate, datestring, loc)
+	logger.Info("createTime: " + strconv.FormatInt(datetime.Unix(), 10))
+	sizeStr := fileMetadata[2]
+	logger.Info("size: " + sizeStr)
+	id := fileMetadata[3]
+	logger.Info("id: " + id)
 
 	size, _ := strconv.ParseInt(sizeStr, 10, 64)
 
