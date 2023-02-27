@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"net"
 	"os"
 	"regexp"
 	"testing/fstest"
@@ -261,14 +262,22 @@ func TestFileMetadata(t *testing.T) {
 			t.Fatalf(err.Error())
 		}
 		datetime, _ := time.ParseInLocation(time.UnixDate, datestring, loc)
+		fanIP := net.ParseIP("192.168.101.210")
 		file := File{
-			path:       "/path/file",
-			createTime: datetime,
-			size:       int64(1024),
-			id:         testFileId}
+			smbName:     "file.txt",
+			stagingPath: "/path/file.txt",
+			createTime:  datetime,
+			size:        int64(1024),
+			id:          testFileId,
+			fanIP:       fanIP,
+		}
 
-		gotPath := file.path
-		wantPath := "/path/file"
+		gotSmbName := file.smbName
+		wantSmbName := "file.txt"
+		assertCorrectString(t, gotSmbName, wantSmbName)
+
+		gotPath := file.stagingPath
+		wantPath := "/path/file.txt"
 		assertCorrectString(t, gotPath, wantPath)
 
 		// N.B. Need to sort out time zones
@@ -292,6 +301,10 @@ func TestFileMetadata(t *testing.T) {
 		wantId := testFileId
 		assertCorrectString(t, gotId, wantId)
 
+		gotFanIP := file.fanIP.String()
+		wantFanIP := net.ParseIP("192.168.101.210").String()
+		assertCorrectString(t, gotFanIP, wantFanIP)
+
 	})
 
 	t.Run("PKT struct test", func(t *testing.T) {
@@ -302,12 +315,12 @@ func TestFileMetadata(t *testing.T) {
 		}
 		datetime, _ := time.ParseInLocation(time.UnixDate, datestring, loc)
 		file := File{
-			path:       "/path/file",
-			createTime: datetime,
-			size:       int64(85512264),
-			id:         testFileId}
+			stagingPath: "/path/file",
+			createTime:  datetime,
+			size:        int64(85512264),
+			id:          testFileId}
 
-		gotPath := file.path
+		gotPath := file.stagingPath
 		wantPath := "/path/file"
 		assertCorrectString(t, gotPath, wantPath)
 

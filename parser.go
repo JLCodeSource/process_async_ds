@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"io/fs"
+	"net"
 	"strconv"
 	"strings"
 	"time"
@@ -33,6 +34,7 @@ func parseFile(fsys fs.FS, f string, logger *logrus.Logger) []string {
 }
 
 func parseLine(line string, logger *logrus.Logger) File {
+	var dateTime time.Time
 	fileMetadata := strings.SplitAfter(line, "|")
 	for i := 0; i < len(fileMetadata); i++ {
 		// The first columns have a | after the content, the last one doesn't
@@ -41,29 +43,44 @@ func parseLine(line string, logger *logrus.Logger) File {
 		}
 	}
 
-	path := fileMetadata[0]
-	logger.Info("path: " + path)
-	datestring := fileMetadata[1]
-	loc, err := time.LoadLocation("America/New_York")
+	smbName := fileMetadata[0]
+	logger.Info("smbName: " + smbName)
+	stagingPath := fileMetadata[1]
+	logger.Info("stagingPath: " + stagingPath)
+	dateTimeString := fileMetadata[2]
+	dateTimeInt, err := strconv.ParseInt(dateTimeString, 10, 64)
 	if err != nil {
-		logger.Fatal(err)
+		logger.Warn(err)
+		loc, err := time.LoadLocation("America/New_York")
+		if err != nil {
+			logger.Fatal(err)
+		}
+		dateTime, err = time.ParseInLocation(time.UnixDate, dateTimeString, loc)
+		if err != nil {
+			logger.Fatal(err)
+		}
+
+	} else {
+		dateTime = time.Unix(dateTimeInt, 0)
 	}
-	datetime, err := time.ParseInLocation(time.UnixDate, datestring, loc)
-	if err != nil {
-		logger.Fatal(err)
-	}
-	logger.Info("createTime: " + strconv.FormatInt(datetime.Unix(), 10))
-	sizeStr := fileMetadata[2]
+
+	logger.Info("createTime: " + strconv.FormatInt(dateTimeInt, 10))
+	sizeStr := fileMetadata[3]
 	logger.Info("size: " + sizeStr)
-	id := fileMetadata[3]
+	id := fileMetadata[4]
 	logger.Info("id: " + id)
+	fanIPString := fileMetadata[5]
+	fanIP := net.ParseIP(fanIPString)
+	logger.Info("fanIP: " + fanIPString)
 
 	size, _ := strconv.ParseInt(sizeStr, 10, 64)
 
 	file := File{
-		path:       path,
-		createTime: datetime,
-		size:       size,
-		id:         id}
+		smbName:     smbName,
+		stagingPath: stagingPath,
+		createTime:  dateTime,
+		size:        size,
+		id:          id,
+		fanIP:       fanIP}
 	return file
 }

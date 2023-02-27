@@ -2,6 +2,7 @@ package main
 
 import (
 	"io/fs"
+	"net"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -23,10 +24,12 @@ var (
 )
 
 type File struct {
-	path       string
-	createTime time.Time
-	size       int64
-	id         string
+	smbName     string
+	stagingPath string
+	createTime  time.Time
+	size        int64
+	id          string
+	fanIP       net.IP
 }
 
 func getSourceFile(filesystem fs.FS, f string, logger *logrus.Logger) fs.FileInfo {
