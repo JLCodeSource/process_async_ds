@@ -15,14 +15,15 @@ import (
 )
 
 const (
-	oneline   = "/data2/staging/05043fe1-00000006-2f8630d0-608630d0-67d25000-ab66ac56{gbtmp-FD40CB70A63D11EBAB7FB02628E0E270}|Sun Apr 25 23:17:53 EDT 2021|0|95BA50C0A64211EB8B73B026285E5DA0\n"
-	multiline = "/data2/staging/05043fe1-00000006-2f8630d0-608630d0-67d25000-ab66ac56{gbtmp-FD40CB70A63D11EBAB7FB02628E0E270}|Sun Apr 25 23:17:53 EDT 2021|0|95BA50C0A64211EB8B73B026285E5DA0\n" +
+	oneline        = "05043fe1-00000006-2f8630d0-608630d0-67d25000-ab66ac56|/data2/staging/05043fe1-00000006-2f8630d0-608630d0-67d25000-ab66ac56{gbtmp-FD40CB70A63D11EBAB7FB02628E0E270}|1619407073|0|95BA50C0A64211EB8B73B026285E5DA0|192.168.101.210\n"
+	onelineOldDate = "05043fe1-00000006-2f8630d0-608630d0-67d25000-ab66ac56|/data2/staging/05043fe1-00000006-2f8630d0-608630d0-67d25000-ab66ac56{gbtmp-FD40CB70A63D11EBAB7FB02628E0E270}|Sun Apr 25 23:17:53 EDT 2021|0|95BA50C0A64211EB8B73B026285E5DA0|192.168.101.210\n"
+	multiline      = "/data2/staging/05043fe1-00000006-2f8630d0-608630d0-67d25000-ab66ac56{gbtmp-FD40CB70A63D11EBAB7FB02628E0E270}|Sun Apr 25 23:17:53 EDT 2021|0|95BA50C0A64211EB8B73B026285E5DA0\n" +
 		"/data2/staging/03bdd706-00000006-f8836565-60836565-2e095000-ab66ac56{gbtmp-E9DE7470A49311EBAB7FB02628E0E270}|Fri Apr 23 20:29:14 EDT 2021|0|24A80BC0A49411EB9275B026285E5440\n" +
 		"/data1/staging/ffbb5588-00000006-a08893b2-608893b2-32645000-ee50a856{gbtmp-113E8140A7AA11EB94CCB02628E0E270}|Tue Apr 27 18:44:04 EDT 2021|0|55670DD0A7AD11EB985CB026285E5410\n"
 )
 
 var (
-	onelineParsed = []string{"/data2/staging/05043fe1-00000006-2f8630d0-608630d0-67d25000-ab66ac56{gbtmp-FD40CB70A63D11EBAB7FB02628E0E270}|Sun Apr 25 23:17:53 EDT 2021|0|95BA50C0A64211EB8B73B026285E5DA0"}
+	onelineParsed = []string{"05043fe1-00000006-2f8630d0-608630d0-67d25000-ab66ac56|/data2/staging/05043fe1-00000006-2f8630d0-608630d0-67d25000-ab66ac56{gbtmp-FD40CB70A63D11EBAB7FB02628E0E270}|1619407073|0|95BA50C0A64211EB8B73B026285E5DA0|192.168.101.210"}
 
 	multilineParsed = []string{
 		"/data2/staging/05043fe1-00000006-2f8630d0-608630d0-67d25000-ab66ac56{gbtmp-FD40CB70A63D11EBAB7FB02628E0E270}|Sun Apr 25 23:17:53 EDT 2021|0|95BA50C0A64211EB8B73B026285E5DA0",
@@ -121,14 +122,20 @@ func TestParseLine(t *testing.T) {
 			log  string
 		}{
 			{
+				name: "verify smbName",
+				got:  workingFile.smbName,
+				want: "05043fe1-00000006-2f8630d0-608630d0-67d25000-ab66ac56",
+				log:  "smbName: ",
+			},
+			{
 				name: "verify path",
-				got:  workingFile.path,
+				got:  workingFile.stagingPath,
 				want: "/data2/staging/05043fe1-00000006-2f8630d0-608630d0-67d25000-ab66ac56{gbtmp-FD40CB70A63D11EBAB7FB02628E0E270}",
-				log:  "path: ",
+				log:  "stagingPath: ",
 			},
 			{
 				"verify createTime",
-				strconv.FormatInt(workingFile.createTime.Unix(), 10),
+				strconv.Itoa(int(workingFile.createTime.Unix())),
 				"1619407073",
 				"createTime: ",
 			},
@@ -144,6 +151,12 @@ func TestParseLine(t *testing.T) {
 				"95BA50C0A64211EB8B73B026285E5DA0",
 				"id: ",
 			},
+			{
+				"verify fanIp",
+				workingFile.fanIP.String(),
+				"192.168.101.210",
+				"fanIP: ",
+			},
 		}
 
 		for i, tt := range parsingTests {
@@ -156,6 +169,20 @@ func TestParseLine(t *testing.T) {
 			})
 
 		}
+	})
+
+	t.Run("it should warn if strconv.ParseInt on dateTime fails", func(t *testing.T) {
+		strconvParseIntErr := "strconv.ParseInt: parsing \"Sun Apr 25 23:17:53 EDT 2021\": invalid syntax"
+
+		testLogger, hook := setupLogs(t)
+		parseLine(onelineOldDate, testLogger)
+
+		gotLogMsg := hook.Entries[2].Message
+		err := strconvParseIntErr
+		wantLogMsg := err
+
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
+
 	})
 
 	t.Run("it should panic if time.LoadLocation fails", func(t *testing.T) {
@@ -173,7 +200,7 @@ func TestParseLine(t *testing.T) {
 		defer patch2.Unpatch()
 
 		testLogger, hook := setupLogs(t)
-		panic := func() { parseLine(oneline, testLogger) }
+		panic := func() { parseLine(onelineOldDate, testLogger) }
 
 		assert.PanicsWithValue(t, "os.Exit called", panic, "os.Exit was not called")
 
@@ -200,7 +227,7 @@ func TestParseLine(t *testing.T) {
 		defer patch2.Unpatch()
 
 		testLogger, hook := setupLogs(t)
-		panic := func() { parseLine(oneline, testLogger) }
+		panic := func() { parseLine(onelineOldDate, testLogger) }
 
 		assert.PanicsWithValue(t, "os.Exit called", panic, "os.Exit was not called")
 
