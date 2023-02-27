@@ -6,6 +6,8 @@ import (
 
 var logger *logrus.Logger
 
+// Init instantiates and configures the logger.
+// It sets a custom format for FullTimestamp
 func Init() {
 	logger = logrus.New()
 	customFormatter := new(logrus.TextFormatter)
@@ -21,7 +23,7 @@ func GetLogger() *logrus.Logger {
 }
 
 // SetLogger sets the logger instance.
-// This is useful in testing as the logger can be overriden
+// This is useful in testing as the logger can be overridden
 // with a test logger
 func SetLogger(l *logrus.Logger) {
 	logger = l
