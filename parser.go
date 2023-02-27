@@ -48,7 +48,10 @@ func parseLine(line string, logger *logrus.Logger) File {
 	if err != nil {
 		logger.Fatal(err)
 	}
-	datetime, _ := time.ParseInLocation(time.UnixDate, datestring, loc)
+	datetime, err := time.ParseInLocation(time.UnixDate, datestring, loc)
+	if err != nil {
+		logger.Fatal(err)
+	}
 	logger.Info("createTime: " + strconv.FormatInt(datetime.Unix(), 10))
 	sizeStr := fileMetadata[2]
 	logger.Info("size: " + sizeStr)
