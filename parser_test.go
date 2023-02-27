@@ -184,4 +184,31 @@ func TestParseLine(t *testing.T) {
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 
 	})
+
+	t.Run("it should panic if time.ParseInLocation fails", func(t *testing.T) {
+		fakeExit := func(int) {
+			panic("os.Exit called")
+		}
+		patch := monkey.Patch(os.Exit, fakeExit)
+		defer patch.Unpatch()
+		timeParseInLocErr := "time.ParseInLocation errored"
+		fakeParseInLoc := func(string, string, *time.Location) (time.Time, error) {
+			err := errors.New(timeParseInLocErr)
+			return time.Time{}, err
+		}
+		patch2 := monkey.Patch(time.ParseInLocation, fakeParseInLoc)
+		defer patch2.Unpatch()
+
+		testLogger, hook := setupLogs(t)
+		panic := func() { parseLine(oneline, testLogger) }
+
+		assert.PanicsWithValue(t, "os.Exit called", panic, "os.Exit was not called")
+
+		gotLogMsg := hook.LastEntry().Message
+		err := timeParseInLocErr
+		wantLogMsg := err
+
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
+
+	})
 }
