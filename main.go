@@ -23,6 +23,7 @@ var (
 	nondryrun bool
 )
 
+// File type is a struct which holds its relevant metadata
 type File struct {
 	smbName     string
 	stagingPath string
@@ -41,19 +42,18 @@ func getSourceFile(filesystem fs.FS, f string, logger *logrus.Logger) fs.FileInf
 	return file
 }
 
-func getAsyncProcessedFolderId(id string, logger *logrus.Logger) string {
+func getAsyncProcessedFolderID(id string, logger *logrus.Logger) string {
 	match, err := regexp.MatchString("^[A-F0-9]{32}$", id)
 	if err != nil {
 		logger.Fatal(err.Error())
 	}
-	if match {
-		logger.Info("DatasetId set to " + id)
-		return id
-	} else {
+	if !match {
 		logger.Fatal("DatasetId: " + id + " not of the form ^[A-F0-9]{32}$")
-		return id
+		return ""
 	}
 
+	logger.Info("DatasetId set to " + id)
+	return id
 }
 
 func getTimeLimit(days int64, logger *logrus.Logger) (limit int64) {

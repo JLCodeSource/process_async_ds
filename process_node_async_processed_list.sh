@@ -100,7 +100,7 @@ do
    fi
 
    ## Verify file is in async processed dataset
-   ### Use gbr to list file by file id with details, grep for parent id and strip preceeding
+   ### Use gbr to list file by file id with details, grep for parent id and strip preceding
    dataset=$(gbr file ls -i $file_id -d | grep "parent id" | cut -c25-)
    ### Filter out any files not in async_processed_files_dataset
    if [ "$dataset" = "$async_processed_files_dataset" ]

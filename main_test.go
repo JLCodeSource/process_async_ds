@@ -20,8 +20,8 @@ import (
 )
 
 const (
-	testDatasetId = "41545AB0788A11ECBD0700155D014E0D"
-	testFileId    = "D5B58980A3E311EBBA0AB026285E5610"
+	testDatasetID = "41545AB0788A11ECBD0700155D014E0D"
+	testFileID    = "D5B58980A3E311EBBA0AB026285E5610"
 )
 
 func TestMainFunc(t *testing.T) {
@@ -30,7 +30,7 @@ func TestMainFunc(t *testing.T) {
 		_, hook := setupLogs(t)
 
 		os.Args = append(os.Args, "-file=./README.md")
-		os.Args = append(os.Args, "-datasetid="+testDatasetId)
+		os.Args = append(os.Args, "-datasetid="+testDatasetID)
 		os.Args = append(os.Args, "-days=123")
 
 		main()
@@ -124,18 +124,18 @@ func TestGetAsyncProcessedFolderId(t *testing.T) {
 
 	t.Run("verify it returns the right dataset id", func(t *testing.T) {
 		testLogger, _ := setupLogs(t)
-		got := getAsyncProcessedFolderId(testDatasetId, testLogger)
-		want := testDatasetId
+		got := getAsyncProcessedFolderID(testDatasetID, testLogger)
+		want := testDatasetID
 
 		assertCorrectString(t, got, want)
 	})
 
 	t.Run("verify it logs the right dataset id", func(t *testing.T) {
 		testLogger, hook := setupLogs(t)
-		_ = getAsyncProcessedFolderId(testDatasetId, testLogger)
+		_ = getAsyncProcessedFolderID(testDatasetID, testLogger)
 
 		gotLogMsg := hook.LastEntry().Message
-		wantLogMsg := "DatasetId set to " + testDatasetId
+		wantLogMsg := "DatasetId set to " + testDatasetID
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 
@@ -149,7 +149,7 @@ func TestGetAsyncProcessedFolderId(t *testing.T) {
 		defer patch.Unpatch()
 
 		testLogger, hook := setupLogs(t)
-		panic := func() { getAsyncProcessedFolderId("123", testLogger) }
+		panic := func() { getAsyncProcessedFolderID("123", testLogger) }
 
 		assert.PanicsWithValue(t, "os.Exit called", panic, "os.Exit was not called")
 		gotLogMsg := hook.LastEntry().Message
@@ -173,7 +173,7 @@ func TestGetAsyncProcessedFolderId(t *testing.T) {
 		defer patch2.Unpatch()
 
 		testLogger, hook := setupLogs(t)
-		panic := func() { getAsyncProcessedFolderId("not_a_dataset", testLogger) }
+		panic := func() { getAsyncProcessedFolderID("not_a_dataset", testLogger) }
 
 		assert.PanicsWithValue(t, "os.Exit called", panic, "os.Exit was not called")
 		gotLogMsg := hook.LastEntry().Message
@@ -268,7 +268,7 @@ func TestFileMetadata(t *testing.T) {
 			stagingPath: "/path/file.txt",
 			createTime:  datetime,
 			size:        int64(1024),
-			id:          testFileId,
+			id:          testFileID,
 			fanIP:       fanIP,
 		}
 
@@ -297,9 +297,9 @@ func TestFileMetadata(t *testing.T) {
 		wantSize := strconv.FormatInt(1024, 10)
 		assertCorrectString(t, gotSize, wantSize)
 
-		gotId := file.id
-		wantId := testFileId
-		assertCorrectString(t, gotId, wantId)
+		gotID := file.id
+		wantID := testFileID
+		assertCorrectString(t, gotID, wantID)
 
 		gotFanIP := file.fanIP.String()
 		wantFanIP := net.ParseIP("192.168.101.210").String()
@@ -318,7 +318,7 @@ func TestFileMetadata(t *testing.T) {
 			stagingPath: "/path/file",
 			createTime:  datetime,
 			size:        int64(85512264),
-			id:          testFileId}
+			id:          testFileID}
 
 		gotPath := file.stagingPath
 		wantPath := "/path/file"
@@ -341,9 +341,9 @@ func TestFileMetadata(t *testing.T) {
 		wantSize := strconv.FormatInt(85512264, 10)
 		assertCorrectString(t, gotSize, wantSize)
 
-		gotId := file.id
-		wantId := testFileId
-		assertCorrectString(t, gotId, wantId)
+		gotID := file.id
+		wantID := testFileID
+		assertCorrectString(t, gotID, wantID)
 
 	})
 }
