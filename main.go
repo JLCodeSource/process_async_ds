@@ -107,7 +107,7 @@ func main() {
 	fsys := os.DirFS(dir)
 
 	getSourceFile(fsys, f, logger)
-	getAsyncProcessedFolderId(datasetid, logger)
+	getAsyncProcessedFolderID(datasetid, logger)
 	getTimeLimit(days, logger)
 	getNonDryRun(nondryrun, logger)
 
