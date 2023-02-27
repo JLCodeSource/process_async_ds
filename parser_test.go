@@ -1,10 +1,12 @@
 package main
 
 import (
+	"errors"
 	"os"
 	"strconv"
 	"testing"
 	"testing/fstest"
+	"time"
 
 	"bou.ke/monkey"
 	"github.com/sirupsen/logrus"
@@ -156,4 +158,30 @@ func TestParseLine(t *testing.T) {
 		}
 	})
 
+	t.Run("it should panic if time.LoadLocation fails", func(t *testing.T) {
+		fakeExit := func(int) {
+			panic("os.Exit called")
+		}
+		patch := monkey.Patch(os.Exit, fakeExit)
+		defer patch.Unpatch()
+		timeLoadLocError := "time.Loadloc errored"
+		fakeLoadLoc := func(string) (*time.Location, error) {
+			err := errors.New(timeLoadLocError)
+			return nil, err
+		}
+		patch2 := monkey.Patch(time.LoadLocation, fakeLoadLoc)
+		defer patch2.Unpatch()
+
+		testLogger, hook := setupLogs(t)
+		panic := func() { parseLine(oneline, testLogger) }
+
+		assert.PanicsWithValue(t, "os.Exit called", panic, "os.Exit was not called")
+
+		gotLogMsg := hook.LastEntry().Message
+		err := timeLoadLocError
+		wantLogMsg := err
+
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
+
+	})
 }
