@@ -152,8 +152,6 @@ func TestVerifyFileExists(t *testing.T) {
 
 	// setup file
 	var file File
-	testName := "test.txt"
-	testPath := "data1/staging/test.txt"
 
 	// setup fs
 	var fsys fstest.MapFS
