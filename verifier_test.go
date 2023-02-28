@@ -70,7 +70,7 @@ func TestVerifyTimeLimit(t *testing.T) {
 	hours := time.Duration(days * 24)
 	now := time.Now()
 
-	t.Run("returns true if file.date is after time limit", func(t *testing.T) {
+	t.Run("returns true if file.createTime is after time limit", func(t *testing.T) {
 		file = File{
 			smbName:    "file.txt",
 			createTime: now,
@@ -84,7 +84,7 @@ func TestVerifyTimeLimit(t *testing.T) {
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 
 	})
-	t.Run("returns false if file.date is before time limit", func(t *testing.T) {
+	t.Run("returns false if file.createTime is before time limit", func(t *testing.T) {
 		file = File{
 			smbName:    "file.txt",
 			createTime: now,
@@ -96,6 +96,48 @@ func TestVerifyTimeLimit(t *testing.T) {
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := ("file.txt createTime:" + file.createTime.String() + " is before timelimit:" +
 			limit.String() + "; skipping file")
+
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
+	})
+
+}
+
+func TestVerifyInProcessedDataset(t *testing.T) {
+	// setup logger
+	var testLogger *logrus.Logger
+	var hook *test.Hook
+
+	// setup file
+	var file File
+
+	t.Run("returns true if file.datasetID matches asyncProcessedDatasetID", func(t *testing.T) {
+		file = File{
+			smbName:   "file.txt",
+			id:        testFileID,
+			datasetID: testDatasetID,
+		}
+		testLogger, hook = setupLogs(t)
+		assert.True(t, file.verifyInProcessedDataset(testDatasetID, testLogger))
+		gotLogMsg := hook.LastEntry().Message
+		wantLogMsg := "file.txt datasetID:" + file.datasetID + " matches asyncProcessedDatasetID:" + testDatasetID
+
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
+
+	})
+	t.Run("returns false if file.datasetID does not match asyncProcessedDatasetID", func(t *testing.T) {
+		file = File{
+			smbName:   "file.txt",
+			id:        testFileID,
+			datasetID: testDatasetID,
+		}
+		wrongDataset := "396862B0791111ECA62400155D014E11"
+
+		testLogger, hook = setupLogs(t)
+		assert.False(t, file.verifyInProcessedDataset(wrongDataset, testLogger))
+
+		gotLogMsg := hook.LastEntry().Message
+		wantLogMsg := ("file.txt datasetID:" + file.datasetID + " does not match asyncProcessedDatasetID:" +
+			wrongDataset + "; skipping file")
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})

@@ -26,3 +26,13 @@ func (f File) verifyTimeLimit(limit time.Time, logger *logrus.Logger) bool {
 	}
 	return f.createTime.After(limit)
 }
+
+func (f File) verifyInProcessedDataset(datasetID string, logger *logrus.Logger) bool {
+	if f.datasetID == datasetID {
+		logger.Info(f.smbName + " datasetID:" + f.datasetID + " matches asyncProcessedDatasetID:" + datasetID)
+	} else {
+		logger.Warn(f.smbName + " datasetID:" + f.datasetID + " does not match asyncProcessedDatasetID:" + datasetID +
+			"; skipping file")
+	}
+	return f.datasetID == datasetID
+}
