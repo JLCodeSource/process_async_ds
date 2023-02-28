@@ -30,7 +30,7 @@ jobs:
           # working-directory: somedir
 
           # Optional: golangci-lint command line arguments.
-          args: --enable-all #-E=gofmt -E=govet -E=revive -E=errcheck -E=staticcheck -E=ineffassign -E=misspell -E=gocyclo -E=gosec #--issues-exit-code=0
+          args: -E=gofmt -E=govet -E=revive -E=errcheck -E=staticcheck -E=ineffassign -E=misspell -E=gocyclo -E=gosec #--issues-exit-code=0
 
           # Optional: show only new issues if it's a pull request. The default value is `false`.
           # only-new-issues: true
