@@ -4,6 +4,7 @@ import (
 	"net"
 	"os"
 	"testing"
+	"testing/fstest"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -138,6 +139,56 @@ func TestVerifyInProcessedDataset(t *testing.T) {
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := ("file.txt datasetID:" + file.datasetID + " does not match asyncProcessedDatasetID:" +
 			wrongDataset + "; skipping file")
+
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
+	})
+
+}
+
+func TestVerifyFileExists(t *testing.T) {
+	// setup logger
+	var testLogger *logrus.Logger
+	var hook *test.Hook
+
+	// setup file
+	var file File
+	testName := "test.txt"
+	testPath := "data1/staging/test.txt"
+
+	// setup fs
+	var fsys fstest.MapFS
+
+	t.Run("returns true if file exists", func(t *testing.T) {
+		file = File{
+			smbName:     testName,
+			stagingPath: testPath,
+		}
+		fsys = fstest.MapFS{
+			testPath: {Data: []byte("test")},
+		}
+		testLogger, hook = setupLogs(t)
+		assert.True(t, file.verifyExists(fsys, testLogger))
+		gotLogMsg := hook.LastEntry().Message
+		wantLogMsg := testName + " exists at " + file.stagingPath
+
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
+
+	})
+	t.Run("returns false if file does not exist", func(t *testing.T) {
+		file = File{
+			smbName:     testName,
+			stagingPath: "/data1/staging/not_the_real_path/test.txt",
+		}
+
+		fsys = fstest.MapFS{
+			testPath: {Data: []byte("test")},
+		}
+
+		testLogger, hook = setupLogs(t)
+		assert.False(t, file.verifyExists(fsys, testLogger))
+
+		gotLogMsg := hook.LastEntry().Message
+		wantLogMsg := (testName + " does not exist at " + file.stagingPath + "; skipping file")
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
