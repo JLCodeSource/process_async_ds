@@ -3,6 +3,7 @@ package main
 import (
 	"net"
 	"reflect"
+	"time"
 
 	"github.com/sirupsen/logrus"
 )
@@ -15,4 +16,13 @@ func (f File) verifyIP(ip net.IP, logger *logrus.Logger) bool {
 
 	}
 	return reflect.DeepEqual(f.fanIP, ip)
+}
+
+func (f File) verifyTimeLimit(limit time.Time, logger *logrus.Logger) bool {
+	if f.createTime.After(limit) {
+		logger.Info(f.smbName + " createTime:" + f.createTime.String() + " is after timelimit:" + limit.String())
+	} else {
+		logger.Warn(f.smbName + " createTime:" + f.createTime.String() + " is before timelimit:" + limit.String() + "; skipping file")
+	}
+	return f.createTime.After(limit)
 }

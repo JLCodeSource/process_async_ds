@@ -4,6 +4,7 @@ import (
 	"net"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -51,6 +52,44 @@ func TestVerifyFileIP(t *testing.T) {
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := ("file.txt ip:" + file.fanIP.String() + " does not match comparison ip:" +
 			ip.String() + "; skipping file")
+
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
+	})
+
+}
+
+func TestVerifyTimeLimit(t *testing.T) {
+
+	t.Run("returns true if file.date is after time limit", func(t *testing.T) {
+		file := File{
+			smbName:    "file.txt",
+			createTime: time.Now(),
+		}
+		days := time.Duration(15)
+		hours := time.Duration(days * 24)
+		now := time.Now()
+		limit := now.Add(-((hours) * time.Hour))
+		testLogger, hook := setupLogs(t)
+		assert.True(t, file.verifyTimeLimit(limit, testLogger))
+		gotLogMsg := hook.LastEntry().Message
+		wantLogMsg := "file.txt createTime:" + file.createTime.String() + " is after timelimit:" + limit.String()
+
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
+
+	})
+	t.Run("returns false if file.date is before time limit", func(t *testing.T) {
+		file := File{
+			smbName:    "file.txt",
+			createTime: time.Now(),
+		}
+		limit := file.createTime.Add(24 * time.Hour)
+		testLogger, hook := setupLogs(t)
+		assert.False(t, file.verifyTimeLimit(limit, testLogger))
+
+		gotLogMsg := hook.LastEntry().Message
+		wantLogMsg := ("file.txt createTime:" + file.createTime.String() + " is before timelimit:" +
+			limit.String() +
+			"; skipping file")
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
