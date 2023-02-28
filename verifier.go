@@ -4,6 +4,7 @@ import (
 	"io/fs"
 	"net"
 	"reflect"
+	"strconv"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -45,5 +46,16 @@ func (f *File) verifyExists(fsys fs.FS, logger *logrus.Logger) bool {
 		return false
 	}
 	logger.Info(f.smbName + " exists at " + f.stagingPath)
+	return true
+}
+
+func (f *File) verifyFileSize(fsys fs.FS, logger *logrus.Logger) bool {
+	info, _ := fs.Stat(fsys, f.stagingPath)
+	if info.Size() != f.fileInfo.Size() {
+
+		return false
+	}
+	logger.Info(f.smbName + " file.size:" + strconv.FormatInt(f.size, 10) +
+		" matches size in file.stagingPath size:" + strconv.FormatInt(f.fileInfo.Size(), 10))
 	return true
 }
