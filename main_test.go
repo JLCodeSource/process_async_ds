@@ -270,6 +270,7 @@ func TestFileMetadata(t *testing.T) {
 			size:        int64(1024),
 			id:          testFileID,
 			fanIP:       fanIP,
+			datasetID:   testDatasetID,
 		}
 
 		gotSmbName := file.smbName
@@ -304,6 +305,10 @@ func TestFileMetadata(t *testing.T) {
 		gotFanIP := file.fanIP.String()
 		wantFanIP := net.ParseIP("192.168.101.210").String()
 		assertCorrectString(t, gotFanIP, wantFanIP)
+
+		gotDatasetID := file.datasetID
+		wantDatasetID := testDatasetID
+		assertCorrectString(t, gotDatasetID, wantDatasetID)
 
 	})
 

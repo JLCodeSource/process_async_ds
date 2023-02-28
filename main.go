@@ -31,6 +31,7 @@ type File struct {
 	size        int64
 	id          string
 	fanIP       net.IP
+	datasetID   string
 }
 
 func getSourceFile(filesystem fs.FS, f string, logger *logrus.Logger) fs.FileInfo {
