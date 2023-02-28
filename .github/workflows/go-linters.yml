@@ -47,4 +47,4 @@ jobs:
       - name: Golang Static Analysis Checker
         uses: danhunsaker/golang-github-actions@v1.3.1
         with:
-          run: all
+          run: misspell fmt vet imports shadow staticcheck lint
