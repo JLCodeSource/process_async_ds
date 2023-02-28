@@ -1,6 +1,7 @@
 package main
 
 import (
+	"io/fs"
 	"net"
 	"reflect"
 	"time"
@@ -35,4 +36,14 @@ func (f File) verifyInProcessedDataset(datasetID string, logger *logrus.Logger) 
 			"; skipping file")
 	}
 	return f.datasetID == datasetID
+}
+
+func (f File) verifyExists(fsys fs.FS, logger *logrus.Logger) bool {
+	_, err := fs.Stat(fsys, f.stagingPath)
+	if err != nil {
+		logger.Warn(f.smbName + " does not exist at " + f.stagingPath + "; skipping file")
+		return false
+	}
+	logger.Info(f.smbName + " exists at " + f.stagingPath)
+	return true
 }
