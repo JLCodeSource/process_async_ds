@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"io/fs"
 	"net"
 	"os"
 	"regexp"
@@ -265,6 +266,10 @@ func TestFileMetadata(t *testing.T) {
 		}
 		datetime, _ := time.ParseInLocation(time.UnixDate, datestring, loc)
 		fanIP := net.ParseIP("192.168.101.210")
+		fsys := fstest.MapFS{
+			"path/file.txt": {Data: []byte("test")},
+		}
+		fileInfo, _ := fs.Stat(fsys, "path/file.txt")
 		file := File{
 			smbName:     "file.txt",
 			stagingPath: "/path/file.txt",
@@ -273,6 +278,7 @@ func TestFileMetadata(t *testing.T) {
 			id:          testFileID,
 			fanIP:       fanIP,
 			datasetID:   testDatasetID,
+			fileInfo:    fileInfo,
 		}
 
 		gotSmbName := file.smbName
@@ -311,6 +317,10 @@ func TestFileMetadata(t *testing.T) {
 		gotDatasetID := file.datasetID
 		wantDatasetID := testDatasetID
 		assertCorrectString(t, gotDatasetID, wantDatasetID)
+
+		gotFileInfo := file.fileInfo
+		wantFileInfo := fileInfo
+		assertCorrectString(t, gotFileInfo.Name(), wantFileInfo.Name())
 
 	})
 
