@@ -11,16 +11,18 @@ import (
 )
 
 const (
-	fIPMatchTrueLog          = "%v (file.id:%v) file.ip:%v matches comparison ip:%v"
-	fIPMatchFalseLog         = "%v (file.id:%v) file.ip:%v does not match comparison ip:%v; skipping file"
-	fCreateTimeMatchTrueLog  = "%v (file.id:%v) file.createTime:%v is after timelimit:%v"
-	fCreateTimeMatchFalseLog = "%v (file.id:%v) file.createTime:%v is before timelimit:%v; skipping file"
-	fDatasetMatchTrueLog     = "%v (file.id:%v) file.datasetID:%v matches asyncProcessedDataset:%v"
-	fDatasetMatchFalseLog    = "%v (file.id:%v) file.datasetID:%v does not match asyncProcessedDataset:%v; skipping file"
-	fExistsTrueLog           = "%v (file.id:%v) exists at file.stagingPath:%v"
-	fExistsFalseLog          = "%v (file.id:%v) does not exist at file.stagingPath:%v; skipping file"
-	fSizeMatchTrueLog        = "%v (file.id:%v) file.size:%v matches size in file.stagingPath size:%v"
-	fSizeMatchFalseLog       = "%v (file.id:%v) file.size:%v does not match size in file.stagingPath size:%v; skipping file"
+	fIPMatchTrueLog               = "%v (file.id:%v) file.ip:%v matches comparison ip:%v"
+	fIPMatchFalseLog              = "%v (file.id:%v) file.ip:%v does not match comparison ip:%v; skipping file"
+	fCreateTimeAfterTimeLimitLog  = "%v (file.id:%v) file.createTime:%v is after timelimit:%v"
+	fCreateTimeBeforeTimeLimitLog = "%v (file.id:%v) file.createTime:%v is before timelimit:%v; skipping file"
+	fDatasetMatchTrueLog          = "%v (file.id:%v) file.datasetID:%v matches asyncProcessedDataset:%v"
+	fDatasetMatchFalseLog         = "%v (file.id:%v) file.datasetID:%v does not match asyncProcessedDataset:%v; skipping file"
+	fExistsTrueLog                = "%v (file.id:%v) exists at file.stagingPath:%v"
+	fExistsFalseLog               = "%v (file.id:%v) does not exist at file.stagingPath:%v; skipping file"
+	fSizeMatchTrueLog             = "%v (file.id:%v) file.size:%v matches size in file.stagingPath size:%v"
+	fSizeMatchFalseLog            = "%v (file.id:%v) file.size:%v does not match size in file.stagingPath size:%v; skipping file"
+	fCreateTimeMatchTrueLog       = "%v (file.id: %v) file.createTime:%v matches info.modTime:%v"
+	fCreateTimeMatchFalseLog      = "%v (file.id: %v) file.createTime:%v does not match info.modTime:%v; skipping file"
 )
 
 func (f *File) verifyIP(ip net.IP, logger *logrus.Logger) bool {
@@ -78,5 +80,22 @@ func (f *File) verifyFileSize(fsys fs.FS, logger *logrus.Logger) bool {
 		return false
 	}
 	logger.Info(fmt.Sprintf(fSizeMatchTrueLog, f.smbName, f.id, f.size, f.fileInfo.Size()))
+	return true
+}
+
+func (f *File) verifyCreateTime(fsys fs.FS, logger *logrus.Logger) bool {
+	info, err := fs.Stat(fsys, f.stagingPath)
+	if err != nil {
+		logger.Error(err)
+	}
+	if info.ModTime() != f.createTime {
+		return false
+	}
+	logger.Info(fmt.Sprintf(
+		fCreateTimeMatchTrueLog,
+		f.smbName,
+		f.id,
+		f.createTime.Round(time.Millisecond),
+		info.ModTime().Round(time.Millisecond)))
 	return true
 }

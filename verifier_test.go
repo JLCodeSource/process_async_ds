@@ -89,7 +89,7 @@ func TestVerifyTimeLimit(t *testing.T) {
 		assert.True(t, file.verifyTimeLimit(limit, testLogger))
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(
-			fCreateTimeMatchTrueLog,
+			fCreateTimeAfterTimeLimitLog,
 			file.smbName,
 			file.id,
 			file.createTime.Round(time.Millisecond),
@@ -110,7 +110,7 @@ func TestVerifyTimeLimit(t *testing.T) {
 		assert.False(t, file.verifyTimeLimit(limit, testLogger))
 
 		gotLogMsg := hook.LastEntry().Message
-		wantLogMsg := fmt.Sprintf(fCreateTimeMatchFalseLog,
+		wantLogMsg := fmt.Sprintf(fCreateTimeBeforeTimeLimitLog,
 			file.smbName,
 			file.id,
 			file.createTime.Round(time.Millisecond),
@@ -263,6 +263,75 @@ func TestVerifyFileSize(t *testing.T) {
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
+
+}
+
+func TestVerifyFileCreateTime(t *testing.T) {
+	// setup logger
+	var testLogger *logrus.Logger
+	var hook *test.Hook
+
+	// setup file
+	var file File
+
+	// setup fs
+	//var fsys MockFS
+
+	t.Run("returns true if file.createTime matches comparator", func(t *testing.T) {
+		fsys := MockFS{}
+		now := time.Now()
+		mf := MockFile{
+			FS:      fsys,
+			modTime: now,
+			name:    testName,
+		}
+		fsys = MockFS{
+			NewDir("path", NewFile(mf)),
+		}
+
+		info, _ := mf.Stat()
+		file = File{
+			smbName:     testName,
+			id:          testFileID,
+			stagingPath: testName,
+			createTime:  now,
+			fileInfo:    info,
+		}
+		testLogger, hook = setupLogs(t)
+		assert.True(t, file.verifyCreateTime(fsys, testLogger))
+		gotLogMsg := hook.LastEntry().Message
+		wantLogMsg := fmt.Sprintf(fCreateTimeMatchTrueLog,
+			file.smbName,
+			file.id,
+			file.createTime.Round(time.Millisecond),
+			file.fileInfo.ModTime().Round(time.Millisecond))
+
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
+
+	})
+
+	/*	t.Run("returns false if file.size does not match comparator", func(t *testing.T) {
+		fsys = fstest.MapFS{
+			testPath:         {Data: []byte(testContent)},
+			testMismatchPath: {Data: []byte(testLongerContent)},
+		}
+		info, _ := fsys.Stat(testMismatchPath)
+		file = File{
+			smbName:     testName,
+			id:          testFileID,
+			stagingPath: testPath,
+			size:        4,
+			fileInfo:    info,
+		}
+
+		testLogger, hook = setupLogs(t)
+		assert.False(t, file.verifyFileSize(fsys, testLogger))
+
+		gotLogMsg := hook.LastEntry().Message
+		wantLogMsg := fmt.Sprintf(fSizeMatchFalseLog, file.smbName, file.id, file.size, file.fileInfo.Size())
+
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
+	})*/
 
 }
 
