@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"io/fs"
 	"net"
 	"os"
@@ -26,9 +27,24 @@ const (
 	testName         = "test.txt"
 	testPath         = "data1/staging/test.txt"
 	testMismatchPath = "data1/staging/testMismatch.txt"
+	testNotADataset  = "123"
+
+	testArgsFile    = "-sourcefile=./README.md"
+	testArgsDataset = "-datasetid=%v"
+	testArgsDays    = "-days=123"
+	testArgsHelp    = "-help"
 
 	osPanicTrue  = "os.Exit called"
 	osPanicFalse = "os.Exit was not called"
+
+	testEmptyRootErr        = "stat %v: os: DirFS with empty root"
+	testOpenDoesNotExistErr = "open %v: file does not exist"
+	testRegexMatchErr       = "Regex match errored"
+
+	testKarachiTime       = "Asia/Karachi"
+	testKarachiDate       = "Mon Jan 30 17:55:14 PKT 2023"
+	testKarachiDateParsed = "2023-01-30 17:55:14 +0500 PKT"
+	testKarachiDateUTC    = "2023-01-30 12:55:14 +0000 UTC"
 )
 
 func TestMainFunc(t *testing.T) {
@@ -36,29 +52,29 @@ func TestMainFunc(t *testing.T) {
 	t.Run("verify main args work", func(t *testing.T) {
 		_, hook := setupLogs(t)
 
-		os.Args = append(os.Args, "-file=./README.md")
-		os.Args = append(os.Args, "-datasetid="+testDatasetID)
-		os.Args = append(os.Args, "-days=123")
+		os.Args = append(os.Args, testArgsFile)
+		os.Args = append(os.Args, fmt.Sprintf(testArgsDataset, testDatasetID))
+		os.Args = append(os.Args, testArgsDays)
 
 		main()
 
 		gotLogMsg := hook.LastEntry().Message
-		wantLogMsg := "Setting dryrun to true; skipping exeecute move"
+		wantLogMsg := dryRunTrueLog
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
 
 	t.Run("verify main help out", func(t *testing.T) {
 		fakeExit := func(int) {
-			panic("help output")
+			panic(osPanicTrue)
 		}
 		patch := monkey.Patch(os.Exit, fakeExit)
 		defer patch.Unpatch()
 
-		os.Args = append(os.Args, "-help")
+		os.Args = append(os.Args, testArgsHelp)
 
 		panic := func() { main() }
-		assert.PanicsWithValue(t, "help output", panic, "help output not called")
+		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
 	})
 
 }
@@ -67,21 +83,21 @@ func TestGetSourceFile(t *testing.T) {
 	t.Run("check for source file", func(t *testing.T) {
 		testLogger, hook := setupLogs(t)
 		fs := fstest.MapFS{
-			"path/file.txt": {Data: []byte("test")},
+			testPath: {Data: []byte(testContent)},
 		}
-		file := getSourceFile(fs, "path/file.txt", testLogger)
+		file := getSourceFile(fs, testPath, testLogger)
 
 		got := file.Name()
-		want := "file.txt"
+		want := testName
 		assertCorrectString(t, got, want)
 
 		gotLogMsg := hook.LastEntry().Message
-		wantLogMsg := "SourceFile: path/file.txt"
+		wantLogMsg := fmt.Sprintf(sourceLog, testPath)
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
 	t.Run("check for empty root", func(t *testing.T) {
 		fakeExit := func(int) {
-			panic("os.Exit called")
+			panic(osPanicTrue)
 		}
 		patch := monkey.Patch(os.Exit, fakeExit)
 		defer patch.Unpatch()
@@ -90,20 +106,20 @@ func TestGetSourceFile(t *testing.T) {
 		fsys := os.DirFS("")
 
 		panic := func() {
-			file := getSourceFile(fsys, "does_not_exist.file", testLogger)
+			file := getSourceFile(fsys, testDoesNotExistFile, testLogger)
 			println(file)
 		}
 
-		assert.PanicsWithValue(t, "os.Exit called", panic, "os.Exit was not called")
+		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
 		gotLogMsg := hook.LastEntry().Message
-		wantLogMsg := "stat does_not_exist.file: os: DirFS with empty root"
+		wantLogMsg := fmt.Sprintf(testEmptyRootErr, testDoesNotExistFile)
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 
 	})
 	t.Run("error if file does not exist", func(t *testing.T) {
 		fakeExit := func(int) {
-			panic("os.Exit called")
+			panic(osPanicTrue)
 		}
 		patch := monkey.Patch(os.Exit, fakeExit)
 		defer patch.Unpatch()
@@ -111,17 +127,17 @@ func TestGetSourceFile(t *testing.T) {
 		testLogger, hook := setupLogs(t)
 
 		fs := fstest.MapFS{
-			"notapath/file.txt": {Data: []byte("test")},
+			testMismatchPath: {Data: []byte(testContent)},
 		}
 
 		panic := func() {
-			file := getSourceFile(fs, "doesnotexist.txt", testLogger)
+			file := getSourceFile(fs, testDoesNotExistFile, testLogger)
 			println(file)
 		}
 
-		assert.PanicsWithValue(t, "os.Exit called", panic, "os.Exit was not called")
+		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
 		gotLogMsg := hook.LastEntry().Message
-		wantLogMsg := "open doesnotexist.txt: file does not exist"
+		wantLogMsg := fmt.Sprintf(testOpenDoesNotExistErr, testDoesNotExistFile)
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
@@ -142,7 +158,7 @@ func TestGetAsyncProcessedFolderId(t *testing.T) {
 		_ = getAsyncProcessedFolderID(testDatasetID, testLogger)
 
 		gotLogMsg := hook.LastEntry().Message
-		wantLogMsg := "DatasetId set to " + testDatasetID
+		wantLogMsg := fmt.Sprintf(datasetLog, testDatasetID)
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 
@@ -150,17 +166,17 @@ func TestGetAsyncProcessedFolderId(t *testing.T) {
 
 	t.Run("verify that it exits if the datasetid is not the right format", func(t *testing.T) {
 		fakeExit := func(int) {
-			panic("os.Exit called")
+			panic(osPanicTrue)
 		}
 		patch := monkey.Patch(os.Exit, fakeExit)
 		defer patch.Unpatch()
 
 		testLogger, hook := setupLogs(t)
-		panic := func() { getAsyncProcessedFolderID("123", testLogger) }
+		panic := func() { getAsyncProcessedFolderID(testNotADataset, testLogger) }
 
-		assert.PanicsWithValue(t, "os.Exit called", panic, "os.Exit was not called")
+		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
 		gotLogMsg := hook.LastEntry().Message
-		err := "DatasetId: 123 not of the form ^[A-F0-9]{32}$"
+		err := fmt.Sprintf(datasetRegexLog, testNotADataset, regexDatasetMatch)
 		wantLogMsg := err
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
@@ -168,23 +184,23 @@ func TestGetAsyncProcessedFolderId(t *testing.T) {
 
 	t.Run("verify that it exits if the regex fails", func(t *testing.T) {
 		fakeExit := func(int) {
-			panic("os.Exit called")
+			panic(osPanicTrue)
 		}
 		patch := monkey.Patch(os.Exit, fakeExit)
 		defer patch.Unpatch()
 		fakeRegexMatch := func(string, string) (bool, error) {
-			err := errors.New("Regex match errored")
+			err := errors.New(testRegexMatchErr)
 			return false, err
 		}
 		patch2 := monkey.Patch(regexp.MatchString, fakeRegexMatch)
 		defer patch2.Unpatch()
 
 		testLogger, hook := setupLogs(t)
-		panic := func() { getAsyncProcessedFolderID("not_a_dataset", testLogger) }
+		panic := func() { getAsyncProcessedFolderID(testNotADataset, testLogger) }
 
-		assert.PanicsWithValue(t, "os.Exit called", panic, "os.Exit was not called")
+		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
 		gotLogMsg := hook.LastEntry().Message
-		err := "Regex match errored"
+		err := testRegexMatchErr
 		wantLogMsg := err
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
@@ -203,7 +219,7 @@ func TestGetTimeLimit(t *testing.T) {
 		assertCorrectString(t, gotDays, wantDays)
 
 		gotLogMsg := hook.LastEntry().Message
-		wantLogMsg := "No days time limit set; processing all processed files"
+		wantLogMsg := timelimitNoDaysLog
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
 
@@ -219,11 +235,7 @@ func TestGetTimeLimit(t *testing.T) {
 		assertCorrectString(t, gotDays, wantDays)
 
 		gotLogMsg := hook.LastEntry().Message
-		wantLogMsg := "Days time limit set to " +
-			strconv.FormatInt(days, 10) +
-			" days ago which is " +
-			strconv.FormatInt(limit, 10) +
-			" in epoch time"
+		wantLogMsg := fmt.Sprintf(timelimitDaysLog, days, gotDays)
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
@@ -240,7 +252,7 @@ func TestGetNonDryRun(t *testing.T) {
 		assertCorrectString(t, got, want)
 
 		gotLogMsg := hook.LastEntry().Message
-		wantLogMsg := "Setting dryrun to true; skipping exeecute move"
+		wantLogMsg := dryRunTrueLog
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
@@ -254,7 +266,7 @@ func TestGetNonDryRun(t *testing.T) {
 		assertCorrectString(t, got, want)
 
 		gotLogMsg := hook.LastEntry().Message
-		wantLogMsg := "Setting dryrun to false; executing move"
+		wantLogMsg := dryRunFalseLog
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 
@@ -263,20 +275,20 @@ func TestGetNonDryRun(t *testing.T) {
 
 func TestFileMetadata(t *testing.T) {
 	t.Run("Initial struct test", func(t *testing.T) {
-		loc, err := time.LoadLocation("America/New_York")
-		datestring := "Wed Apr 28 20:41:34 EDT 2021"
+		loc, err := time.LoadLocation(EasternTime)
+		datestring := testOldDate
 		if err != nil {
 			t.Fatalf(err.Error())
 		}
 		datetime, _ := time.ParseInLocation(time.UnixDate, datestring, loc)
-		fanIP := net.ParseIP("192.168.101.210")
+		fanIP := net.ParseIP(testIP)
 		fsys := fstest.MapFS{
-			"path/file.txt": {Data: []byte("test")},
+			testPath: {Data: []byte(testContent)},
 		}
-		fileInfo, _ := fs.Stat(fsys, "path/file.txt")
+		fileInfo, _ := fs.Stat(fsys, testPath)
 		file := File{
-			smbName:     "file.txt",
-			stagingPath: "/path/file.txt",
+			smbName:     testName,
+			stagingPath: testPath,
 			createTime:  datetime,
 			size:        int64(1024),
 			id:          testFileID,
@@ -286,24 +298,24 @@ func TestFileMetadata(t *testing.T) {
 		}
 
 		gotSmbName := file.smbName
-		wantSmbName := "file.txt"
+		wantSmbName := testName
 		assertCorrectString(t, gotSmbName, wantSmbName)
 
 		gotPath := file.stagingPath
-		wantPath := "/path/file.txt"
+		wantPath := testPath
 		assertCorrectString(t, gotPath, wantPath)
 
 		// N.B. Need to sort out time zones
 		gotCreateTime := file.createTime.String()
-		wantCreateTime := "2021-04-28 20:41:34 -0400 EDT"
+		wantCreateTime := testOldDateParsed
 		assertCorrectString(t, gotCreateTime, wantCreateTime)
 
 		gotCreateTimeUnix := strconv.FormatInt(file.createTime.Unix(), 10)
-		wantCreateTimeUnix := strconv.FormatInt(1619656894, 10)
+		wantCreateTimeUnix := strconv.FormatInt(1619407073, 10)
 		assertCorrectString(t, gotCreateTimeUnix, wantCreateTimeUnix)
 
 		gotCreateTimeUTC := file.createTime.UTC()
-		wantCreateTimeUTC := "2021-04-29 00:41:34 +0000 UTC"
+		wantCreateTimeUTC := testOldDateParsedUTC
 		assertCorrectString(t, gotCreateTimeUTC.String(), wantCreateTimeUTC)
 
 		gotSize := strconv.FormatInt(file.size, 10)
@@ -315,7 +327,7 @@ func TestFileMetadata(t *testing.T) {
 		assertCorrectString(t, gotID, wantID)
 
 		gotFanIP := file.fanIP.String()
-		wantFanIP := net.ParseIP("192.168.101.210").String()
+		wantFanIP := net.ParseIP(testIP).String()
 		assertCorrectString(t, gotFanIP, wantFanIP)
 
 		gotDatasetID := file.datasetID
@@ -329,25 +341,25 @@ func TestFileMetadata(t *testing.T) {
 	})
 
 	t.Run("PKT struct test", func(t *testing.T) {
-		loc, err := time.LoadLocation("Asia/Karachi")
-		datestring := "Mon Jan 30 17:55:14 PKT 2023"
+		loc, err := time.LoadLocation(testKarachiTime)
+		datestring := testKarachiDate
 		if err != nil {
 			t.Fatalf(err.Error())
 		}
 		datetime, _ := time.ParseInLocation(time.UnixDate, datestring, loc)
 		file := File{
-			stagingPath: "/path/file",
+			stagingPath: testPath,
 			createTime:  datetime,
 			size:        int64(85512264),
 			id:          testFileID}
 
 		gotPath := file.stagingPath
-		wantPath := "/path/file"
+		wantPath := testPath
 		assertCorrectString(t, gotPath, wantPath)
 
 		// N.B. Need to sort out time zones
 		gotCreateTime := file.createTime.String()
-		wantCreateTime := "2023-01-30 17:55:14 +0500 PKT"
+		wantCreateTime := testKarachiDateParsed
 		assertCorrectString(t, gotCreateTime, wantCreateTime)
 
 		gotCreateTimeUnix := strconv.FormatInt(file.createTime.Unix(), 10)
@@ -355,7 +367,7 @@ func TestFileMetadata(t *testing.T) {
 		assertCorrectString(t, gotCreateTimeUnix, wantCreateTimeUnix)
 
 		gotCreateTimeUTC := file.createTime.UTC()
-		wantCreateTimeUTC := "2023-01-30 12:55:14 +0000 UTC"
+		wantCreateTimeUTC := testKarachiDateUTC
 		assertCorrectString(t, gotCreateTimeUTC.String(), wantCreateTimeUTC)
 
 		gotSize := strconv.FormatInt(file.size, 10)
