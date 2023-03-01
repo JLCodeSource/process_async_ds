@@ -1,9 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"net"
 	"os"
-	"strconv"
 	"testing"
 	"testing/fstest"
 	"time"
@@ -176,11 +176,12 @@ func TestVerifyFileExists(t *testing.T) {
 	t.Run("returns false if file does not exist", func(t *testing.T) {
 		file = File{
 			smbName:     testName,
-			stagingPath: "/data1/staging/not_the_real_path/test.txt",
+			stagingPath: testPath,
 		}
 
 		fsys = fstest.MapFS{
-			testPath: {Data: []byte("test")},
+			testPath:         {Data: []byte("test")},
+			testMismatchPath: {Data: []byte("not a match")},
 		}
 
 		testLogger, hook = setupLogs(t)
@@ -205,7 +206,7 @@ func TestVerifyFileSize(t *testing.T) {
 	// setup fs
 	var fsys fstest.MapFS
 
-	t.Run("returns true if file size matches comparator", func(t *testing.T) {
+	t.Run("returns true if file.size matches comparator", func(t *testing.T) {
 		fsys = fstest.MapFS{
 			testPath: {Data: []byte("test")},
 		}
@@ -219,32 +220,33 @@ func TestVerifyFileSize(t *testing.T) {
 		testLogger, hook = setupLogs(t)
 		assert.True(t, file.verifyFileSize(fsys, testLogger))
 		gotLogMsg := hook.LastEntry().Message
-		wantLogMsg := testName +
-			" file.size:" + strconv.FormatInt(file.size, 10) +
-			" matches size in file.stagingPath size:" +
-			strconv.FormatInt(file.fileInfo.Size(), 10)
+		wantLogMsg := fmt.Sprintf(fSizeMatchTrueLog, file.smbName, file.size, file.fileInfo.Size())
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 
 	})
-	/* 	t.Run("returns false if file does not exist", func(t *testing.T) {
+
+	t.Run("returns false if file.size does not match comparator", func(t *testing.T) {
+		fsys = fstest.MapFS{
+			testPath:         {Data: []byte("test")},
+			testMismatchPath: {Data: []byte("longer than the test")},
+		}
+		info, _ := fsys.Stat(testMismatchPath)
 		file = File{
 			smbName:     testName,
-			stagingPath: "/data1/staging/not_the_real_path/test.txt",
-		}
-
-		fsys = fstest.MapFS{
-			testPath: {Data: []byte("test")},
+			stagingPath: testPath,
+			size:        4,
+			fileInfo:    info,
 		}
 
 		testLogger, hook = setupLogs(t)
-		assert.False(t, file.verifyExists(fsys, testLogger))
+		assert.False(t, file.verifyFileSize(fsys, testLogger))
 
 		gotLogMsg := hook.LastEntry().Message
-		wantLogMsg := (testName + " does not exist at " + file.stagingPath + "; skipping file")
+		wantLogMsg := fmt.Sprintf(fSizeMatchFalseLog, file.smbName, file.size, file.fileInfo.Size())
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
-	}) */
+	})
 
 }
 

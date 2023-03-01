@@ -21,10 +21,11 @@ import (
 )
 
 const (
-	testDatasetID = "41545AB0788A11ECBD0700155D014E0D"
-	testFileID    = "D5B58980A3E311EBBA0AB026285E5610"
-	testName      = "test.txt"
-	testPath      = "data1/staging/test.txt"
+	testDatasetID    = "41545AB0788A11ECBD0700155D014E0D"
+	testFileID       = "D5B58980A3E311EBBA0AB026285E5610"
+	testName         = "test.txt"
+	testPath         = "data1/staging/test.txt"
+	testMismatchPath = "data1/staging/testMismatch.txt"
 )
 
 func TestMainFunc(t *testing.T) {
