@@ -222,6 +222,7 @@ func TestVerifyFileSize(t *testing.T) {
 		info, _ := fsys.Stat(testPath)
 		file = File{
 			smbName:     testName,
+			id:          testFileID,
 			stagingPath: testPath,
 			size:        4,
 			fileInfo:    info,
@@ -231,7 +232,7 @@ func TestVerifyFileSize(t *testing.T) {
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(fSizeMatchTrueLog, file.smbName, file.id, file.size, file.fileInfo.Size())
 
-		assertCorrectString(t, gotLogMsg, wantLogMsg+"test")
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
 
 	})
 
@@ -243,6 +244,7 @@ func TestVerifyFileSize(t *testing.T) {
 		info, _ := fsys.Stat(testMismatchPath)
 		file = File{
 			smbName:     testName,
+			id:          testFileID,
 			stagingPath: testPath,
 			size:        4,
 			fileInfo:    info,
@@ -254,7 +256,7 @@ func TestVerifyFileSize(t *testing.T) {
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(fSizeMatchFalseLog, file.smbName, file.id, file.size, file.fileInfo.Size())
 
-		assertCorrectString(t, gotLogMsg, wantLogMsg+"test")
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
 
 }
