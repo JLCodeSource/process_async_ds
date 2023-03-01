@@ -26,6 +26,9 @@ const (
 	testName         = "test.txt"
 	testPath         = "data1/staging/test.txt"
 	testMismatchPath = "data1/staging/testMismatch.txt"
+
+	osPanicTrue  = "os.Exit called"
+	osPanicFalse = "os.Exit was not called"
 )
 
 func TestMainFunc(t *testing.T) {

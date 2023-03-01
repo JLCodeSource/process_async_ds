@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"fmt"
 	"io/fs"
 	"net"
 	"strconv"
@@ -9,6 +10,16 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
+)
+
+const (
+	parseFileLog   = "Processing: %v"
+	smbNameLog     = "%v; file.smbName: %v"
+	stagingPathLog = "%v; file.stagingPath: %v"
+	createTimeLog  = "%v; file.createTime: %s#v"
+	sizeLog        = "%v; file.size: %v"
+	idLog          = "%v; file.id: %v"
+	fanIPLog       = "%v; file.fanIP: %v"
 )
 
 func parseFile(fsys fs.FS, f string, logger *logrus.Logger) []string {
@@ -26,7 +37,7 @@ func parseFile(fsys fs.FS, f string, logger *logrus.Logger) []string {
 
 	for scanner.Scan() {
 		lines = append(lines, scanner.Text())
-		logger.Info("Processing: " + scanner.Text())
+		logger.Info(fmt.Sprintf(parseFileLog, scanner.Text()))
 	}
 
 	return lines
@@ -35,6 +46,7 @@ func parseFile(fsys fs.FS, f string, logger *logrus.Logger) []string {
 
 func parseLine(line string, logger *logrus.Logger) File {
 	var dateTime time.Time
+
 	fileMetadata := strings.SplitAfter(line, "|")
 	for i := 0; i < len(fileMetadata); i++ {
 		// The first columns have a | after the content, the last one doesn't
@@ -43,10 +55,13 @@ func parseLine(line string, logger *logrus.Logger) File {
 		}
 	}
 
+	id := fileMetadata[4]
+	processing := fmt.Sprintf(parseFileLog, id)
+
 	smbName := fileMetadata[0]
-	logger.Info("smbName: " + smbName)
+	logger.Info(fmt.Sprintf(smbNameLog, processing, smbName))
 	stagingPath := fileMetadata[1]
-	logger.Info("stagingPath: " + stagingPath)
+	logger.Info(fmt.Sprintf(stagingPathLog, processing, stagingPath))
 	dateTimeString := fileMetadata[2]
 	dateTimeInt, err := strconv.ParseInt(dateTimeString, 10, 64)
 	if err != nil {
@@ -63,15 +78,14 @@ func parseLine(line string, logger *logrus.Logger) File {
 	} else {
 		dateTime = time.Unix(dateTimeInt, 0)
 	}
+	logger.Info(fmt.Sprintf(createTimeLog, processing, dateTime.UTC()))
 
-	logger.Info("createTime: " + strconv.FormatInt(dateTimeInt, 10))
 	sizeStr := fileMetadata[3]
-	logger.Info("size: " + sizeStr)
-	id := fileMetadata[4]
-	logger.Info("id: " + id)
-	fanIPString := fileMetadata[5]
-	fanIP := net.ParseIP(fanIPString)
-	logger.Info("fanIP: " + fanIPString)
+	logger.Info(fmt.Sprintf(sizeLog, processing, sizeStr))
+	// Set above
+	logger.Info(fmt.Sprintf(idLog, processing, id))
+	fanIP := net.ParseIP(fileMetadata[5])
+	logger.Info(fmt.Sprintf(fanIPLog, processing, fanIP))
 
 	size, _ := strconv.ParseInt(sizeStr, 10, 64)
 
