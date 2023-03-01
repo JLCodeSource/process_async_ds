@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"strconv"
 	"testing"
@@ -15,6 +16,19 @@ import (
 )
 
 const (
+	testProcessedFilesOut   = "path/processed_files.out"
+	testDoesNotExistFile    = "does_not_exist.file"
+	testFsysDoesNotExistErr = "open %v: file does not exist"
+	testDateNotIntErr       = "strconv.ParseInt: parsing %v: invalid syntax"
+	testSmbName             = "05043fe1-00000006-2f8630d0-608630d0-67d25000-ab66ac56"
+	testStagingPath         = "/data2/staging/05043fe1-00000006-2f8630d0-608630d0-67d25000-ab66ac56{gbtmp-FD40CB70A63D11EBAB7FB02628E0E270}"
+	testSize                = "0"
+	testID                  = "95BA50C0A64211EB8B73B026285E5DA0"
+	testIP                  = "192.168.101.210"
+	testOldDate             = "\"Sun Apr 25 23:17:53 EDT 2021\""
+	testTimeParseInLocErr   = "time.ParseInLocation errored"
+	testTimeLoadLocError    = "time.Loadloc errored"
+
 	oneline        = "05043fe1-00000006-2f8630d0-608630d0-67d25000-ab66ac56|/data2/staging/05043fe1-00000006-2f8630d0-608630d0-67d25000-ab66ac56{gbtmp-FD40CB70A63D11EBAB7FB02628E0E270}|1619407073|0|95BA50C0A64211EB8B73B026285E5DA0|192.168.101.210\n"
 	onelineOldDate = "05043fe1-00000006-2f8630d0-608630d0-67d25000-ab66ac56|/data2/staging/05043fe1-00000006-2f8630d0-608630d0-67d25000-ab66ac56{gbtmp-FD40CB70A63D11EBAB7FB02628E0E270}|Sun Apr 25 23:17:53 EDT 2021|0|95BA50C0A64211EB8B73B026285E5DA0|192.168.101.210\n"
 	multiline      = "/data2/staging/05043fe1-00000006-2f8630d0-608630d0-67d25000-ab66ac56{gbtmp-FD40CB70A63D11EBAB7FB02628E0E270}|Sun Apr 25 23:17:53 EDT 2021|0|95BA50C0A64211EB8B73B026285E5DA0\n" +
@@ -23,6 +37,8 @@ const (
 )
 
 var (
+	testCreateTimeUnix = time.Unix(1619407073, 0)
+
 	onelineParsed = []string{"05043fe1-00000006-2f8630d0-608630d0-67d25000-ab66ac56|/data2/staging/05043fe1-00000006-2f8630d0-608630d0-67d25000-ab66ac56{gbtmp-FD40CB70A63D11EBAB7FB02628E0E270}|1619407073|0|95BA50C0A64211EB8B73B026285E5DA0|192.168.101.210"}
 
 	multilineParsed = []string{
@@ -48,13 +64,13 @@ func TestParseFile(t *testing.T) {
 				name:    "parsefile",
 				content: oneline,
 				want:    onelineParsed,
-				log:     "Processing: ",
+				log:     parseFileLog,
 			},
 			{
 				name:    "parse multiline file",
 				content: multiline,
 				want:    multilineParsed,
-				log:     "Processing: ",
+				log:     parseFileLog,
 			},
 		}
 
@@ -62,11 +78,11 @@ func TestParseFile(t *testing.T) {
 			t.Run(tt.name, func(t *testing.T) {
 				testLogger, hook = setupLogs(t)
 				fs = fstest.MapFS{
-					"path/processed_files.out": {
+					testProcessedFilesOut: {
 						Data: []byte(tt.content)},
 				}
 
-				got := parseFile(fs, "path/processed_files.out", testLogger)
+				got := parseFile(fs, testProcessedFilesOut, testLogger)
 
 				logs := hook.AllEntries()
 
@@ -74,7 +90,7 @@ func TestParseFile(t *testing.T) {
 					assertCorrectString(t, got[i], tt.want[i])
 
 					gotLogMsg := logs[i].Message
-					wantLogMsg := "Processing: " + got[i]
+					wantLogMsg := fmt.Sprintf(parseFileLog, got[i])
 					assertCorrectString(t, gotLogMsg, wantLogMsg)
 
 				}
@@ -84,25 +100,25 @@ func TestParseFile(t *testing.T) {
 
 	t.Run("check it logs fsys error", func(t *testing.T) {
 		fakeExit := func(int) {
-			panic("os.Exit called")
+			panic(osPanicTrue)
 		}
 		patch := monkey.Patch(os.Exit, fakeExit)
 		defer patch.Unpatch()
 
 		testLogger, hook := setupLogs(t)
 		fsys := fstest.MapFS{
-			"path/processed_files.out": {
+			testProcessedFilesOut: {
 				Data: []byte(multiline)},
 		}
 
 		panic := func() {
-			parseFile(fsys, "does_not_exist.file", testLogger)
+			parseFile(fsys, testDoesNotExistFile, testLogger)
 
 		}
 
-		assert.PanicsWithValue(t, "os.Exit called", panic, "os.Exit was not called")
+		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
 		gotLogMsg := hook.LastEntry().Message
-		wantLogMsg := "open does_not_exist.file: file does not exist"
+		wantLogMsg := fmt.Sprintf(testFsysDoesNotExistErr, testDoesNotExistFile)
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
@@ -124,46 +140,47 @@ func TestParseLine(t *testing.T) {
 			{
 				name: "verify smbName",
 				got:  workingFile.smbName,
-				want: "05043fe1-00000006-2f8630d0-608630d0-67d25000-ab66ac56",
-				log:  "smbName: ",
+				want: testSmbName,
+				log:  smbNameLog,
 			},
 			{
 				name: "verify path",
 				got:  workingFile.stagingPath,
-				want: "/data2/staging/05043fe1-00000006-2f8630d0-608630d0-67d25000-ab66ac56{gbtmp-FD40CB70A63D11EBAB7FB02628E0E270}",
-				log:  "stagingPath: ",
+				want: testStagingPath,
+				log:  stagingPathLog,
 			},
 			{
-				"verify createTime",
-				strconv.Itoa(int(workingFile.createTime.Unix())),
-				"1619407073",
-				"createTime: ",
+				name: "verify createTime",
+				got:  workingFile.createTime.UTC().String(),
+				want: testCreateTimeUnix.UTC().String(),
+				log:  createTimeLog,
 			},
 			{
-				"verify size",
-				strconv.FormatInt(workingFile.size, 10),
-				"0",
-				"size: ",
+				name: "verify size",
+				got:  strconv.FormatInt(workingFile.size, 10),
+				want: testSize,
+				log:  sizeLog,
 			},
 			{
-				"verify id",
-				workingFile.id,
-				"95BA50C0A64211EB8B73B026285E5DA0",
-				"id: ",
+				name: "verify id",
+				got:  workingFile.id,
+				want: testID,
+				log:  idLog,
 			},
 			{
-				"verify fanIp",
-				workingFile.fanIP.String(),
-				"192.168.101.210",
-				"fanIP: ",
+				name: "verify fanIp",
+				got:  workingFile.fanIP.String(),
+				want: testIP,
+				log:  fanIPLog,
 			},
 		}
 
 		for i, tt := range parsingTests {
 
 			t.Run(tt.name, func(t *testing.T) {
+				testParseFileLog := fmt.Sprintf(parseFileLog, testID)
 				gotLogMsg := hook.Entries[i].Message
-				wantLogMsg := tt.log + tt.got
+				wantLogMsg := fmt.Sprintf(tt.log, testParseFileLog, tt.got)
 				assertCorrectString(t, tt.got, tt.want)
 				assertCorrectString(t, gotLogMsg, wantLogMsg)
 			})
@@ -172,7 +189,7 @@ func TestParseLine(t *testing.T) {
 	})
 
 	t.Run("it should warn if strconv.ParseInt on dateTime fails", func(t *testing.T) {
-		strconvParseIntErr := "strconv.ParseInt: parsing \"Sun Apr 25 23:17:53 EDT 2021\": invalid syntax"
+		strconvParseIntErr := fmt.Sprintf(testDateNotIntErr, testOldDate)
 
 		testLogger, hook := setupLogs(t)
 		parseLine(onelineOldDate, testLogger)
@@ -187,13 +204,13 @@ func TestParseLine(t *testing.T) {
 
 	t.Run("it should panic if time.LoadLocation fails", func(t *testing.T) {
 		fakeExit := func(int) {
-			panic("os.Exit called")
+			panic(osPanicTrue)
 		}
 		patch := monkey.Patch(os.Exit, fakeExit)
 		defer patch.Unpatch()
-		timeLoadLocError := "time.Loadloc errored"
+
 		fakeLoadLoc := func(string) (*time.Location, error) {
-			err := errors.New(timeLoadLocError)
+			err := errors.New(testTimeLoadLocError)
 			return nil, err
 		}
 		patch2 := monkey.Patch(time.LoadLocation, fakeLoadLoc)
@@ -202,10 +219,10 @@ func TestParseLine(t *testing.T) {
 		testLogger, hook := setupLogs(t)
 		panic := func() { parseLine(onelineOldDate, testLogger) }
 
-		assert.PanicsWithValue(t, "os.Exit called", panic, "os.Exit was not called")
+		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
 
 		gotLogMsg := hook.LastEntry().Message
-		err := timeLoadLocError
+		err := testTimeLoadLocError
 		wantLogMsg := err
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
@@ -214,13 +231,13 @@ func TestParseLine(t *testing.T) {
 
 	t.Run("it should panic if time.ParseInLocation fails", func(t *testing.T) {
 		fakeExit := func(int) {
-			panic("os.Exit called")
+			panic(osPanicTrue)
 		}
 		patch := monkey.Patch(os.Exit, fakeExit)
 		defer patch.Unpatch()
-		timeParseInLocErr := "time.ParseInLocation errored"
+
 		fakeParseInLoc := func(string, string, *time.Location) (time.Time, error) {
-			err := errors.New(timeParseInLocErr)
+			err := errors.New(testTimeParseInLocErr)
 			return time.Time{}, err
 		}
 		patch2 := monkey.Patch(time.ParseInLocation, fakeParseInLoc)
@@ -229,10 +246,10 @@ func TestParseLine(t *testing.T) {
 		testLogger, hook := setupLogs(t)
 		panic := func() { parseLine(onelineOldDate, testLogger) }
 
-		assert.PanicsWithValue(t, "os.Exit called", panic, "os.Exit was not called")
+		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
 
 		gotLogMsg := hook.LastEntry().Message
-		err := timeParseInLocErr
+		err := testTimeParseInLocErr
 		wantLogMsg := err
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
