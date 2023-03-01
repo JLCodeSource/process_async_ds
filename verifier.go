@@ -38,14 +38,14 @@ func (f *File) verifyIP(ip net.IP, logger *logrus.Logger) bool {
 func (f *File) verifyTimeLimit(limit time.Time, logger *logrus.Logger) bool {
 	if f.createTime.After(limit) {
 		logger.Info(fmt.Sprintf(
-			fCreateTimeMatchTrueLog,
+			fCreateTimeAfterTimeLimitLog,
 			f.smbName,
 			f.id,
 			f.createTime.Round(time.Millisecond),
 			limit.Round(time.Millisecond)))
 	} else {
 		logger.Warn(fmt.Sprintf(
-			fCreateTimeMatchFalseLog,
+			fCreateTimeBeforeTimeLimitLog,
 			f.smbName,
 			f.id,
 			f.createTime.Round(time.Millisecond),
