@@ -13,6 +13,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const (
+	testContent       = "test"
+	testLongerContent = "longer than the test"
+	testWrongDataset  = "396862B0791111ECA62400155D014E11"
+)
+
 func TestVerifyFileIP(t *testing.T) {
 	// setup logger
 	var testLogger *logrus.Logger
@@ -142,13 +148,12 @@ func TestVerifyInProcessedDataset(t *testing.T) {
 			id:        testFileID,
 			datasetID: testDatasetID,
 		}
-		wrongDataset := "396862B0791111ECA62400155D014E11"
 
 		testLogger, hook = setupLogs(t)
-		assert.False(t, file.verifyInProcessedDataset(wrongDataset, testLogger))
+		assert.False(t, file.verifyInProcessedDataset(testWrongDataset, testLogger))
 
 		gotLogMsg := hook.LastEntry().Message
-		wantLogMsg := fmt.Sprintf(fDatasetMatchFalseLog, file.smbName, file.id, file.datasetID, wrongDataset)
+		wantLogMsg := fmt.Sprintf(fDatasetMatchFalseLog, file.smbName, file.id, file.datasetID, testWrongDataset)
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
 
@@ -172,7 +177,7 @@ func TestVerifyFileExists(t *testing.T) {
 			id:          testFileID,
 		}
 		fsys = fstest.MapFS{
-			testPath: {Data: []byte("test")},
+			testPath: {Data: []byte(testContent)},
 		}
 		testLogger, hook = setupLogs(t)
 		assert.True(t, file.verifyExists(fsys, testLogger))
@@ -190,7 +195,7 @@ func TestVerifyFileExists(t *testing.T) {
 		}
 
 		fsys = fstest.MapFS{
-			testPath: {Data: []byte("test")},
+			testPath: {Data: []byte(testContent)},
 		}
 
 		testLogger, hook = setupLogs(t)
@@ -217,7 +222,7 @@ func TestVerifyFileSize(t *testing.T) {
 
 	t.Run("returns true if file.size matches comparator", func(t *testing.T) {
 		fsys = fstest.MapFS{
-			testPath: {Data: []byte("test")},
+			testPath: {Data: []byte(testContent)},
 		}
 		info, _ := fsys.Stat(testPath)
 		file = File{
@@ -238,8 +243,8 @@ func TestVerifyFileSize(t *testing.T) {
 
 	t.Run("returns false if file.size does not match comparator", func(t *testing.T) {
 		fsys = fstest.MapFS{
-			testPath:         {Data: []byte("test")},
-			testMismatchPath: {Data: []byte("longer than the test")},
+			testPath:         {Data: []byte(testContent)},
+			testMismatchPath: {Data: []byte(testLongerContent)},
 		}
 		info, _ := fsys.Stat(testMismatchPath)
 		file = File{
