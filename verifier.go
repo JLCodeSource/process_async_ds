@@ -1,13 +1,18 @@
 package main
 
 import (
+	"fmt"
 	"io/fs"
 	"net"
 	"reflect"
-	"strconv"
 	"time"
 
 	"github.com/sirupsen/logrus"
+)
+
+const (
+	fSizeMatchTrueLog  = "%v file.size:%v matches size in file.stagingPath size:%v"
+	fSizeMatchFalseLog = "%v file.size:%v does not match size in file.stagingPath size:%v; skipping file"
 )
 
 func (f *File) verifyIP(ip net.IP, logger *logrus.Logger) bool {
@@ -52,10 +57,9 @@ func (f *File) verifyExists(fsys fs.FS, logger *logrus.Logger) bool {
 func (f *File) verifyFileSize(fsys fs.FS, logger *logrus.Logger) bool {
 	info, _ := fs.Stat(fsys, f.stagingPath)
 	if info.Size() != f.fileInfo.Size() {
-
+		logger.Warn(fmt.Sprintf(fSizeMatchFalseLog, f.smbName, f.size, f.fileInfo.Size()))
 		return false
 	}
-	logger.Info(f.smbName + " file.size:" + strconv.FormatInt(f.size, 10) +
-		" matches size in file.stagingPath size:" + strconv.FormatInt(f.fileInfo.Size(), 10))
+	logger.Info(fmt.Sprintf(fSizeMatchTrueLog, f.smbName, f.size, f.fileInfo.Size()))
 	return true
 }
