@@ -16,7 +16,7 @@ const (
 	parseFileLog   = "Processing: %v"
 	smbNameLog     = "%v; file.smbName: %v"
 	stagingPathLog = "%v; file.stagingPath: %v"
-	createTimeLog  = "%v; file.createTime: %s#v"
+	createTimeLog  = "%v; file.createTime: %v"
 	sizeLog        = "%v; file.size: %v"
 	idLog          = "%v; file.id: %v"
 	fanIPLog       = "%v; file.fanIP: %v"
