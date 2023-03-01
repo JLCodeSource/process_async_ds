@@ -21,7 +21,7 @@ const (
 	idLog          = "%v; file.id: %v"
 	fanIPLog       = "%v; file.fanIP: %v"
 
-	EasternTime = "America/New_York"
+	easternTime = "America/New_York"
 )
 
 func parseFile(fsys fs.FS, f string, logger *logrus.Logger) []string {
@@ -68,7 +68,7 @@ func parseLine(line string, logger *logrus.Logger) File {
 	dateTimeInt, err := strconv.ParseInt(dateTimeString, 10, 64)
 	if err != nil {
 		logger.Warn(err)
-		loc, err := time.LoadLocation(EasternTime)
+		loc, err := time.LoadLocation(easternTime)
 		if err != nil {
 			logger.Fatal(err)
 		}

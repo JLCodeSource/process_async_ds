@@ -275,7 +275,7 @@ func TestGetNonDryRun(t *testing.T) {
 
 func TestFileMetadata(t *testing.T) {
 	t.Run("Initial struct test", func(t *testing.T) {
-		loc, err := time.LoadLocation(EasternTime)
+		loc, err := time.LoadLocation(easternTime)
 		datestring := testOldDate
 		if err != nil {
 			t.Fatalf(err.Error())
