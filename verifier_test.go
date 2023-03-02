@@ -30,7 +30,7 @@ func TestVerifyEnvSettings(t *testing.T) {
 
 	t.Run("returns true if config metadata matches", func(t *testing.T) {
 		limit = now.Add(-24 * time.Hour)
-		env = Env{
+		testEnv = Env{
 			sysIP: ips[0],
 			limit: limit,
 		}
@@ -42,14 +42,14 @@ func TestVerifyEnvSettings(t *testing.T) {
 			fanIP:       ips[0],
 		}
 		testLogger, hook = setupLogs(t)
-		assert.True(t, file.verifyEnv(env, testLogger))
+		assert.True(t, file.verifyEnv(testEnv, testLogger))
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(fEnvMatchLog, file.smbName, file.id, file.stagingPath)
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 
 	})
 	t.Run("returns false if ip is not the same as the current machine", func(t *testing.T) {
-		env = Env{
+		testEnv = Env{
 			sysIP: ip,
 		}
 		file = File{
@@ -58,7 +58,7 @@ func TestVerifyEnvSettings(t *testing.T) {
 			fanIP:   ips[0],
 		}
 		testLogger, hook = setupLogs(t)
-		assert.False(t, file.verifyEnv(env, testLogger))
+		assert.False(t, file.verifyEnv(testEnv, testLogger))
 
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(fIPMatchFalseLog, file.smbName, file.id, file.fanIP, ip)
@@ -74,12 +74,12 @@ func TestVerifyEnvSettings(t *testing.T) {
 			fanIP:      ips[0],
 		}
 		limit = now.Add(24 * time.Hour)
-		env = Env{
+		testEnv = Env{
 			limit: limit,
 			sysIP: ips[0],
 		}
 		testLogger, hook := setupLogs(t)
-		assert.False(t, file.verifyEnv(env, testLogger))
+		assert.False(t, file.verifyEnv(testEnv, testLogger))
 
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(fCreateTimeBeforeTimeLimitLog,
@@ -90,7 +90,6 @@ func TestVerifyEnvSettings(t *testing.T) {
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
-
 }
 
 func TestVerifyIP(t *testing.T) {
@@ -127,7 +126,6 @@ func TestVerifyIP(t *testing.T) {
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
-
 }
 
 func TestVerifyTimeLimit(t *testing.T) {
@@ -175,8 +173,37 @@ func TestVerifyTimeLimit(t *testing.T) {
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
-
 }
+
+/* func TestVerifyGBMetadata(t *testing.T) {
+	t.Run("returns true if file.datasetID matches asyncProcessedDatasetID", func(t *testing.T) {
+		file = File{
+			smbName:   testName,
+			id:        testFileID,
+			datasetID: testDatasetID,
+		}
+		testLogger, hook = setupLogs(t)
+		assert.True(t, file.verifyGBMetadata(testLogger))
+		//gotLogMsg := hook.LastEntry().Message
+		//wantLogMsg := fmt.Sprintf(fDatasetMatchTrueLog, file.smbName, file.id, file.datasetID, testDatasetID)
+		//assertCorrectString(t, gotLogMsg, wantLogMsg)
+
+	})
+	/* t.Run("returns false if file.datasetID does not match asyncProcessedDatasetID", func(t *testing.T) {
+		file = File{
+			smbName:   testName,
+			id:        testFileID,
+			datasetID: testDatasetID,
+		}
+
+		testLogger, hook = setupLogs(t)
+		assert.False(t, file.verifyInProcessedDataset(testWrongDataset, testLogger))
+
+		gotLogMsg := hook.LastEntry().Message
+		wantLogMsg := fmt.Sprintf(fDatasetMatchFalseLog, file.smbName, file.id, file.datasetID, testWrongDataset)
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
+	})
+}*/
 
 func TestVerifyInProcessedDataset(t *testing.T) {
 	t.Run("returns true if file.datasetID matches asyncProcessedDatasetID", func(t *testing.T) {
