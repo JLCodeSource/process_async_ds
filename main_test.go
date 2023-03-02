@@ -18,6 +18,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	log "github.com/JLCodeSource/process_async_ds/logger"
+	"github.com/JLCodeSource/process_async_ds/mockfs"
 )
 
 const (
@@ -44,6 +45,25 @@ const (
 	testKarachiDate       = "Mon Jan 30 17:55:14 PKT 2023"
 	testKarachiDateParsed = "2023-01-30 17:55:14 +0500 PKT"
 	testKarachiDateUTC    = "2023-01-30 12:55:14 +0000 UTC"
+)
+
+var (
+	// setup logger
+	testLogger *logrus.Logger
+	hook       *test.Hook
+
+	// setup env
+	env   Env
+	limit time.Time
+	ip    net.IP
+
+	// setup file
+	file File
+	now  time.Time
+
+	// setup fsys
+	fsys fstest.MapFS
+	mfs  mockfs.MockFS
 )
 
 func TestMainFunc(t *testing.T) {

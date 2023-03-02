@@ -8,8 +8,6 @@ import (
 	"testing/fstest"
 	"time"
 
-	"github.com/sirupsen/logrus"
-	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/JLCodeSource/process_async_ds/mockfs"
 )
@@ -22,26 +20,13 @@ const (
 )
 
 func TestVerifyEnvSettings(t *testing.T) {
-	// setup logger
-	var testLogger *logrus.Logger
-	var hook *test.Hook
-
-	// setup env
-	var env Env
-
-	// setup file
-	var file File
-
 	// setup server ip
 	hostname, _ := os.Hostname()
 	ips, _ := net.LookupIP(hostname)
 	// set incorrect ip
-	ip := net.ParseIP("192.168.101.1")
+	ip = net.ParseIP("192.168.101.1")
 
-	// setup limit
-	var limit time.Time
-
-	now := time.Now()
+	now = time.Now()
 
 	t.Run("returns true if config metadata matches", func(t *testing.T) {
 		limit = now.Add(-24 * time.Hour)
@@ -109,13 +94,6 @@ func TestVerifyEnvSettings(t *testing.T) {
 }
 
 func TestVerifyIP(t *testing.T) {
-	// setup logger
-	var testLogger *logrus.Logger
-	var hook *test.Hook
-
-	// setup file
-	var file File
-
 	// setup server ip
 	hostname, _ := os.Hostname()
 	ips, _ := net.LookupIP(hostname)
@@ -153,16 +131,6 @@ func TestVerifyIP(t *testing.T) {
 }
 
 func TestVerifyTimeLimit(t *testing.T) {
-	// setup logger
-	var testLogger *logrus.Logger
-	var hook *test.Hook
-
-	// setup file
-	var file File
-
-	// setup limit
-	var limit time.Time
-
 	days := time.Duration(15)
 	hours := time.Duration(days * 24)
 	now := time.Now()
@@ -211,13 +179,6 @@ func TestVerifyTimeLimit(t *testing.T) {
 }
 
 func TestVerifyInProcessedDataset(t *testing.T) {
-	// setup logger
-	var testLogger *logrus.Logger
-	var hook *test.Hook
-
-	// setup file
-	var file File
-
 	t.Run("returns true if file.datasetID matches asyncProcessedDatasetID", func(t *testing.T) {
 		file = File{
 			smbName:   testName,
@@ -249,16 +210,6 @@ func TestVerifyInProcessedDataset(t *testing.T) {
 }
 
 func TestVerifyStat(t *testing.T) {
-	// setup logger
-	var testLogger *logrus.Logger
-	var hook *test.Hook
-
-	// setup file
-	var file File
-
-	// setup fs
-	var fsys fstest.MapFS
-	var mfs mockfs.MockFS
 
 	t.Run("returns true if file matches", func(t *testing.T) {
 		fsys = fstest.MapFS{
@@ -362,68 +313,7 @@ func TestVerifyStat(t *testing.T) {
 
 }
 
-/*
-	func TestVerifyFileExists(t *testing.T) {
-		// setup logger
-		var testLogger *logrus.Logger
-		var hook *test.Hook
-
-		// setup file
-		var file File
-
-		// setup fs
-		var fsys fstest.MapFS
-
-		t.Run("returns true if file exists", func(t *testing.T) {
-			file = File{
-				smbName:     testName,
-				stagingPath: testPath,
-				id:          testFileID,
-			}
-			fsys = fstest.MapFS{
-				testPath: {Data: []byte(testContent)},
-			}
-			testLogger, hook = setupLogs(t)
-			assert.True(t, file.verifyExists(fsys, testLogger))
-			gotLogMsg := hook.LastEntry().Message
-			wantLogMsg := fmt.Sprintf(fExistsTrueLog, file.smbName, file.id, file.stagingPath)
-
-			assertCorrectString(t, gotLogMsg, wantLogMsg)
-
-		})
-		t.Run("returns false if file does not exist", func(t *testing.T) {
-			file = File{
-				smbName:     testName,
-				stagingPath: testMismatchPath,
-				id:          testFileID,
-			}
-
-			fsys = fstest.MapFS{
-				testPath: {Data: []byte(testContent)},
-			}
-
-			testLogger, hook = setupLogs(t)
-			assert.False(t, file.verifyExists(fsys, testLogger))
-
-			gotLogMsg := hook.LastEntry().Message
-			wantLogMsg := fmt.Sprintf(fExistsFalseLog, file.smbName, file.id, file.stagingPath)
-
-			assertCorrectString(t, gotLogMsg, wantLogMsg)
-		})
-
-}
-*/
 func TestVerifyFileSize(t *testing.T) {
-	// setup logger
-	var testLogger *logrus.Logger
-	var hook *test.Hook
-
-	// setup file
-	var file File
-
-	// setup fs
-	var fsys fstest.MapFS
-
 	t.Run("returns true if file.size matches comparator", func(t *testing.T) {
 		fsys = fstest.MapFS{
 			testPath: {Data: []byte(testContent)},
@@ -472,16 +362,6 @@ func TestVerifyFileSize(t *testing.T) {
 }
 
 func TestVerifyFileCreateTime(t *testing.T) {
-	// setup logger
-	var testLogger *logrus.Logger
-	var hook *test.Hook
-
-	// setup file
-	var file File
-
-	// setup fs
-	var mfs mockfs.MockFS
-
 	t.Run("returns true if file.createTime matches comparator", func(t *testing.T) {
 		mfs = mockfs.MockFS{}
 		now := time.Now()
@@ -552,13 +432,6 @@ func TestVerifyFileCreateTime(t *testing.T) {
 }
 
 func TestVerifyFileIDName(t *testing.T) {
-	// setup logger
-	var testLogger *logrus.Logger
-	var hook *test.Hook
-
-	// setup file
-	var file File
-
 	t.Run("returns true if file.smbname matches file.id filename", func(t *testing.T) {
 		file = File{
 			smbName: testName,
