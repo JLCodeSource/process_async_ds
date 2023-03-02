@@ -76,7 +76,7 @@ func getSourceFile(filesystem fs.FS, f string, logger *logrus.Logger) fs.FileInf
 	return file
 }
 
-func getAsyncProcessedFolderID(id string, logger *logrus.Logger) string {
+func getDatasetID(id string, logger *logrus.Logger) string {
 	match, err := regexp.MatchString(regexDatasetMatch, id)
 	if err != nil {
 		logger.Fatal(err.Error())
@@ -137,7 +137,7 @@ func main() {
 	fsys := os.DirFS(dir)
 
 	getSourceFile(fsys, f, logger)
-	getAsyncProcessedFolderID(datasetID, logger)
+	getDatasetID(datasetID, logger)
 	getTimeLimit(days, logger)
 	getNonDryRun(nondryrun, logger)
 
