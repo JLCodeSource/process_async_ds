@@ -7,18 +7,17 @@ import (
 	"net"
 	"os"
 	"regexp"
-	"testing/fstest"
-
-	"github.com/stretchr/testify/assert"
-	log "github.com/JLCodeSource/process_async_ds/logger"
-
 	"strconv"
 	"testing"
+	"testing/fstest"
 	"time"
 
 	"bou.ke/monkey"
 	"github.com/sirupsen/logrus"
 	"github.com/sirupsen/logrus/hooks/test"
+	"github.com/stretchr/testify/assert"
+
+	log "github.com/JLCodeSource/process_async_ds/logger"
 )
 
 const (
