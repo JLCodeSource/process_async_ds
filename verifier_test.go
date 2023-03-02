@@ -386,6 +386,41 @@ func TestVerifyFileCreateTime(t *testing.T) {
 
 }
 
+func TestVerifyFileIDName(t *testing.T) {
+	// setup logger
+	var testLogger *logrus.Logger
+	var hook *test.Hook
+
+	// setup file
+	var file File
+
+	t.Run("returns true if file.smbname matches file.id filename", func(t *testing.T) {
+		file = File{
+			smbName: testName,
+			id:      testFileID,
+		}
+		testLogger, hook = setupLogs(t)
+		assert.True(t, file.verifyFileIDName(testName, testLogger))
+		gotLogMsg := hook.LastEntry().Message
+		wantLogMsg := fmt.Sprintf(fSmbNameMatchFileIDNameTrueLog, file.smbName, file.id, file.smbName, testName)
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
+
+	})
+	t.Run("returns false if file.smbname matches file.id filename", func(t *testing.T) {
+		file = File{
+			smbName: testSmbName,
+			id:      testFileID,
+		}
+
+		testLogger, hook = setupLogs(t)
+		assert.False(t, file.verifyFileIDName(testName, testLogger))
+
+		gotLogMsg := hook.LastEntry().Message
+		wantLogMsg := fmt.Sprintf(fSmbNameMatchFileIDNameFalseLog, file.smbName, file.id, file.smbName, testName)
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
+	})
+}
+
 /*
 Need to work this out for the future
 type function func(File, interface{}, *logrus.Logger) bool
