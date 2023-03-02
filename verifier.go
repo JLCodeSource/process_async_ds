@@ -25,10 +25,22 @@ const (
 	fCreateTimeMatchFalseLog        = "%v (file.id: %v) file.createTime:%v does not match comparator fileinfo.modTime:%v; skipping file"
 	fSmbNameMatchFileIDNameTrueLog  = "%v (file.id:%v) file.smbName:%v matches file.id name:%v"
 	fSmbNameMatchFileIDNameFalseLog = "%v (file.id:%v) file.smbName:%v does not match file.id name:%v; skipping file"
-	fStatMatchLog                   = "%v (file.id:%v) file.Stat matches all metadata for file.stagingPath:%v"
+	fStatMatchLog                   = "%v (file.id:%v) file.verifyStat passes all metadata checks for file.stagingPath:%v"
+	fEnvMatchLog                    = "%v (file.id:%v) file.verfiyEnv passes all settings checks for file.stagingPath:%v"
 )
 
 // verify config metadata
+
+func (f *File) verifyEnv(env Env, logger *logrus.Logger) bool {
+	if !f.verifyIP(env.sysIP, logger) {
+		return false
+	}
+	if !f.verifyTimeLimit(env.limit, logger) {
+		return false
+	}
+	logger.Info(fmt.Sprintf(fEnvMatchLog, f.smbName, f.id, f.stagingPath))
+	return true
+}
 
 func (f *File) verifyIP(ip net.IP, logger *logrus.Logger) bool {
 	if reflect.DeepEqual(f.fanIP, ip) {

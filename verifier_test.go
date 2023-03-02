@@ -21,7 +21,94 @@ const (
 	testShortPath     = "staging"
 )
 
-func TestVerifyFileIP(t *testing.T) {
+func TestVerifyEnvSettings(t *testing.T) {
+	// setup logger
+	var testLogger *logrus.Logger
+	var hook *test.Hook
+
+	// setup env
+	var env Env
+
+	// setup file
+	var file File
+
+	// setup server ip
+	hostname, _ := os.Hostname()
+	ips, _ := net.LookupIP(hostname)
+	// set incorrect ip
+	ip := net.ParseIP("192.168.101.1")
+
+	// setup limit
+	var limit time.Time
+
+	now := time.Now()
+
+	t.Run("returns true if config metadata matches", func(t *testing.T) {
+		limit = now.Add(-24 * time.Hour)
+		env = Env{
+			sysIP: ips[0],
+			limit: limit,
+		}
+		file = File{
+			smbName:     testName,
+			id:          testFileID,
+			createTime:  now,
+			stagingPath: testPath,
+			fanIP:       ips[0],
+		}
+		testLogger, hook = setupLogs(t)
+		assert.True(t, file.verifyEnv(env, testLogger))
+		gotLogMsg := hook.LastEntry().Message
+		wantLogMsg := fmt.Sprintf(fEnvMatchLog, file.smbName, file.id, file.stagingPath)
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
+
+	})
+	t.Run("returns false if ip is not the same as the current machine", func(t *testing.T) {
+		env = Env{
+			sysIP: ip,
+		}
+		file = File{
+			smbName: testName,
+			id:      testFileID,
+			fanIP:   ips[0],
+		}
+		testLogger, hook = setupLogs(t)
+		assert.False(t, file.verifyEnv(env, testLogger))
+
+		gotLogMsg := hook.LastEntry().Message
+		wantLogMsg := fmt.Sprintf(fIPMatchFalseLog, file.smbName, file.id, file.fanIP, ip)
+
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
+	})
+
+	t.Run("returns false if file.createTime is before time limit", func(t *testing.T) {
+		file = File{
+			smbName:    testName,
+			id:         testFileID,
+			createTime: now,
+			fanIP:      ips[0],
+		}
+		limit = now.Add(24 * time.Hour)
+		env = Env{
+			limit: limit,
+			sysIP: ips[0],
+		}
+		testLogger, hook := setupLogs(t)
+		assert.False(t, file.verifyEnv(env, testLogger))
+
+		gotLogMsg := hook.LastEntry().Message
+		wantLogMsg := fmt.Sprintf(fCreateTimeBeforeTimeLimitLog,
+			file.smbName,
+			file.id,
+			file.createTime.Round(time.Millisecond),
+			limit.Round(time.Millisecond))
+
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
+	})
+
+}
+
+func TestVerifyIP(t *testing.T) {
 	// setup logger
 	var testLogger *logrus.Logger
 	var hook *test.Hook
