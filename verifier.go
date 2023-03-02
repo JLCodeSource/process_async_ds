@@ -65,6 +65,23 @@ func (f *File) verifyInProcessedDataset(datasetID string, logger *logrus.Logger)
 	return f.datasetID == datasetID
 }
 
+func (f *File) verifyStat(fsys fs.FS, logger *logrus.Logger) bool {
+	fileInfo, err := fs.Stat(fsys, f.stagingPath)
+	if err != nil {
+		logger.Warn(fmt.Sprintf(fExistsFalseLog, f.smbName, f.id, f.stagingPath))
+		return false
+	} else {
+		logger.Info(fmt.Sprintf(fExistsTrueLog, f.smbName, f.id, f.stagingPath))
+	}
+	if !f.verifyFileSize(fileInfo.Size(), logger) {
+		return false
+	}
+	if !f.verifyCreateTime(fileInfo.ModTime(), logger) {
+		return false
+	}
+	return true
+}
+
 func (f *File) verifyExists(fsys fs.FS, logger *logrus.Logger) bool {
 	_, err := fs.Stat(fsys, f.stagingPath)
 	if err != nil {
@@ -75,13 +92,8 @@ func (f *File) verifyExists(fsys fs.FS, logger *logrus.Logger) bool {
 	return true
 }
 
-func (f *File) verifyFileSize(fsys fs.FS, logger *logrus.Logger) bool {
-	info, err := fs.Stat(fsys, f.stagingPath)
-	if err != nil {
-		logger.Warn(err)
-		return false
-	}
-	if info.Size() != f.fileInfo.Size() {
+func (f *File) verifyFileSize(size int64, logger *logrus.Logger) bool {
+	if size != f.fileInfo.Size() {
 		logger.Warn(fmt.Sprintf(fSizeMatchFalseLog, f.smbName, f.id, f.size, f.fileInfo.Size()))
 		return false
 	}
@@ -89,18 +101,13 @@ func (f *File) verifyFileSize(fsys fs.FS, logger *logrus.Logger) bool {
 	return true
 }
 
-func (f *File) verifyCreateTime(fsys fs.FS, logger *logrus.Logger) bool {
-	fileInfo, err := fs.Stat(fsys, f.stagingPath)
-	if err != nil {
-		logger.Warn(err)
-		return false
-	}
-	if !fileInfo.ModTime().Equal(f.createTime) {
+func (f *File) verifyCreateTime(t time.Time, logger *logrus.Logger) bool {
+	if !t.Equal(f.createTime) {
 		logger.Warn(fmt.Sprintf(fCreateTimeMatchFalseLog,
 			f.smbName,
 			f.id,
 			f.createTime.Round(time.Millisecond),
-			f.fileInfo.ModTime().Round(time.Millisecond)))
+			t.Round(time.Millisecond)))
 		return false
 	}
 	logger.Info(fmt.Sprintf(
@@ -108,7 +115,7 @@ func (f *File) verifyCreateTime(fsys fs.FS, logger *logrus.Logger) bool {
 		f.smbName,
 		f.id,
 		f.createTime.Round(time.Millisecond),
-		fileInfo.ModTime().Round(time.Millisecond)))
+		t.Round(time.Millisecond)))
 	return true
 }
 
