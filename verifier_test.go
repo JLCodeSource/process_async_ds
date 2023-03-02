@@ -17,6 +17,7 @@ const (
 	testContent       = "test"
 	testLongerContent = "longer than the test"
 	testWrongDataset  = "396862B0791111ECA62400155D014E11"
+	testShortPath     = "staging"
 )
 
 func TestVerifyFileIP(t *testing.T) {
@@ -264,6 +265,25 @@ func TestVerifyFileSize(t *testing.T) {
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
 
+	t.Run("it should error on fs.Stat issue", func(t *testing.T) {
+		fsys = fstest.MapFS{
+			testPath: {Data: []byte(testContent)},
+		}
+		file = File{
+			smbName:     testName,
+			id:          testFileID,
+			stagingPath: testMismatchPath,
+		}
+
+		testLogger, hook = setupLogs(t)
+		assert.False(t, file.verifyFileSize(fsys, testLogger))
+
+		gotLogMsg := hook.LastEntry().Message
+		wantLogMsg := fmt.Sprintf(testFsysDoesNotExistErr, file.stagingPath)
+
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
+	})
+
 }
 
 func TestVerifyFileCreateTime(t *testing.T) {
@@ -275,30 +295,31 @@ func TestVerifyFileCreateTime(t *testing.T) {
 	var file File
 
 	// setup fs
-	//var fsys MockFS
+	var fsys fstest.MapFS
+	var mfs MockFS
 
 	t.Run("returns true if file.createTime matches comparator", func(t *testing.T) {
-		fsys := MockFS{}
+		mfs = MockFS{}
 		now := time.Now()
 		mf := MockFile{
-			FS:      fsys,
+			FS:      mfs,
 			modTime: now,
 			name:    testName,
 		}
-		fsys = MockFS{
-			NewDir("path", NewFile(mf)),
+		mfs = MockFS{
+			NewDir(testShortPath, NewFile(mf)),
 		}
 
-		info, _ := mf.Stat()
+		fileInfo, _ := mf.Stat()
 		file = File{
 			smbName:     testName,
 			id:          testFileID,
-			stagingPath: testName,
+			stagingPath: testShortPath,
 			createTime:  now,
-			fileInfo:    info,
+			fileInfo:    fileInfo,
 		}
 		testLogger, hook = setupLogs(t)
-		assert.True(t, file.verifyCreateTime(fsys, testLogger))
+		assert.True(t, file.verifyCreateTime(mfs, testLogger))
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(fCreateTimeMatchTrueLog,
 			file.smbName,
@@ -306,32 +327,62 @@ func TestVerifyFileCreateTime(t *testing.T) {
 			file.createTime.Round(time.Millisecond),
 			file.fileInfo.ModTime().Round(time.Millisecond))
 
-		assertCorrectString(t, gotLogMsg, wantLogMsg)
+		assertCorrectString(t, gotLogMsg, wantLogMsg+"test")
 
 	})
 
-	/*	t.Run("returns false if file.size does not match comparator", func(t *testing.T) {
-		fsys = fstest.MapFS{
-			testPath:         {Data: []byte(testContent)},
-			testMismatchPath: {Data: []byte(testLongerContent)},
+	t.Run("returns false if file.CreateTime does not match comparator", func(t *testing.T) {
+		mfs = MockFS{}
+		now := time.Now()
+		mf := MockFile{
+			FS:      mfs,
+			modTime: now.Add(5 * time.Second),
+			name:    testName,
 		}
-		info, _ := fsys.Stat(testMismatchPath)
+		mfs = MockFS{
+			NewDir(testShortPath, NewFile(mf)),
+		}
+
+		fileInfo, _ := mf.Stat()
 		file = File{
 			smbName:     testName,
 			id:          testFileID,
-			stagingPath: testPath,
-			size:        4,
-			fileInfo:    info,
+			stagingPath: testName,
+			createTime:  now,
+			fileInfo:    fileInfo,
 		}
 
 		testLogger, hook = setupLogs(t)
-		assert.False(t, file.verifyFileSize(fsys, testLogger))
+		assert.False(t, file.verifyCreateTime(mfs, testLogger))
 
 		gotLogMsg := hook.LastEntry().Message
-		wantLogMsg := fmt.Sprintf(fSizeMatchFalseLog, file.smbName, file.id, file.size, file.fileInfo.Size())
+		wantLogMsg := fmt.Sprintf(fCreateTimeMatchFalseLog,
+			file.smbName,
+			file.id,
+			file.createTime.Round(time.Millisecond),
+			file.fileInfo.ModTime().Round(time.Millisecond))
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
-	})*/
+	})
+
+	t.Run("it should error on fs.Stat issue", func(t *testing.T) {
+		fsys = fstest.MapFS{
+			testPath: {Data: []byte(testContent)},
+		}
+		file = File{
+			smbName:     testName,
+			id:          testFileID,
+			stagingPath: testMismatchPath,
+		}
+
+		testLogger, hook = setupLogs(t)
+		assert.False(t, file.verifyCreateTime(fsys, testLogger))
+
+		gotLogMsg := hook.LastEntry().Message
+		wantLogMsg := fmt.Sprintf(testFsysDoesNotExistErr, file.stagingPath)
+
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
+	})
 
 }
 
