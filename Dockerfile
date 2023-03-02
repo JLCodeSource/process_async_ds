@@ -4,6 +4,8 @@ WORKDIR /usr/src/app
 
 COPY . .
 
+COPY gbr /usr/bin/gbr
+
 RUN go mod download
 
 RUN go build -o /usr/src/app/process_processed

@@ -53,9 +53,9 @@ var (
 	hook       *test.Hook
 
 	// setup env
-	env   Env
-	limit time.Time
-	ip    net.IP
+	testEnv Env
+	limit   time.Time
+	ip      net.IP
 
 	// setup file
 	file File
@@ -69,7 +69,7 @@ var (
 func TestMainFunc(t *testing.T) {
 
 	t.Run("verify main args work", func(t *testing.T) {
-		_, hook := setupLogs(t)
+		_, hook = setupLogs(t)
 
 		os.Args = append(os.Args, testArgsFile)
 		os.Args = append(os.Args, fmt.Sprintf(testArgsDataset, testDatasetID))
@@ -100,11 +100,11 @@ func TestMainFunc(t *testing.T) {
 
 func TestGetSourceFile(t *testing.T) {
 	t.Run("check for source file", func(t *testing.T) {
-		testLogger, hook := setupLogs(t)
-		fs := fstest.MapFS{
+		testLogger, hook = setupLogs(t)
+		fsys = fstest.MapFS{
 			testPath: {Data: []byte(testContent)},
 		}
-		file := getSourceFile(fs, testPath, testLogger)
+		file := getSourceFile(fsys, testPath, testLogger)
 
 		got := file.Name()
 		want := testName
@@ -121,11 +121,11 @@ func TestGetSourceFile(t *testing.T) {
 		patch := monkey.Patch(os.Exit, fakeExit)
 		defer patch.Unpatch()
 
-		testLogger, hook := setupLogs(t)
-		fsys := os.DirFS("")
+		testLogger, hook = setupLogs(t)
+		fs := os.DirFS("")
 
 		panic := func() {
-			file := getSourceFile(fsys, testDoesNotExistFile, testLogger)
+			file := getSourceFile(fs, testDoesNotExistFile, testLogger)
 			println(file)
 		}
 
@@ -143,14 +143,14 @@ func TestGetSourceFile(t *testing.T) {
 		patch := monkey.Patch(os.Exit, fakeExit)
 		defer patch.Unpatch()
 
-		testLogger, hook := setupLogs(t)
+		testLogger, hook = setupLogs(t)
 
-		fs := fstest.MapFS{
+		fsys = fstest.MapFS{
 			testMismatchPath: {Data: []byte(testContent)},
 		}
 
 		panic := func() {
-			file := getSourceFile(fs, testDoesNotExistFile, testLogger)
+			file := getSourceFile(fsys, testDoesNotExistFile, testLogger)
 			println(file)
 		}
 
@@ -162,19 +162,19 @@ func TestGetSourceFile(t *testing.T) {
 	})
 }
 
-func TestGetAsyncProcessedFolderId(t *testing.T) {
+func TestgetDatasetID(t *testing.T) {
 
 	t.Run("verify it returns the right dataset id", func(t *testing.T) {
-		testLogger, _ := setupLogs(t)
-		got := getAsyncProcessedFolderID(testDatasetID, testLogger)
+		testLogger, _ = setupLogs(t)
+		got := getDatasetID(testDatasetID, testLogger)
 		want := testDatasetID
 
 		assertCorrectString(t, got, want)
 	})
 
 	t.Run("verify it logs the right dataset id", func(t *testing.T) {
-		testLogger, hook := setupLogs(t)
-		_ = getAsyncProcessedFolderID(testDatasetID, testLogger)
+		testLogger, hook = setupLogs(t)
+		_ = getDatasetID(testDatasetID, testLogger)
 
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(datasetLog, testDatasetID)
@@ -190,8 +190,8 @@ func TestGetAsyncProcessedFolderId(t *testing.T) {
 		patch := monkey.Patch(os.Exit, fakeExit)
 		defer patch.Unpatch()
 
-		testLogger, hook := setupLogs(t)
-		panic := func() { getAsyncProcessedFolderID(testNotADataset, testLogger) }
+		testLogger, hook = setupLogs(t)
+		panic := func() { getDatasetID(testNotADataset, testLogger) }
 
 		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
 		gotLogMsg := hook.LastEntry().Message
@@ -215,7 +215,7 @@ func TestGetAsyncProcessedFolderId(t *testing.T) {
 		defer patch2.Unpatch()
 
 		testLogger, hook := setupLogs(t)
-		panic := func() { getAsyncProcessedFolderID(testNotADataset, testLogger) }
+		panic := func() { getDatasetID(testNotADataset, testLogger) }
 
 		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
 		gotLogMsg := hook.LastEntry().Message
@@ -229,7 +229,7 @@ func TestGetAsyncProcessedFolderId(t *testing.T) {
 func TestGetTimeLimit(t *testing.T) {
 
 	t.Run("zero days", func(t *testing.T) {
-		testLogger, hook := setupLogs(t)
+		testLogger, hook = setupLogs(t)
 
 		var days = int64(0)
 		gotDays := strconv.FormatInt(getTimeLimit(days, testLogger), 10)
@@ -243,7 +243,7 @@ func TestGetTimeLimit(t *testing.T) {
 	})
 
 	t.Run("Multiple days", func(t *testing.T) {
-		testLogger, hook := setupLogs(t)
+		testLogger, hook = setupLogs(t)
 
 		var now = time.Now().Unix()
 		days := int64(15)
@@ -263,7 +263,7 @@ func TestGetTimeLimit(t *testing.T) {
 func TestGetNonDryRun(t *testing.T) {
 
 	t.Run("default dry run", func(t *testing.T) {
-		testLogger, hook := setupLogs(t)
+		testLogger, hook = setupLogs(t)
 
 		got := strconv.FormatBool(getNonDryRun(false, testLogger))
 		want := strconv.FormatBool(false)
@@ -277,7 +277,7 @@ func TestGetNonDryRun(t *testing.T) {
 	})
 
 	t.Run("non-dry run execute move", func(t *testing.T) {
-		testLogger, hook := setupLogs(t)
+		testLogger, hook = setupLogs(t)
 
 		got := strconv.FormatBool(getNonDryRun(true, testLogger))
 		want := strconv.FormatBool(true)

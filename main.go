@@ -42,7 +42,7 @@ var (
 	datasetID  string
 	days       int64
 	nondryrun  bool
-	//env        Env
+	env        Env
 )
 
 // File type is a struct which holds its relevant metadata
@@ -60,7 +60,7 @@ type File struct {
 // Env type holds config and environment settings
 type Env struct {
 	//sourceFile string
-	//datasetID  string
+	datasetID string
 	//days       int64
 	limit time.Time
 	//nondryrun  bool
@@ -76,7 +76,7 @@ func getSourceFile(filesystem fs.FS, f string, logger *logrus.Logger) fs.FileInf
 	return file
 }
 
-func getAsyncProcessedFolderID(id string, logger *logrus.Logger) string {
+func getDatasetID(id string, logger *logrus.Logger) string {
 	match, err := regexp.MatchString(regexDatasetMatch, id)
 	if err != nil {
 		logger.Fatal(err.Error())
@@ -137,7 +137,7 @@ func main() {
 	fsys := os.DirFS(dir)
 
 	getSourceFile(fsys, f, logger)
-	getAsyncProcessedFolderID(datasetID, logger)
+	getDatasetID(datasetID, logger)
 	getTimeLimit(days, logger)
 	getNonDryRun(nondryrun, logger)
 
