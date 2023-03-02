@@ -72,6 +72,13 @@ func (f *File) verifyTimeLimit(limit time.Time, logger *logrus.Logger) bool {
 }
 
 // Verify GB internal metadata
+/*
+func (f *File) verifyGBMetadata(logger *logrus.Logger) bool {
+	if !f.verifyInProcessedDataset(xxx, logger) {
+		return true
+	}
+	return true
+} */
 
 func (f *File) verifyInProcessedDataset(datasetID string, logger *logrus.Logger) bool {
 	if f.datasetID == datasetID {

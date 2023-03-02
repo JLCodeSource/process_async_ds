@@ -53,9 +53,9 @@ var (
 	hook       *test.Hook
 
 	// setup env
-	env   Env
-	limit time.Time
-	ip    net.IP
+	testEnv Env
+	limit   time.Time
+	ip      net.IP
 
 	// setup file
 	file File

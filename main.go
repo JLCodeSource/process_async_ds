@@ -42,7 +42,7 @@ var (
 	datasetID  string
 	days       int64
 	nondryrun  bool
-	//env        Env
+	env        Env
 )
 
 // File type is a struct which holds its relevant metadata
@@ -60,7 +60,7 @@ type File struct {
 // Env type holds config and environment settings
 type Env struct {
 	//sourceFile string
-	//datasetID  string
+	datasetID string
 	//days       int64
 	limit time.Time
 	//nondryrun  bool
