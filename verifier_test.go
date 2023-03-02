@@ -171,21 +171,25 @@ func TestVerifyStat(t *testing.T) {
 
 	// setup fs
 	var fsys fstest.MapFS
-	//var mfs mockfs.MockFS
+	var mfs mockfs.MockFS
 
-	t.Run("returns true if file exists", func(t *testing.T) {
-		file = File{
-			smbName:     testName,
-			stagingPath: testPath,
-			id:          testFileID,
-		}
+	t.Run("returns true if file matches", func(t *testing.T) {
 		fsys = fstest.MapFS{
 			testPath: {Data: []byte(testContent)},
+		}
+		info, _ := fsys.Stat(testPath)
+		size := int64(4)
+		file = File{
+			smbName:     testName,
+			id:          testFileID,
+			stagingPath: testPath,
+			size:        size,
+			fileInfo:    info,
 		}
 		testLogger, hook = setupLogs(t)
 		assert.True(t, file.verifyStat(fsys, testLogger))
 		gotLogMsg := hook.LastEntry().Message
-		wantLogMsg := fmt.Sprintf(fExistsTrueLog, file.smbName, file.id, file.stagingPath)
+		wantLogMsg := fmt.Sprintf(fStatMatchLog, file.smbName, file.id, file.stagingPath)
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 
@@ -203,33 +207,12 @@ func TestVerifyStat(t *testing.T) {
 		}
 
 		testLogger, hook = setupLogs(t)
-		assert.False(t, file.verifyExists(fsys, testLogger))
+		assert.False(t, file.verifyStat(fsys, testLogger))
 
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(fExistsFalseLog, file.smbName, file.id, file.stagingPath)
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
-	})
-
-	t.Run("returns true if file.size matches comparator", func(t *testing.T) {
-		fsys = fstest.MapFS{
-			testPath: {Data: []byte(testContent)},
-		}
-		info, _ := fsys.Stat(testPath)
-		file = File{
-			smbName:     testName,
-			id:          testFileID,
-			stagingPath: testPath,
-			size:        4,
-			fileInfo:    info,
-		}
-		testLogger, hook = setupLogs(t)
-		assert.True(t, file.verifyStat(fsys, testLogger))
-		gotLogMsg := hook.LastEntry().Message
-		wantLogMsg := fmt.Sprintf(fSizeMatchTrueLog, file.smbName, file.id, file.size, file.fileInfo.Size())
-
-		assertCorrectString(t, gotLogMsg, wantLogMsg)
-
 	})
 
 	t.Run("returns false if file.size does not match comparator", func(t *testing.T) {
@@ -254,58 +237,95 @@ func TestVerifyStat(t *testing.T) {
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
-}
 
-func TestVerifyFileExists(t *testing.T) {
-	// setup logger
-	var testLogger *logrus.Logger
-	var hook *test.Hook
+	t.Run("returns false if file.CreateTime does not match comparator", func(t *testing.T) {
+		mfs = mockfs.MockFS{}
+		now := time.Now()
+		afterNow := now.Add(5 * time.Second)
+		mf := mockfs.MockFile{
+			FS:        mfs,
+			MFModTime: afterNow,
+			MFName:    testName,
+		}
+		mfs = mockfs.MockFS{
+			mockfs.NewFile(mf),
+		}
 
-	// setup file
-	var file File
-
-	// setup fs
-	var fsys fstest.MapFS
-
-	t.Run("returns true if file exists", func(t *testing.T) {
+		fileInfo, _ := mf.Stat()
 		file = File{
 			smbName:     testName,
-			stagingPath: testPath,
 			id:          testFileID,
-		}
-		fsys = fstest.MapFS{
-			testPath: {Data: []byte(testContent)},
-		}
-		testLogger, hook = setupLogs(t)
-		assert.True(t, file.verifyExists(fsys, testLogger))
-		gotLogMsg := hook.LastEntry().Message
-		wantLogMsg := fmt.Sprintf(fExistsTrueLog, file.smbName, file.id, file.stagingPath)
-
-		assertCorrectString(t, gotLogMsg, wantLogMsg)
-
-	})
-	t.Run("returns false if file does not exist", func(t *testing.T) {
-		file = File{
-			smbName:     testName,
-			stagingPath: testMismatchPath,
-			id:          testFileID,
-		}
-
-		fsys = fstest.MapFS{
-			testPath: {Data: []byte(testContent)},
+			stagingPath: testName,
+			createTime:  now,
+			fileInfo:    fileInfo,
 		}
 
 		testLogger, hook = setupLogs(t)
-		assert.False(t, file.verifyExists(fsys, testLogger))
+		assert.False(t, file.verifyStat(mfs, testLogger))
 
 		gotLogMsg := hook.LastEntry().Message
-		wantLogMsg := fmt.Sprintf(fExistsFalseLog, file.smbName, file.id, file.stagingPath)
+		wantLogMsg := fmt.Sprintf(fCreateTimeMatchFalseLog,
+			file.smbName,
+			file.id,
+			file.createTime.Round(time.Millisecond),
+			file.fileInfo.ModTime().Round(time.Millisecond))
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
 
 }
 
+/*
+	func TestVerifyFileExists(t *testing.T) {
+		// setup logger
+		var testLogger *logrus.Logger
+		var hook *test.Hook
+
+		// setup file
+		var file File
+
+		// setup fs
+		var fsys fstest.MapFS
+
+		t.Run("returns true if file exists", func(t *testing.T) {
+			file = File{
+				smbName:     testName,
+				stagingPath: testPath,
+				id:          testFileID,
+			}
+			fsys = fstest.MapFS{
+				testPath: {Data: []byte(testContent)},
+			}
+			testLogger, hook = setupLogs(t)
+			assert.True(t, file.verifyExists(fsys, testLogger))
+			gotLogMsg := hook.LastEntry().Message
+			wantLogMsg := fmt.Sprintf(fExistsTrueLog, file.smbName, file.id, file.stagingPath)
+
+			assertCorrectString(t, gotLogMsg, wantLogMsg)
+
+		})
+		t.Run("returns false if file does not exist", func(t *testing.T) {
+			file = File{
+				smbName:     testName,
+				stagingPath: testMismatchPath,
+				id:          testFileID,
+			}
+
+			fsys = fstest.MapFS{
+				testPath: {Data: []byte(testContent)},
+			}
+
+			testLogger, hook = setupLogs(t)
+			assert.False(t, file.verifyExists(fsys, testLogger))
+
+			gotLogMsg := hook.LastEntry().Message
+			wantLogMsg := fmt.Sprintf(fExistsFalseLog, file.smbName, file.id, file.stagingPath)
+
+			assertCorrectString(t, gotLogMsg, wantLogMsg)
+		})
+
+}
+*/
 func TestVerifyFileSize(t *testing.T) {
 	// setup logger
 	var testLogger *logrus.Logger
@@ -322,15 +342,16 @@ func TestVerifyFileSize(t *testing.T) {
 			testPath: {Data: []byte(testContent)},
 		}
 		info, _ := fsys.Stat(testPath)
+		size := int64(4)
 		file = File{
 			smbName:     testName,
 			id:          testFileID,
 			stagingPath: testPath,
-			size:        4,
+			size:        size,
 			fileInfo:    info,
 		}
 		testLogger, hook = setupLogs(t)
-		assert.True(t, file.verifyFileSize(fsys, testLogger))
+		assert.True(t, file.verifyFileSize(size, testLogger))
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(fSizeMatchTrueLog, file.smbName, file.id, file.size, file.fileInfo.Size())
 
@@ -343,43 +364,24 @@ func TestVerifyFileSize(t *testing.T) {
 			testPath:         {Data: []byte(testContent)},
 			testMismatchPath: {Data: []byte(testLongerContent)},
 		}
-		info, _ := fsys.Stat(testMismatchPath)
+		fileInfo, _ := fsys.Stat(testMismatchPath)
+		size := int64(4)
 		file = File{
 			smbName:     testName,
 			id:          testFileID,
 			stagingPath: testPath,
-			size:        4,
-			fileInfo:    info,
+			size:        size,
+			fileInfo:    fileInfo,
 		}
 
 		testLogger, hook = setupLogs(t)
-		assert.False(t, file.verifyFileSize(fsys, testLogger))
+		assert.False(t, file.verifyStat(fsys, testLogger))
 
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(fSizeMatchFalseLog, file.smbName, file.id, file.size, file.fileInfo.Size())
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
-
-	t.Run("it should error on fs.Stat issue", func(t *testing.T) {
-		fsys = fstest.MapFS{
-			testPath: {Data: []byte(testContent)},
-		}
-		file = File{
-			smbName:     testName,
-			id:          testFileID,
-			stagingPath: testMismatchPath,
-		}
-
-		testLogger, hook = setupLogs(t)
-		assert.False(t, file.verifyFileSize(fsys, testLogger))
-
-		gotLogMsg := hook.LastEntry().Message
-		wantLogMsg := fmt.Sprintf(testFsysDoesNotExistErr, file.stagingPath)
-
-		assertCorrectString(t, gotLogMsg, wantLogMsg)
-	})
-
 }
 
 func TestVerifyFileCreateTime(t *testing.T) {
@@ -391,7 +393,6 @@ func TestVerifyFileCreateTime(t *testing.T) {
 	var file File
 
 	// setup fs
-	var fsys fstest.MapFS
 	var mfs mockfs.MockFS
 
 	t.Run("returns true if file.createTime matches comparator", func(t *testing.T) {
@@ -415,7 +416,7 @@ func TestVerifyFileCreateTime(t *testing.T) {
 			fileInfo:    fileInfo,
 		}
 		testLogger, hook = setupLogs(t)
-		assert.True(t, file.verifyCreateTime(mfs, testLogger))
+		assert.True(t, file.verifyCreateTime(now, testLogger))
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(fCreateTimeMatchTrueLog,
 			file.smbName,
@@ -430,9 +431,10 @@ func TestVerifyFileCreateTime(t *testing.T) {
 	t.Run("returns false if file.CreateTime does not match comparator", func(t *testing.T) {
 		mfs = mockfs.MockFS{}
 		now := time.Now()
+		afterNow := now.Add(5 * time.Second)
 		mf := mockfs.MockFile{
 			FS:        mfs,
-			MFModTime: now.Add(5 * time.Second),
+			MFModTime: afterNow,
 			MFName:    testName,
 		}
 		mfs = mockfs.MockFS{
@@ -449,7 +451,7 @@ func TestVerifyFileCreateTime(t *testing.T) {
 		}
 
 		testLogger, hook = setupLogs(t)
-		assert.False(t, file.verifyCreateTime(mfs, testLogger))
+		assert.False(t, file.verifyCreateTime(afterNow, testLogger))
 
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(fCreateTimeMatchFalseLog,
@@ -460,26 +462,6 @@ func TestVerifyFileCreateTime(t *testing.T) {
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
-
-	t.Run("it should error on fs.Stat issue", func(t *testing.T) {
-		fsys = fstest.MapFS{
-			testPath: {Data: []byte(testContent)},
-		}
-		file = File{
-			smbName:     testName,
-			id:          testFileID,
-			stagingPath: testMismatchPath,
-		}
-
-		testLogger, hook = setupLogs(t)
-		assert.False(t, file.verifyCreateTime(fsys, testLogger))
-
-		gotLogMsg := hook.LastEntry().Message
-		wantLogMsg := fmt.Sprintf(testFsysDoesNotExistErr, file.stagingPath)
-
-		assertCorrectString(t, gotLogMsg, wantLogMsg)
-	})
-
 }
 
 func TestVerifyFileIDName(t *testing.T) {
