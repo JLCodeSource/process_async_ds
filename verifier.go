@@ -93,7 +93,7 @@ func (f *File) verifyCreateTime(fsys fs.FS, logger *logrus.Logger) bool {
 		logger.Warn(err)
 		return false
 	}
-	if fileInfo.ModTime() != f.createTime {
+	if !fileInfo.ModTime().Equal(f.createTime) {
 		logger.Warn(fmt.Sprintf(fCreateTimeMatchFalseLog,
 			f.smbName,
 			f.id,

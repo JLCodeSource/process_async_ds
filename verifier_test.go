@@ -307,14 +307,14 @@ func TestVerifyFileCreateTime(t *testing.T) {
 			name:    testName,
 		}
 		mfs = MockFS{
-			NewDir(testShortPath, NewFile(mf)),
+			NewFile(mf),
 		}
 
 		fileInfo, _ := mf.Stat()
 		file = File{
 			smbName:     testName,
 			id:          testFileID,
-			stagingPath: testShortPath,
+			stagingPath: testName,
 			createTime:  now,
 			fileInfo:    fileInfo,
 		}
@@ -327,7 +327,7 @@ func TestVerifyFileCreateTime(t *testing.T) {
 			file.createTime.Round(time.Millisecond),
 			file.fileInfo.ModTime().Round(time.Millisecond))
 
-		assertCorrectString(t, gotLogMsg, wantLogMsg+"test")
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
 
 	})
 
@@ -340,7 +340,7 @@ func TestVerifyFileCreateTime(t *testing.T) {
 			name:    testName,
 		}
 		mfs = MockFS{
-			NewDir(testShortPath, NewFile(mf)),
+			NewFile(mf),
 		}
 
 		fileInfo, _ := mf.Stat()
