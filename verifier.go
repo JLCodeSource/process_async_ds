@@ -28,6 +28,8 @@ const (
 	fStatMatchLog                   = "%v (file.id:%v) file.Stat matches all metadata for file.stagingPath:%v"
 )
 
+// verify config metadata
+
 func (f *File) verifyIP(ip net.IP, logger *logrus.Logger) bool {
 	if reflect.DeepEqual(f.fanIP, ip) {
 		logger.Info(fmt.Sprintf(fIPMatchTrueLog, f.smbName, f.id, f.fanIP, ip))
@@ -57,6 +59,8 @@ func (f *File) verifyTimeLimit(limit time.Time, logger *logrus.Logger) bool {
 	return f.createTime.After(limit)
 }
 
+// Verify GB internal metadata
+
 func (f *File) verifyInProcessedDataset(datasetID string, logger *logrus.Logger) bool {
 	if f.datasetID == datasetID {
 		logger.Info(fmt.Sprintf(fDatasetMatchTrueLog, f.smbName, f.id, f.datasetID, datasetID))
@@ -65,6 +69,19 @@ func (f *File) verifyInProcessedDataset(datasetID string, logger *logrus.Logger)
 	}
 	return f.datasetID == datasetID
 }
+
+func (f *File) verifyFileIDName(fileName string, logger *logrus.Logger) bool {
+	if f.smbName == fileName {
+		logger.Info(fmt.Sprintf(
+			fSmbNameMatchFileIDNameTrueLog, f.smbName, f.id, f.smbName, fileName))
+	} else {
+		logger.Warn(fmt.Sprintf(
+			fSmbNameMatchFileIDNameFalseLog, f.smbName, f.id, f.smbName, fileName))
+	}
+	return f.smbName == fileName
+}
+
+// Verify local FS metadata
 
 func (f *File) verifyStat(fsys fs.FS, logger *logrus.Logger) bool {
 	fileInfo, err := fs.Stat(fsys, f.stagingPath)
@@ -118,15 +135,4 @@ func (f *File) verifyCreateTime(t time.Time, logger *logrus.Logger) bool {
 		f.createTime.Round(time.Millisecond),
 		t.Round(time.Millisecond)))
 	return true
-}
-
-func (f *File) verifyFileIDName(fileName string, logger *logrus.Logger) bool {
-	if f.smbName == fileName {
-		logger.Info(fmt.Sprintf(
-			fSmbNameMatchFileIDNameTrueLog, f.smbName, f.id, f.smbName, fileName))
-	} else {
-		logger.Warn(fmt.Sprintf(
-			fSmbNameMatchFileIDNameFalseLog, f.smbName, f.id, f.smbName, fileName))
-	}
-	return f.smbName == fileName
 }
