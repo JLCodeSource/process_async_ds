@@ -302,9 +302,9 @@ func TestVerifyFileCreateTime(t *testing.T) {
 		mfs = MockFS{}
 		now := time.Now()
 		mf := MockFile{
-			FS:      mfs,
-			modTime: now,
-			name:    testName,
+			FS:        mfs,
+			MFModTime: now,
+			name:      testName,
 		}
 		mfs = MockFS{
 			NewFile(mf),
@@ -335,9 +335,9 @@ func TestVerifyFileCreateTime(t *testing.T) {
 		mfs = MockFS{}
 		now := time.Now()
 		mf := MockFile{
-			FS:      mfs,
-			modTime: now.Add(5 * time.Second),
-			name:    testName,
+			FS:        mfs,
+			MFModTime: now.Add(5 * time.Second),
+			name:      testName,
 		}
 		mfs = MockFS{
 			NewFile(mf),
