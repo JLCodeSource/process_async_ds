@@ -41,7 +41,7 @@ func (mfs MockFS) Open(name string) (fs.File, error) {
 	}
 }
 
-// Open is a mock implementation of File.ReadDir
+// ReadDir is a mock implementation of File.ReadDir
 func (mfs MockFS) ReadDir(n int) ([]fs.DirEntry, error) {
 	list := make([]fs.DirEntry, 0, len(mfs))
 
@@ -73,6 +73,7 @@ func (m *MockFile) IsDir() bool {
 	return m.isDir
 }
 
+// Info is a mock implementation of File.Info
 func (m *MockFile) Info() (fs.FileInfo, error) {
 	return m.Stat()
 }
