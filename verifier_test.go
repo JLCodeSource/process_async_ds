@@ -11,6 +11,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
+	"github.com/JLCodeSource/process_async_ds/mockfs"
 )
 
 const (
@@ -296,18 +297,18 @@ func TestVerifyFileCreateTime(t *testing.T) {
 
 	// setup fs
 	var fsys fstest.MapFS
-	var mfs MockFS
+	var mfs mockfs.MockFS
 
 	t.Run("returns true if file.createTime matches comparator", func(t *testing.T) {
-		mfs = MockFS{}
+		mfs = mockfs.MockFS{}
 		now := time.Now()
-		mf := MockFile{
+		mf := mockfs.MockFile{
 			FS:        mfs,
 			MFModTime: now,
-			name:      testName,
+			MFName:    testName,
 		}
-		mfs = MockFS{
-			NewFile(mf),
+		mfs = mockfs.MockFS{
+			mockfs.NewFile(mf),
 		}
 
 		fileInfo, _ := mf.Stat()
@@ -332,15 +333,15 @@ func TestVerifyFileCreateTime(t *testing.T) {
 	})
 
 	t.Run("returns false if file.CreateTime does not match comparator", func(t *testing.T) {
-		mfs = MockFS{}
+		mfs = mockfs.MockFS{}
 		now := time.Now()
-		mf := MockFile{
+		mf := mockfs.MockFile{
 			FS:        mfs,
 			MFModTime: now.Add(5 * time.Second),
-			name:      testName,
+			MFName:    testName,
 		}
-		mfs = MockFS{
-			NewFile(mf),
+		mfs = mockfs.MockFS{
+			mockfs.NewFile(mf),
 		}
 
 		fileInfo, _ := mf.Stat()
