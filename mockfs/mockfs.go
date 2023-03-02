@@ -1,4 +1,4 @@
-package main
+package mockfs
 
 import (
 	"io"
@@ -20,8 +20,9 @@ type MockFile struct {
 	name    string
 	size    int64
 	sys     interface{}
-	// MFModTime is a public exports to set the internals
+	// MFModTime & MFName are public exports to set the internals
 	MFModTime time.Time
+	MFName    string
 }
 
 // Stat is a mock implementation of File.Stat
@@ -33,6 +34,15 @@ func (m *MockFile) Stat() (fs.FileInfo, error) {
 	}
 
 	return m, nil
+}
+
+// Name is a mock impementation of File.Name
+// N.B. It has been updated to allow Public setting of name
+func (m *MockFile) Name() string {
+	if m.MFName != "" {
+		m.name = m.MFName
+	}
+	return m.name
 }
 
 // Open is a mock implementation of File.Open
@@ -74,11 +84,6 @@ func (mfs MockFS) ReadDir(n int) ([]fs.DirEntry, error) {
 		return list, io.EOF
 	}
 	return list[:n], io.EOF
-}
-
-// Name is a mock impementation of File.Name
-func (m *MockFile) Name() string {
-	return m.name
 }
 
 // IsDir is a mock implementation of File.IsDir
@@ -147,8 +152,9 @@ func NewFile(m MockFile) *MockFile {
 		modTime: m.modTime,
 		FS:      m.FS,
 		size:    m.size,
-		// Added to modify mf.modtime publicly
+		// Added to modify m.modtime & m.name publicly
 		MFModTime: m.MFModTime,
+		MFName:    m.MFName,
 	}
 }
 
