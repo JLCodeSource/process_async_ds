@@ -16,7 +16,7 @@ const (
 )
 
 func getAsyncProcessedDSID(logger *logrus.Logger) string {
-	cmd := exec.Command("gbr", "pool", "ls", "-d")
+	cmd := exec.Command("/usr/bin/gbr", "pool", "ls", "-d")
 	cmdOut, _ := cmd.Output()
 	//if err != nil {
 	//	logger.Fatal(gbrAsyncProcessedDSErrLog)
@@ -33,7 +33,7 @@ func getAsyncProcessedDSID(logger *logrus.Logger) string {
 }
 
 func getFileNameByID(id string, logger *logrus.Logger) string {
-	cmd := exec.Command("gbr", "file", "ls", "-i", id)
+	cmd := exec.Command("/usr/bin/gbr", "file", "ls", "-i", id)
 	cmdOut, _ := cmd.Output()
 	//if err != nil {
 	//		logger.Fatal(gbrAsyncProcessedDSErrLog)
@@ -45,7 +45,7 @@ func getFileNameByID(id string, logger *logrus.Logger) string {
 }
 
 func getDatasetByID(id string, logger *logrus.Logger) string {
-	cmd := exec.Command("gbr", "file", "ls", "-i", id, "-d")
+	cmd := exec.Command("/usr/bin/gbr", "file", "ls", "-i", id, "-d")
 	cmdOut, _ := cmd.Output()
 	//if err != nil {
 	//		logger.Fatal(gbrAsyncProcessedDSErrLog)
