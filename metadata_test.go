@@ -281,7 +281,7 @@ func TestGetByIDErrLog(t *testing.T) {
 		getByIDErrLog(testFileID, errors.New(testGbrFileIDErrOut), testLogger)
 
 		gotLogMsgs := hook.Entries
-		wantLogMsg := fmt.Sprintf(testGbrFileIDErrOutLog)
+		wantLogMsg := testGbrFileIDErrOutLog
 		assertCorrectString(t, gotLogMsgs[0].Message, wantLogMsg)
 
 		wantLogMsg = fmt.Sprintf(gbrNoFileNameByIDLog, testFileID)
