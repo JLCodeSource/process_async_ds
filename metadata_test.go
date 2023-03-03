@@ -199,7 +199,7 @@ func TestParseAsyncProcessedDSID(t *testing.T) {
 		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
 
 		gotLogMsg := hook.LastEntry().Message
-		wantLogMsg := fmt.Sprintf(gbrAsyncProcessedDSErrLog)
+		wantLogMsg := gbrAsyncProcessedDSErrLog
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 
 	})
@@ -260,10 +260,10 @@ func TestAsyncProcessedDSIDErrLog(t *testing.T) {
 
 		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
 		gotLogMsgs := hook.Entries
-		wantLogMsg := fmt.Sprintf(osPanicTrue)
+		wantLogMsg := osPanicTrue
 		assertCorrectString(t, gotLogMsgs[0].Message, wantLogMsg)
 
-		wantLogMsg = fmt.Sprintf(gbrAsyncProcessedDSErrLog)
+		wantLogMsg = gbrAsyncProcessedDSErrLog
 		assertCorrectString(t, gotLogMsgs[1].Message, wantLogMsg)
 
 	})
