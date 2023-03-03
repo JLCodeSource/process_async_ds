@@ -162,7 +162,7 @@ func TestGetSourceFile(t *testing.T) {
 	})
 }
 
-func TestgetDatasetID(t *testing.T) {
+func TestGetDatasetID(t *testing.T) {
 
 	t.Run("verify it returns the right dataset id", func(t *testing.T) {
 		testLogger, _ = setupLogs(t)
