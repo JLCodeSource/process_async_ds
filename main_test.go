@@ -214,7 +214,7 @@ func TestGetDatasetID(t *testing.T) {
 		patch2 := monkey.Patch(regexp.MatchString, fakeRegexMatch)
 		defer patch2.Unpatch()
 
-		testLogger, hook := setupLogs(t)
+		testLogger, hook = setupLogs(t)
 		panic := func() { getDatasetID(testNotADataset, testLogger) }
 
 		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
@@ -301,11 +301,11 @@ func TestFileMetadata(t *testing.T) {
 		}
 		datetime, _ := time.ParseInLocation(time.UnixDate, datestring, loc)
 		fanIP := net.ParseIP(testIP)
-		fsys := fstest.MapFS{
+		fsys = fstest.MapFS{
 			testPath: {Data: []byte(testContent)},
 		}
 		fileInfo, _ := fs.Stat(fsys, testPath)
-		file := File{
+		file = File{
 			smbName:     testName,
 			stagingPath: testPath,
 			createTime:  datetime,
@@ -366,7 +366,7 @@ func TestFileMetadata(t *testing.T) {
 			t.Fatalf(err.Error())
 		}
 		datetime, _ := time.ParseInLocation(time.UnixDate, datestring, loc)
-		file := File{
+		file = File{
 			stagingPath: testPath,
 			createTime:  datetime,
 			size:        int64(85512264),

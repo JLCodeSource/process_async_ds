@@ -78,7 +78,7 @@ func TestVerifyEnvSettings(t *testing.T) {
 			limit: limit,
 			sysIP: ips[0],
 		}
-		testLogger, hook := setupLogs(t)
+		testLogger, hook = setupLogs(t)
 		assert.False(t, file.verifyEnv(testEnv, testLogger))
 
 		gotLogMsg := hook.LastEntry().Message
@@ -161,7 +161,7 @@ func TestVerifyTimeLimit(t *testing.T) {
 			createTime: now,
 		}
 		limit = now.Add(24 * time.Hour)
-		testLogger, hook := setupLogs(t)
+		testLogger, hook = setupLogs(t)
 		assert.False(t, file.verifyTimeLimit(limit, testLogger))
 
 		gotLogMsg := hook.LastEntry().Message
