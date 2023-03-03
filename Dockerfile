@@ -2,6 +2,8 @@ FROM golang:alpine AS build
 
 WORKDIR /usr/src/app
 
+RUN apk update && apk upgrade && apk add bash
+
 COPY . .
 
 COPY gbr /usr/bin/gbr
