@@ -1,0 +1,82 @@
+#!/bin/bash
+## gbr script mocking gbr install in container
+# It only works with:
+# gbr pool ls -d
+# gbr file ls -i D5B58980A3E311EBBA0AB026285E5610
+# gbr file ls -i D5B58980A3E311EBBA0AB026285E5610 -d
+## WARNING!!!!
+## These are hard coded, incredibly brittle & site2ally inflexible
+
+# Consts
+DATASETID=41545AB0788A11ECBD0700155D014E0D
+FILEID=D5B58980A3E311EBBA0AB026285E5610
+FILENAME=05043fe1-00000006-2f8630d0-608630d0-67d25000-ab66ac56
+
+
+# Outputs
+
+read -r -d '' DATALAKE << 'EOF'
+====== + Pools  in datalake 'nmr' ======
+
+- pool01 ( disk pool, primary )
+ == General ==
+   - description:
+   - creation date:             Tue Jan 18 23:12:53 EST 2022
+   - primary:                   true
+   - ID:                        41545AB0788A11ECBD0700155D014E0D
+   - parent datalake:           nmr (ID: 0E544860788911ECBD0700155D014E0D)
+EOF
+
+read -r -d '' FILE_DETAIL << 'EOF'
+1 - 05043fe1-00000006-2f8630d0-608630d0-67d25000-ab66ac56 (file id: D5B58980A3E311EBBA0AB026285E5610)
+    version:            0
+    type:               file
+    parent folder id:   3E4FF671B44E11ED86FF00155D014E0D
+    parent folder name: 6132
+    parent id:          41545AB0788A11ECBD0700155D014E0D
+    original file name: null
+    file URI:           null
+    fan URI:            ftp://fan_c2:***REMOVED***p2@192.168.101.210:2121/download/2023_02/1eeb7769-fdb1-4313-8d76-ec719ad7a44c/mnt/nas01/BTRIFONOV-QA/6132/TTL9002_LOGS_20150819_072505.zip
+    pool id:            41545AB0788A11ECBD0700155D014E0D
+    legal hold:         Enabled=false OwnerID=null MatterID=null Start=Sat Jan 01 05:00:00 EST 1 Release=Sat Jan 01 05:00:00 EST 1
+    policies:
+      RetentionDisposition(null, enabled='true')(start='Mon Feb 27 19:08:25 EST 2023', end='Sat Jan 27 19:08:25 EST 2029', neverDispose='true')
+    file hash:
+EOF
+
+read -r -d '' FILE << 'EOF'
+1 - 05043fe1-00000006-2f8630d0-608630d0-67d25000-ab66ac56 (file id: D5B58980A3E311EBBA0AB026285E5610)
+EOF
+
+
+
+function get_datalake {
+    echo "$DATALAKE"
+}
+
+function get_file_detail {
+    echo "$FILE_DETAIL"
+}
+
+function get_file {
+    echo "$FILE"
+}
+
+sleep 2
+if [ "$1" = "pool" ] 
+then
+    get_datalake
+elif [ "$1" = "file" ]
+then 
+    if [ "$4" = "D5B58980A3E311EBBA0AB026285E5610" ]
+    then
+        if [ "$#" = "4" ] 
+        then
+            get_file
+        fi
+        if [ "$#" = "5" ]
+        then
+            get_file_detail
+        fi
+    fi
+fi
