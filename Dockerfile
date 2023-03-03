@@ -5,6 +5,7 @@ WORKDIR /usr/src/app
 COPY . .
 
 COPY ./gbr /usr/bin/gbr
+RUN chmod +x /usr/bin/gbr
 
 RUN go mod download
 
