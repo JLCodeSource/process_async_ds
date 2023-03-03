@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os/exec"
 	"regexp"
@@ -15,8 +16,10 @@ const (
 	gbrParseAsyncProcessedDSLog = "gbr verified asyncProcessedDataset as %v"
 	gbrFileNameByIDLog        = "gbr verified file.id:%v as having filename:%v"
 	gbrNoFileNameByIDLog      = "gbr could not find file.id:%v"
-	gbrDatasetByIDLog         = "gbr verified file.id:%v as having dataset:%v"
+	gbrFileDatasetByIDLog     = "gbr verified file.id:%v as having dataset:%v"
 )
+
+// Getters
 
 func getAsyncProcessedDSID(logger *logrus.Logger) string {
 	cmd := exec.Command("/usr/bin/gbr", "pool", "ls", "-d")
@@ -31,31 +34,11 @@ func getAsyncProcessedDSID(logger *logrus.Logger) string {
 	return out
 }
 
-func asyncProcessedDSIDErrLog(err error, logger *logrus.Logger) {
-	// We want it to crash out on not finding the asyncProcessedDS
-	logger.Error(err)
-	logger.Fatal(gbrAsyncProcessedDSErrLog)
-}
-
-func parseAsyncProcessedDSID(cmdOut string, logger *logrus.Logger) string {
-	lines := strings.Split(string(cmdOut), ";")
-	for _, line := range lines {
-		if strings.Contains(line, "ID") {
-			asyncDelDS := line[len(line)-32:]
-			logger.Info(fmt.Sprintf(gbrParseAsyncProcessedDSLog, asyncDelDS))
-			return asyncDelDS
-		}
-	}
-	// We want it to crash out on not finding the asyncProcessedDS
-	logger.Fatal(gbrAsyncProcessedDSErrLog)
-	return ""
-}
-
 func getFileNameByID(id string, logger *logrus.Logger) (string, bool) {
 	cmd := exec.Command("/usr/bin/gbr", "file", "ls", "-i", id)
 	cmdOut, err := cmd.CombinedOutput()
 	if err != nil {
-		getFileNameByIDErrLog(id, err, logger)
+		getByIDErrLog(id, err, logger)
 		return "", false
 	}
 	out := string(cmdOut)
@@ -64,39 +47,80 @@ func getFileNameByID(id string, logger *logrus.Logger) (string, bool) {
 		logger.Warn(fmt.Sprintf(gbrNoFileNameByIDLog, id))
 		return "", false
 	}
-	filename := parseGetFileNameByID(out, id, logger)
+	filename := parseFileNameByID(out, id, logger)
 	logger.Info(fmt.Sprintf(gbrFileNameByIDLog, id, filename))
 	return filename, true
 }
 
-func parseGetFileNameByID(cmdOut, id string, logger *logrus.Logger) string {
-	line := strings.Split(cmdOut, " ")
-	filename := line[2]
-	logger.Info(fmt.Sprintf(gbrFileNameByIDLog, id, filename))
-	return filename
+func getFileDatasetByID(id string, logger *logrus.Logger) (string, bool) {
+	cmd := exec.Command("/usr/bin/gbr", "file", "ls", "-i", id, "-d")
+	cmdOut, err := cmd.Output()
+	if err != nil {
+		getByIDErrLog(id, err, logger)
+	}
+	out := string(cmdOut)
+	out = cleanGbrOut(out)
+	if out == "" {
+		logger.Warn(fmt.Sprintf(gbrNoFileNameByIDLog, id))
+		return "", false
+	}
+	datasetID := parseFileDatasetByID(out, id, logger)
+	logger.Info(fmt.Sprintf(gbrFileDatasetByIDLog, id, datasetID))
+	return datasetID, true
 }
 
-func getFileNameByIDErrLog(id string, err error, logger *logrus.Logger) {
+// Parsers
+
+func parseAsyncProcessedDSID(cmdOut string, logger *logrus.Logger) (asyncDelDS string) {
+	lines := strings.Split(string(cmdOut), ";")
+	for _, line := range lines {
+		if strings.Contains(line, "ID") {
+			asyncDelDS = line[len(line)-32:]
+			logger.Info(fmt.Sprintf(gbrParseAsyncProcessedDSLog, asyncDelDS))
+			return
+		}
+	}
+	// We want it to crash out on not finding the asyncProcessedDS
+	logger.Fatal(gbrAsyncProcessedDSErrLog)
+	return
+}
+
+func parseFileNameByID(cmdOut, id string, logger *logrus.Logger) (filename string) {
+	line := strings.Split(cmdOut, " ")
+	filename = line[2]
+	logger.Info(fmt.Sprintf(gbrFileNameByIDLog, id, filename))
+	return
+}
+
+func parseFileDatasetByID(cmdOut, id string, logger *logrus.Logger) (parentDS string) {
+	lines := strings.Split(string(cmdOut), ";")
+	for _, line := range lines {
+		if strings.Contains(line, "parent id") {
+			parentDS = line[len(line)-32:]
+			logger.Info(fmt.Sprintf(gbrFileDatasetByIDLog, id, parentDS))
+			return
+		}
+	}
+	logger.Warn(fmt.Sprintf(gbrNoFileNameByIDLog, id))
+	return
+}
+
+// Errors
+
+func asyncProcessedDSIDErrLog(err error, logger *logrus.Logger) {
+	// We want it to crash out on not finding the asyncProcessedDS
+	err = errors.New(cleanGbrOut(err.Error()))
+	logger.Error(err)
+	logger.Fatal(gbrAsyncProcessedDSErrLog)
+}
+
+func getByIDErrLog(id string, err error, logger *logrus.Logger) {
+	err = errors.New(cleanGbrOut(err.Error()))
 	logger.Warn(err)
 	logger.Warn(fmt.Sprintf(gbrNoFileNameByIDLog, id))
 }
 
-func getDatasetByID(id string, logger *logrus.Logger) string {
-	cmd := exec.Command("/usr/bin/gbr", "file", "ls", "-i", id, "-d")
-	cmdOut, _ := cmd.Output()
-	//if err != nil {
-	//		logger.Fatal(gbrAsyncProcessedDSErrLog)
-	//	}
-	lines := strings.Split(string(cmdOut), "\n")
-	for _, line := range lines {
-		if strings.Contains(line, "parent id") {
-			parentDS := line[len(line)-32:]
-			logger.Info(fmt.Sprintf(gbrDatasetByIDLog, id, parentDS))
-			return parentDS
-		}
-	}
-	return ""
-}
+// Cleaners
 
 func cleanGbrOut(out string) string {
 	// Remove new lines from out

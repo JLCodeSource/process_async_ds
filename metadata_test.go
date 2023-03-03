@@ -75,7 +75,7 @@ const (
 	testNotAFileID = "not_a_file_id"
 )
 
-// need to add tests for failed lookups and errors...
+// Getters
 
 func TestGetAsyncProcessedDSID(t *testing.T) {
 	t.Run("should return asyncprocessed dataset", func(t *testing.T) {
@@ -113,27 +113,65 @@ func TestGetAsyncProcessedDSID(t *testing.T) {
 		})*/
 }
 
-func TestAsyncProcessedDSIDErrLog(t *testing.T) {
-	t.Run("should log cmd error and fatal", func(t *testing.T) {
-		fakeExit := func(int) {
-			panic(osPanicTrue)
-		}
-		patch := monkey.Patch(os.Exit, fakeExit)
-		defer patch.Unpatch()
-
+func TestGetFilenameByID(t *testing.T) {
+	t.Run("should return the filename by id if it exists", func(t *testing.T) {
 		testLogger, hook = setupLogs(t)
-		panic := func() { asyncProcessedDSIDErrLog(errors.New(osPanicTrue), testLogger) }
+		got, ok := getFileNameByID(testFileID, testLogger)
+		want := testSmbName
+		assert.True(t, ok)
+		assertCorrectString(t, got, want)
 
-		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
-		gotLogMsgs := hook.Entries
-		wantLogMsg := fmt.Sprintf(osPanicTrue)
-		assertCorrectString(t, gotLogMsgs[0].Message, wantLogMsg)
+		gotLogMsg := hook.LastEntry().Message
+		wantLogMsg := fmt.Sprintf(gbrFileNameByIDLog, testFileID, testSmbName)
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
 
-		wantLogMsg = fmt.Sprintf(gbrAsyncProcessedDSErrLog)
-		assertCorrectString(t, gotLogMsgs[1].Message, wantLogMsg)
+	})
+
+	t.Run("should return empty if no file exists", func(t *testing.T) {
+		testLogger, hook = setupLogs(t)
+		got, ok := getFileNameByID(testBadFileID, testLogger)
+		want := ""
+		assert.False(t, ok)
+		assertCorrectString(t, got, want)
+
+		gotLogMsg := hook.LastEntry().Message
+		wantLogMsg := fmt.Sprintf(gbrNoFileNameByIDLog, testBadFileID)
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
+
+	})
+
+}
+
+func TestGetFileDatasetByID(t *testing.T) {
+	t.Run("should return the dataset by id if it exists", func(t *testing.T) {
+		testLogger, hook = setupLogs(t)
+		got, ok := getFileDatasetByID(testFileID, testLogger)
+		want := testDatasetID
+		assert.True(t, ok)
+		assertCorrectString(t, got, want)
+
+		gotLogMsg := hook.LastEntry().Message
+		wantLogMsg := fmt.Sprintf(gbrFileDatasetByIDLog, testFileID, testDatasetID)
+
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
+
+	})
+
+	t.Run("should return empty if no file exists", func(t *testing.T) {
+		testLogger, hook = setupLogs(t)
+		got, ok := getFileDatasetByID(testBadFileID, testLogger)
+		want := ""
+		assert.False(t, ok)
+		assertCorrectString(t, got, want)
+
+		gotLogMsg := hook.LastEntry().Message
+		wantLogMsg := fmt.Sprintf(gbrNoFileNameByIDLog, testBadFileID)
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
 
 	})
 }
+
+// Parsers
 
 func TestParseAsyncProcessedDSID(t *testing.T) {
 	t.Run("should parse output and return AsyncProcessedDSID", func(t *testing.T) {
@@ -167,10 +205,10 @@ func TestParseAsyncProcessedDSID(t *testing.T) {
 	})
 }
 
-func TestParseGetFileNameByID(t *testing.T) {
+func TestParseFileNameByID(t *testing.T) {
 	t.Run("should parse output and return filename", func(t *testing.T) {
 		testLogger, hook = setupLogs(t)
-		got := parseGetFileNameByID(testGbrFileIDOut, testFileID, testLogger)
+		got := parseFileNameByID(testGbrFileIDDetailOutLog, testFileID, testLogger)
 		want := testSmbName
 		assertCorrectString(t, got, want)
 
@@ -181,19 +219,69 @@ func TestParseGetFileNameByID(t *testing.T) {
 	})
 }
 
-func TestGetFileNameByIDErrLog(t *testing.T) {
+func TestParseFileDatasetByID(t *testing.T) {
+	t.Run("should return the dataset by id if it exists", func(t *testing.T) {
+		testLogger, hook = setupLogs(t)
+		got := parseFileDatasetByID(testGbrFileIDDetailOutLog, testFileID, testLogger)
+		want := testDatasetID
+		assertCorrectString(t, got, want)
+
+		gotLogMsg := hook.LastEntry().Message
+		wantLogMsg := fmt.Sprintf(gbrFileDatasetByIDLog, testFileID, testDatasetID)
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
+
+	})
+
+	t.Run("should return '' if the file does not exist", func(t *testing.T) {
+		testLogger, hook = setupLogs(t)
+		got := parseFileDatasetByID("", testBadFileID, testLogger)
+		want := ""
+		assertCorrectString(t, got, want)
+
+		gotLogMsg := hook.LastEntry().Message
+		wantLogMsg := fmt.Sprintf(gbrNoFileNameByIDLog, testBadFileID)
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
+
+	})
+}
+
+// Errors
+
+func TestAsyncProcessedDSIDErrLog(t *testing.T) {
+	t.Run("should log cmd error and fatal", func(t *testing.T) {
+		fakeExit := func(int) {
+			panic(osPanicTrue)
+		}
+		patch := monkey.Patch(os.Exit, fakeExit)
+		defer patch.Unpatch()
+
+		testLogger, hook = setupLogs(t)
+		panic := func() { asyncProcessedDSIDErrLog(errors.New(osPanicTrue), testLogger) }
+
+		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
+		gotLogMsgs := hook.Entries
+		wantLogMsg := fmt.Sprintf(osPanicTrue)
+		assertCorrectString(t, gotLogMsgs[0].Message, wantLogMsg)
+
+		wantLogMsg = fmt.Sprintf(gbrAsyncProcessedDSErrLog)
+		assertCorrectString(t, gotLogMsgs[1].Message, wantLogMsg)
+
+	})
+}
+
+func TestGetByIDErrLog(t *testing.T) {
 	t.Run("should log err and gbrNoFileNameByID on err", func(t *testing.T) {
 		testLogger, hook = setupLogs(t)
 		fakeLoggerError := func(args ...interface{}) {
-			panic(osPanicTrue)
+			panic(testGbrFileIDErrOut)
 		}
 		patch := monkey.Patch(testLogger.Error, fakeLoggerError)
 		defer patch.Unpatch()
 
-		getFileNameByIDErrLog(testFileID, errors.New(osPanicTrue), testLogger)
+		getByIDErrLog(testFileID, errors.New(testGbrFileIDErrOut), testLogger)
 
 		gotLogMsgs := hook.Entries
-		wantLogMsg := fmt.Sprintf(osPanicTrue)
+		wantLogMsg := fmt.Sprintf(testGbrFileIDErrOutLog)
 		assertCorrectString(t, gotLogMsgs[0].Message, wantLogMsg)
 
 		wantLogMsg = fmt.Sprintf(gbrNoFileNameByIDLog, testFileID)
@@ -202,49 +290,7 @@ func TestGetFileNameByIDErrLog(t *testing.T) {
 	})
 }
 
-func TestGetFilenameByID(t *testing.T) {
-	t.Run("should return the filename by id if it exists", func(t *testing.T) {
-		testLogger, hook = setupLogs(t)
-		got, ok := getFileNameByID(testFileID, testLogger)
-		want := testSmbName
-		assert.True(t, ok)
-		assertCorrectString(t, got, want)
-
-		gotLogMsg := hook.LastEntry().Message
-		wantLogMsg := fmt.Sprintf(gbrFileNameByIDLog, testFileID, testSmbName)
-		assertCorrectString(t, gotLogMsg, wantLogMsg)
-
-	})
-
-	t.Run("should return empty if no file exists", func(t *testing.T) {
-		testLogger, hook = setupLogs(t)
-		got, ok := getFileNameByID(testBadFileID, testLogger)
-		want := ""
-		assert.False(t, ok)
-		assertCorrectString(t, got, want)
-
-		gotLogMsg := hook.LastEntry().Message
-		wantLogMsg := fmt.Sprintf(gbrNoFileNameByIDLog, testBadFileID)
-		assertCorrectString(t, gotLogMsg, wantLogMsg)
-
-	})
-
-}
-
-func TestGetDatasetByID(t *testing.T) {
-	t.Run("should return the dataset by id", func(t *testing.T) {
-		testLogger, hook = setupLogs(t)
-		got := getDatasetByID(testFileID, testLogger)
-		want := testDatasetID
-		assertCorrectString(t, got, want)
-
-		gotLogMsg := hook.LastEntry().Message
-		wantLogMsg := fmt.Sprintf(gbrDatasetByIDLog, testFileID, testDatasetID)
-
-		assertCorrectString(t, gotLogMsg, wantLogMsg)
-
-	})
-}
+// Cleaners
 
 func TestCleanGbrOut(t *testing.T) {
 	t.Run("should strip \n and dupe white spaces from gbr out", func(t *testing.T) {
