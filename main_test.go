@@ -24,6 +24,7 @@ import (
 const (
 	testDatasetID    = "41545AB0788A11ECBD0700155D014E0D"
 	testFileID       = "D5B58980A3E311EBBA0AB026285E5610"
+	testBadFileID    = "3D3D0900791F11ECB6BD00155D014E0D"
 	testName         = "test.txt"
 	testPath         = "data1/staging/test.txt"
 	testMismatchPath = "data1/staging/testMismatch.txt"
