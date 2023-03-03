@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 ## gbr script mocking gbr install in container
 # It only works with:
 # gbr pool ls -d
