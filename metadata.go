@@ -14,6 +14,7 @@ const (
 	gbrGetAsyncProcessedDSLog   = "gbr pool got output:%v"
 	gbrParseAsyncProcessedDSLog = "gbr verified asyncProcessedDataset as %v"
 	gbrFileNameByIDLog        = "gbr verified file.id:%v as having filename:%v"
+	gbrNoFileNameByIDLog      = "gbr could not find file.id:%v"
 	gbrDatasetByIDLog         = "gbr verified file.id:%v as having dataset:%v"
 )
 
@@ -54,16 +55,21 @@ func parseAsyncProcessedDSID(cmdOut string, logger *logrus.Logger) string {
 	return ""
 }
 
-func getFileNameByID(id string, logger *logrus.Logger) string {
+func getFileNameByID(id string, logger *logrus.Logger) (string, bool) {
 	cmd := exec.Command("/usr/bin/gbr", "file", "ls", "-i", id)
-	cmdOut, _ := cmd.Output()
+	cmdOut, _ := cmd.CombinedOutput()
 	//if err != nil {
 	//		logger.Fatal(gbrAsyncProcessedDSErrLog)
 	//	}
-	line := strings.Split(string(cmdOut), " ")
+	out := string(cmdOut)
+	if out == "" {
+		logger.Warn(fmt.Sprintf(gbrNoFileNameByIDLog, id))
+		return "", false
+	}
+	line := strings.Split(out, " ")
 	filename := line[2]
 	logger.Info(fmt.Sprintf(gbrFileNameByIDLog, id, filename))
-	return filename
+	return filename, true
 }
 
 func getDatasetByID(id string, logger *logrus.Logger) string {

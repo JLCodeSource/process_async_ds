@@ -20,6 +20,7 @@ const (
 		"   - ID:                        41545AB0788A11ECBD0700155D014E0D\n" +
 		"   - parent datalake:           nmr (ID: 0E544860788911ECBD0700155D014E0D)\n")
 	testGbrPoolOutLog = "====== + Pools in datalake 'nmr' ======;;- pool01 ( disk pool, primary ); == General ==; - description:; - creation date: Tue Jan 18 23:12:53 EST 2022; - primary: true; - ID: 41545AB0788A11ECBD0700155D014E0D; - parent datalake: nmr (ID: 0E544860788911ECBD0700155D014E0D);"
+	testNotAFileID    = "not_a_file_id"
 )
 
 // need to add tests for failed lookups and errors...
@@ -115,15 +116,28 @@ func TestParseAsyncProcessedDSID(t *testing.T) {
 }
 
 func TestGetFilenameByID(t *testing.T) {
-	t.Run("should return the filename by id", func(t *testing.T) {
+	t.Run("should return the filename by id if it exists", func(t *testing.T) {
 		testLogger, hook = setupLogs(t)
-		got := getFileNameByID(testFileID, testLogger)
+		got, ok := getFileNameByID(testFileID, testLogger)
 		want := testSmbName
+		assert.True(t, ok)
 		assertCorrectString(t, got, want)
 
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(gbrFileNameByIDLog, testFileID, testSmbName)
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
 
+	})
+
+	t.Run("should return empty if no file exists", func(t *testing.T) {
+		testLogger, hook = setupLogs(t)
+		got, ok := getFileNameByID(testBadFileID, testLogger)
+		want := ""
+		assert.False(t, ok)
+		assertCorrectString(t, got, want)
+
+		gotLogMsg := hook.LastEntry().Message
+		wantLogMsg := fmt.Sprintf(gbrNoFileNameByIDLog, testBadFileID)
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 
 	})

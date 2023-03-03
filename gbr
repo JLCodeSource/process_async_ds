@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 ## gbr script mocking gbr install in container
 # It only works with:
 # gbr pool ls -d
@@ -11,7 +11,7 @@
 DATASETID=41545AB0788A11ECBD0700155D014E0D
 FILEID=D5B58980A3E311EBBA0AB026285E5610
 FILENAME=05043fe1-00000006-2f8630d0-608630d0-67d25000-ab66ac56
-
+NOTAFILEID=not_a_file_id
 
 # Outputs
 
@@ -48,7 +48,23 @@ read -r -d '' FILE << 'EOF'
 1 - 05043fe1-00000006-2f8630d0-608630d0-67d25000-ab66ac56 (file id: D5B58980A3E311EBBA0AB026285E5610)
 EOF
 
-
+read -r -d '' FILE_ERR << 'EOF'
+java.lang.NumberFormatException: For input string: "no"
+        at java.base/java.lang.NumberFormatException.forInputString(NumberFormatException.java:65)
+        at java.base/java.lang.Integer.parseInt(Integer.java:652)
+        at ttl.nds.java.common.StringUtils.fromHexString(StringUtils.java:139)
+        at TTL.Nds.Mb.Objects.Common.Nuid.Nuid.<init>(Nuid.java:35)
+        at com.trm.gb.restapi.client.commands.file.FileListCommand.call(FileListCommand.java:84)
+        at com.trm.gb.restapi.client.commands.file.FileListCommand.call(FileListCommand.java:36)
+        at picocli.CommandLine.executeUserObject(CommandLine.java:1933)
+        at picocli.CommandLine.access$1200(CommandLine.java:145)
+        at picocli.CommandLine$RunLast.executeUserObjectOfLastSubcommandWithSameParent(CommandLine.java:2332)
+        at picocli.CommandLine$RunLast.handle(CommandLine.java:2326)
+        at picocli.CommandLine$RunLast.handle(CommandLine.java:2291)
+        at picocli.CommandLine$AbstractParseResultHandler.execute(CommandLine.java:2159)
+        at picocli.CommandLine.execute(CommandLine.java:2058)
+        at com.trm.gb.restapi.client.commands.GbrcCommand.main(GbrcCommand.java:71)
+EOF
 
 function get_datalake {
     echo "$DATALAKE"
@@ -62,13 +78,17 @@ function get_file {
     echo "$FILE"
 }
 
+function get_file_err {
+    >&2 echo "$FILE_ERR" 
+}
+
 sleep 2
 if [ "$1" = "pool" ] 
 then
     get_datalake
 elif [ "$1" = "file" ]
 then 
-    if [ "$4" = "D5B58980A3E311EBBA0AB026285E5610" ]
+    if [ "$4" = "$FILEID" ]
     then
         if [ "$#" = "4" ] 
         then
@@ -78,5 +98,9 @@ then
         then
             get_file_detail
         fi
+    fi
+    if [ "$4" = "$NOTAFILEID" ]
+    then
+        get_file_err
     fi
 fi
