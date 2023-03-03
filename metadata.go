@@ -25,11 +25,7 @@ func getAsyncProcessedDSID(logger *logrus.Logger) string {
 		asyncProcessedDSIDErrLog(err, logger)
 	}
 	out := string(cmdOut)
-	// Remove new lines from out
-	out = strings.Replace(out, "\n", ";", -1)
-	// Remove duplicate spaces from out
-	space := regexp.MustCompile(`\s+`)
-	out = space.ReplaceAllString(out, " ")
+	out = cleanGbrOut(out)
 	logger.Info(fmt.Sprintf(gbrGetAsyncProcessedDSLog, out))
 
 	return out
@@ -57,19 +53,32 @@ func parseAsyncProcessedDSID(cmdOut string, logger *logrus.Logger) string {
 
 func getFileNameByID(id string, logger *logrus.Logger) (string, bool) {
 	cmd := exec.Command("/usr/bin/gbr", "file", "ls", "-i", id)
-	cmdOut, _ := cmd.CombinedOutput()
-	//if err != nil {
-	//		logger.Fatal(gbrAsyncProcessedDSErrLog)
-	//	}
+	cmdOut, err := cmd.CombinedOutput()
+	if err != nil {
+		getFileNameByIDErrLog(id, err, logger)
+		return "", false
+	}
 	out := string(cmdOut)
+	out = cleanGbrOut(out)
 	if out == "" {
 		logger.Warn(fmt.Sprintf(gbrNoFileNameByIDLog, id))
 		return "", false
 	}
-	line := strings.Split(out, " ")
-	filename := line[2]
+	filename := parseGetFileNameByID(out, id, logger)
 	logger.Info(fmt.Sprintf(gbrFileNameByIDLog, id, filename))
 	return filename, true
+}
+
+func parseGetFileNameByID(cmdOut, id string, logger *logrus.Logger) string {
+	line := strings.Split(cmdOut, " ")
+	filename := line[2]
+	logger.Info(fmt.Sprintf(gbrFileNameByIDLog, id, filename))
+	return filename
+}
+
+func getFileNameByIDErrLog(id string, err error, logger *logrus.Logger) {
+	logger.Warn(err)
+	logger.Warn(fmt.Sprintf(gbrNoFileNameByIDLog, id))
 }
 
 func getDatasetByID(id string, logger *logrus.Logger) string {
@@ -87,4 +96,13 @@ func getDatasetByID(id string, logger *logrus.Logger) string {
 		}
 	}
 	return ""
+}
+
+func cleanGbrOut(out string) string {
+	// Remove new lines from out
+	out = strings.Replace(out, "\n", ";", -1)
+	// Remove duplicate spaces from out
+	space := regexp.MustCompile(`\s+`)
+	out = space.ReplaceAllString(out, " ")
+	return out
 }
