@@ -5,6 +5,8 @@ import (
 	"testing"
 )
 
+// need to add tests for failed lookups and errors
+
 func TestGetAsyncProcessedDSID(t *testing.T) {
 	t.Run("should return asyncprocessed dataset", func(t *testing.T) {
 		testLogger, hook = setupLogs(t)
@@ -39,4 +41,34 @@ func TestGetAsyncProcessedDSID(t *testing.T) {
 
 			assertCorrectString(t, gotLogMsg, wantLogMsg)
 		})*/
+}
+
+func TestGetFilenameByID(t *testing.T) {
+	t.Run("should return the filename by id", func(t *testing.T) {
+		testLogger, hook = setupLogs(t)
+		got := getFileNameByID(testFileID, testLogger)
+		want := testSmbName
+		assertCorrectString(t, got, want)
+
+		gotLogMsg := hook.LastEntry().Message
+		wantLogMsg := fmt.Sprintf(gbrFileNameByIDLog, testFileID, testSmbName)
+
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
+
+	})
+}
+
+func TestGetDatasetByID(t *testing.T) {
+	t.Run("should return the dataset by id", func(t *testing.T) {
+		testLogger, hook = setupLogs(t)
+		got := getDatasetByID(testFileID, testLogger)
+		want := testDatasetID
+		assertCorrectString(t, got, want)
+
+		gotLogMsg := hook.LastEntry().Message
+		wantLogMsg := fmt.Sprintf(gbrDatasetByIDLog, testFileID, testDatasetID)
+
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
+
+	})
 }
