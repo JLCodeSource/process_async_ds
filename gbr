@@ -36,7 +36,7 @@ read -r -d '' FILE_DETAIL << 'EOF'
     parent id:          41545AB0788A11ECBD0700155D014E0D
     original file name: null
     file URI:           null
-    fan URI:            ftp://fan_c2:***REMOVED***p2@192.168.101.210:2121/download/2023_02/1eeb7769-fdb1-4313-8d76-ec719ad7a44c/mnt/nas01/BTRIFONOV-QA/6132/TTL9002_LOGS_20150819_072505.zip
+    fan URI:            ftp://user@192.168.101.210:2121/download/2023_02/1eeb7769-fdb1-4313-8d76-ec719ad7a44c/mnt/nas01/BTRIFONOV-QA/6132/TTL9002_LOGS_20150819_072505.zip
     pool id:            41545AB0788A11ECBD0700155D014E0D
     legal hold:         Enabled=false OwnerID=null MatterID=null Start=Sat Jan 01 05:00:00 EST 1 Release=Sat Jan 01 05:00:00 EST 1
     policies:
