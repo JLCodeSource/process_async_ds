@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os/exec"
 	"strings"
@@ -9,18 +10,27 @@ import (
 )
 
 const (
+	gbrCmd                  = "/usr/bin/gbr"
+	gbrArgsPool             = "pool"
+	gbrArgsLs               = "ls"
+	gbrArgsDetails          = "--details"
 	gbrAsyncProcessedDSErrLog = "gbr could not verify AsyncProcessed dataset"
 	gbrAsyncProcessedDSLog    = "gbr verified asyncProcessedDataset as %v"
 	gbrFileNameByIDLog      = "gbr verified file.id:%v as having filename:%v"
 	gbrDatasetByIDLog       = "gbr verified file.id:%v as having dataset:%v"
 )
 
-func getAsyncProcessedDSID(logger *logrus.Logger) string {
-	cmd := exec.Command("/usr/bin/gbr", "pool", "ls", "-d")
-	cmdOut, _ := cmd.Output()
-	//if err != nil {
-	//	logger.Fatal(gbrAsyncProcessedDSErrLog)
-	//}
+func getAsyncProcessedDSID(logger *logrus.Logger) (string, error) {
+	cmd := exec.Command(gbrCmd, gbrArgsPool, gbrArgsLs, gbrArgsDetails)
+	cmdOut, err := cmd.Output()
+	if err != nil {
+		logger.Fatal(fmt.Sprintf(gbrAsyncProcessedDSErrLog))
+		return "", errors.New(gbrAsyncProcessedDSErrLog)
+	}
+	return string(cmdOut), nil
+}
+
+func parseAsyncProcessedDSID(cmdOut string, logger *logrus.Logger) string {
 	lines := strings.Split(string(cmdOut), "\n")
 	for _, line := range lines {
 		if strings.Contains(line, "ID") {
@@ -30,6 +40,7 @@ func getAsyncProcessedDSID(logger *logrus.Logger) string {
 		}
 	}
 	return ""
+
 }
 
 func getFileNameByID(id string, logger *logrus.Logger) string {
