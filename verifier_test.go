@@ -15,7 +15,6 @@ import (
 )
 
 const (
-	//testGbrFileIDOut       = "1 - 05043fe1-00000006-2f8630d0-608630d0-67d25000-ab66ac56 (file id: D5B58980A3E311EBBA0AB026285E5610)"
 	testGbrFileIDDetailOut = ("1 - 05043fe1-00000006-2f8630d0-608630d0-67d25000-ab66ac56 (file id: D5B58980A3E311EBBA0AB026285E5610)\n" +
 		"    version:            0\n" +
 		"    type:               file\n" +
@@ -108,6 +107,10 @@ func TestVerify(t *testing.T) {
 
 	testLogger, hook = setupLogs()
 	assert.True(t, file.verify(env, testLogger))
+
+	gotLogMsg := hook.LastEntry().Message
+	wantLogMsg := fmt.Sprintf(fVerifiedLog, file.smbName, file.id)
+	assertCorrectString(t, gotLogMsg, wantLogMsg)
 
 }
 

@@ -33,6 +33,7 @@ const (
 	fGbrFileNameByFileIDLog         = "%v (file.id:%v) gbr verified file.id:%v as matching MB filename:%v"
 	fGbrNoFileNameByFileIDLog       = "%v (file.id:%v) gbr could not find MB file.id:%v"
 	fGbrDatasetByFileIDLog          = "%v (file.id:%v) gbr verified file.id:%v as matching dataset:%v"
+	fVerifiedLog                    = "%v (file.id:%v) verified as ready to be migrated in preparation for removal!"
 )
 
 // verify all
@@ -44,7 +45,15 @@ func (f *File) verify(env Env, logger *logrus.Logger) bool {
 	if !f.verifyGBMetadata(logger) {
 		return false
 	}
-	return f.verifyStat(env.fsys, logger)
+
+	if !f.verifyStat(env.fsys, logger) {
+		return false
+	}
+
+	logger.Info(fmt.Sprintf(fVerifiedLog, f.smbName, f.id))
+
+	return true
+
 }
 
 // verify config metadata
