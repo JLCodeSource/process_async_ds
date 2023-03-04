@@ -1,10 +1,13 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"io/fs"
 	"net"
+	"os/exec"
 	"reflect"
+	"strings"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -27,6 +30,9 @@ const (
 	fSmbNameMatchFileIDNameFalseLog = "%v (file.id:%v) file.smbName:%v does not match file.id name:%v; skipping file"
 	fStatMatchLog                   = "%v (file.id:%v) file.verifyStat passes all metadata checks for file.stagingPath:%v"
 	fEnvMatchLog                    = "%v (file.id:%v) file.verfiyEnv passes all settings checks for file.stagingPath:%v"
+	fGbrFileNameByFileIDLog         = "%v (file.id:%v) gbr verified file.id:%v as matching filename:%v"
+	fGbrNoFileNameByFileIDLog       = "%v (file.id:%v) gbr could not find file.id:%v"
+	fGbrDatasetByFileIDLog          = "%v (file.id:%v) gbr verified file.id:%v as matching dataset:%v"
 )
 
 // verify config metadata
@@ -79,6 +85,65 @@ func (f *File) verifyGBMetadata(logger *logrus.Logger) bool {
 	}
 	return true
 } */
+
+func (f *File) getMBFileNameByFileID(logger *logrus.Logger) (string, bool) {
+	cmd := exec.Command("/usr/bin/gbr", "file", "ls", "-i", f.id)
+	cmdOut, err := cmd.CombinedOutput()
+	if err != nil {
+		f.getByIDErrLog(err, logger)
+		return "", false
+	}
+	out := string(cmdOut)
+	out = cleanGbrOut(out)
+	if out == "" {
+		logger.Warn(fmt.Sprintf(fGbrNoFileNameByFileIDLog, f.smbName, f.id, f.id))
+		return "", false
+	}
+	filename := f.parseMBFileNameByFileID(out, logger)
+	return filename, true
+}
+
+func (f *File) getMBDatasetByFileID(logger *logrus.Logger) (string, bool) {
+	cmd := exec.Command("/usr/bin/gbr", "file", "ls", "-i", f.id, "-d")
+	cmdOut, err := cmd.CombinedOutput()
+	if err != nil {
+		f.getByIDErrLog(err, logger)
+	}
+	out := string(cmdOut)
+	out = cleanGbrOut(out)
+	if out == "" {
+		logger.Warn(fmt.Sprintf(fGbrNoFileNameByFileIDLog, f.smbName, f.id, f.id))
+		return "", false
+	}
+	datasetID := f.parseMBDatasetByFileID(out, f.id, logger)
+	return datasetID, true
+}
+
+func (f *File) parseMBFileNameByFileID(cmdOut string, logger *logrus.Logger) (filename string) {
+	line := strings.Split(cmdOut, " ")
+	filename = line[2]
+	logger.Info(fmt.Sprintf(fGbrFileNameByFileIDLog, f.smbName, f.id, f.id, filename))
+	return
+}
+
+func (f *File) parseMBDatasetByFileID(cmdOut, id string, logger *logrus.Logger) (parentDS string) {
+	lines := strings.Split(string(cmdOut), ";")
+	for _, line := range lines {
+		if strings.Contains(line, "parent id") {
+			parentDS = line[len(line)-32:]
+			logger.Info(fmt.Sprintf(fGbrDatasetByFileIDLog, f.smbName, f.id, f.id, parentDS))
+			return
+		}
+	}
+	logger.Warn(fmt.Sprintf(fGbrNoFileNameByFileIDLog, f.smbName, f.id, f.id))
+	return
+}
+
+func (f *File) getByIDErrLog(err error, logger *logrus.Logger) {
+	err = errors.New(cleanGbrOut(err.Error()))
+	logger.Warn(err)
+	logger.Warn(fmt.Sprintf(fGbrNoFileNameByFileIDLog, f.smbName, f.id, f.id))
+}
 
 func (f *File) verifyInProcessedDataset(datasetID string, logger *logrus.Logger) bool {
 	if f.datasetID == datasetID {
