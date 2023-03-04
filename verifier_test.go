@@ -301,7 +301,7 @@ func TestGetMBFilenameByFileID(t *testing.T) {
 			id:      testFileID,
 		}
 		testLogger, hook = setupLogs(t)
-		got, ok := file.getMBFileNameByFileID(testLogger)
+		got, ok := file.verifyMBFileNameByFileID(testLogger)
 		want := testSmbName
 		assert.True(t, ok)
 		assertCorrectString(t, got, want)
@@ -319,7 +319,7 @@ func TestGetMBFilenameByFileID(t *testing.T) {
 			id:      testFileID,
 		}
 		testLogger, hook = setupLogs(t)
-		got, ok := file.getMBFileNameByFileID(testLogger)
+		got, ok := file.verifyMBFileNameByFileID(testLogger)
 		want := testSmbName
 		assert.False(t, ok)
 		assertCorrectString(t, got, want)
@@ -337,7 +337,7 @@ func TestGetMBFilenameByFileID(t *testing.T) {
 			id:      testBadFileID,
 		}
 		testLogger, hook = setupLogs(t)
-		got, ok := file.getMBFileNameByFileID(testLogger)
+		got, ok := file.verifyMBFileNameByFileID(testLogger)
 		want := ""
 		assert.False(t, ok)
 		assertCorrectString(t, got, want)
@@ -360,7 +360,7 @@ func TestGetMBDatasetByFileID(t *testing.T) {
 			datasetID: testDatasetID,
 		}
 		testLogger, hook = setupLogs(t)
-		got, ok := file.getMBDatasetByFileID(testLogger)
+		got, ok := file.verifyMBDatasetByFileID(testLogger)
 		want := testDatasetID
 		assert.True(t, ok)
 		assertCorrectString(t, got, want)
@@ -378,7 +378,7 @@ func TestGetMBDatasetByFileID(t *testing.T) {
 			id:      testBadFileID,
 		}
 		testLogger, hook = setupLogs(t)
-		got, ok := file.getMBDatasetByFileID(testLogger)
+		got, ok := file.verifyMBDatasetByFileID(testLogger)
 		want := ""
 		assert.False(t, ok)
 		assertCorrectString(t, got, want)

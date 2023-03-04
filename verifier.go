@@ -85,18 +85,16 @@ func (f *File) verifyGBMetadata(logger *logrus.Logger) bool {
 	if !f.verifyInDataset(ds, logger) {
 		return false
 	}
-	_, ok := f.getMBFileNameByFileID(logger)
+	_, ok := f.verifyMBFileNameByFileID(logger)
 	if !ok {
 		return false
 	}
-	_, ok = f.getMBDatasetByFileID(logger)
-	if !ok {
-		return false
-	}
-	return true
+	_, ok = f.verifyMBDatasetByFileID(logger)
+
+	return ok
 }
 
-func (f *File) getMBFileNameByFileID(logger *logrus.Logger) (string, bool) {
+func (f *File) verifyMBFileNameByFileID(logger *logrus.Logger) (string, bool) {
 	id := f.id
 	cmd := exec.Command("/usr/bin/gbr", "file", "ls", "-i", id)
 	cmdOut, err := cmd.CombinedOutput()
@@ -120,7 +118,7 @@ func (f *File) getMBFileNameByFileID(logger *logrus.Logger) (string, bool) {
 	return filename, true
 }
 
-func (f *File) getMBDatasetByFileID(logger *logrus.Logger) (string, bool) {
+func (f *File) verifyMBDatasetByFileID(logger *logrus.Logger) (string, bool) {
 	id := f.id
 	cmd := exec.Command("/usr/bin/gbr", "file", "ls", "-i", id, "-d")
 	cmdOut, err := cmd.CombinedOutput()
