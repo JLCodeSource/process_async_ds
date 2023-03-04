@@ -31,10 +31,10 @@ const (
 	fStatMatchLog                   = "%v (file.id:%v) file.verifyStat passes all metadata checks for file.stagingPath:%v"
 	fEnvMatchLog                    = "%v (file.id:%v) file.verfiyEnv passes all settings checks for file.stagingPath:%v"
 	fGbrFileNameByFileIDLog         = "%v (file.id:%v) gbr verified file.id:%v as matching MB filename:%v"
-	fGbrFileNameByFileIDMismatchLog = "%v (file.id:%v) gbr could not verify file; file.smbName:%v does not match MB filename:%v"
-	fGbrNoFileNameByFileIDLog       = "%v (file.id:%v) gbr could not find MB file.id:%v"
-	fGbrDatasetByFileIDLog          = "%v (file.id:%v) gbr verified file.id:%v as matching dataset:%v"
-	fGbrDatasetByFileIDMismatchLog  = "%v (file.id:%v) gbr could not verify file; file.datasetID:%v does not match MB dataset:%v"
+	//fGbrFileNameByFileIDMismatchLog = "%v (file.id:%v) gbr could not verify file; file.smbName:%v does not match MB filename:%v"
+	fGbrNoFileNameByFileIDLog = "%v (file.id:%v) gbr could not find MB file.id:%v"
+	fGbrDatasetByFileIDLog    = "%v (file.id:%v) gbr verified file.id:%v as matching dataset:%v"
+	//fGbrDatasetByFileIDMismatchLog  = "%v (file.id:%v) gbr could not verify file; file.datasetID:%v does not match MB dataset:%v"
 )
 
 // verify all
@@ -137,7 +137,7 @@ func (f *File) verifyMBDatasetByFileID(logger *logrus.Logger) bool {
 		logger.Warn(fmt.Sprintf(fGbrNoFileNameByFileIDLog, f.smbName, id, id))
 		return false
 	}
-	datasetID := f.parseMBDatasetByFileID(out, f.id, logger)
+	datasetID := f.parseMBDatasetByFileID(out, logger)
 
 	return f.verifyInDataset(datasetID, logger)
 
@@ -158,7 +158,7 @@ func (f *File) parseMBFileNameByFileID(cmdOut string, logger *logrus.Logger) (fi
 	return
 }
 
-func (f *File) parseMBDatasetByFileID(cmdOut, id string, logger *logrus.Logger) (parentDS string) {
+func (f *File) parseMBDatasetByFileID(cmdOut string, logger *logrus.Logger) (parentDS string) {
 	lines := strings.Split(string(cmdOut), ";")
 	for _, line := range lines {
 		if strings.Contains(line, "parent id") {

@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	testGbrFileIDOut       = "1 - 05043fe1-00000006-2f8630d0-608630d0-67d25000-ab66ac56 (file id: D5B58980A3E311EBBA0AB026285E5610)"
+	//testGbrFileIDOut       = "1 - 05043fe1-00000006-2f8630d0-608630d0-67d25000-ab66ac56 (file id: D5B58980A3E311EBBA0AB026285E5610)"
 	testGbrFileIDDetailOut = ("1 - 05043fe1-00000006-2f8630d0-608630d0-67d25000-ab66ac56 (file id: D5B58980A3E311EBBA0AB026285E5610)\n" +
 		"    version:            0\n" +
 		"    type:               file\n" +
@@ -65,7 +65,7 @@ const (
 		" at picocli.CommandLine$RunLast.handle(CommandLine.java:2326); at picocli.CommandLine$RunLast.handle(CommandLine.java:2291);" +
 		" at picocli.CommandLine$AbstractParseResultHandler.execute(CommandLine.java:2159); at picocli.CommandLine.execute(CommandLine.java:2058);" +
 		" at com.trm.gb.restapi.client.commands.GbrcCommand.main(GbrcCommand.java:71));")
-	testNotAFileID = "not_a_file_id"
+	//testNotAFileID = "not_a_file_id"
 
 	testContent              = "test"
 	testLongerContent        = "longer than the test"
@@ -445,7 +445,7 @@ func TestParseFileDatasetByID(t *testing.T) {
 			id:      testFileID,
 		}
 		testLogger, hook = setupLogs(t)
-		got := file.parseMBDatasetByFileID(testGbrFileIDDetailOutLog, testFileID, testLogger)
+		got := file.parseMBDatasetByFileID(testGbrFileIDDetailOutLog, testLogger)
 		want := testDatasetID
 		assertCorrectString(t, got, want)
 
@@ -462,7 +462,7 @@ func TestParseFileDatasetByID(t *testing.T) {
 			smbName: testSmbName,
 			id:      testBadFileID,
 		}
-		got := file.parseMBDatasetByFileID("", testBadFileID, testLogger)
+		got := file.parseMBDatasetByFileID("", testLogger)
 		want := ""
 		assertCorrectString(t, got, want)
 
