@@ -135,6 +135,7 @@ func (f *File) parseMBDatasetByFileID(cmdOut, id string, logger *logrus.Logger) 
 			return
 		}
 	}
+	// Should never happen as caught with previous checks
 	logger.Warn(fmt.Sprintf(fGbrNoFileNameByFileIDLog, f.smbName, f.id, f.id))
 	return
 }
