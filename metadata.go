@@ -54,7 +54,7 @@ func getFileNameByID(id string, logger *logrus.Logger) (string, bool) {
 
 func getFileDatasetByID(id string, logger *logrus.Logger) (string, bool) {
 	cmd := exec.Command("/usr/bin/gbr", "file", "ls", "-i", id, "-d")
-	cmdOut, err := cmd.Output()
+	cmdOut, err := cmd.CombinedOutput()
 	if err != nil {
 		getByIDErrLog(id, err, logger)
 	}
