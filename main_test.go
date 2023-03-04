@@ -70,7 +70,7 @@ var (
 func TestMainFunc(t *testing.T) {
 
 	t.Run("verify main args work", func(t *testing.T) {
-		_, hook = setupLogs(t)
+		_, hook = setupLogs()
 
 		os.Args = append(os.Args, testArgsFile)
 		os.Args = append(os.Args, fmt.Sprintf(testArgsDataset, testDatasetID))
@@ -101,7 +101,7 @@ func TestMainFunc(t *testing.T) {
 
 func TestGetSourceFile(t *testing.T) {
 	t.Run("check for source file", func(t *testing.T) {
-		testLogger, hook = setupLogs(t)
+		testLogger, hook = setupLogs()
 		fsys = fstest.MapFS{
 			testPath: {Data: []byte(testContent)},
 		}
@@ -122,7 +122,7 @@ func TestGetSourceFile(t *testing.T) {
 		patch := monkey.Patch(os.Exit, fakeExit)
 		defer patch.Unpatch()
 
-		testLogger, hook = setupLogs(t)
+		testLogger, hook = setupLogs()
 		fs := os.DirFS("")
 
 		panic := func() {
@@ -144,7 +144,7 @@ func TestGetSourceFile(t *testing.T) {
 		patch := monkey.Patch(os.Exit, fakeExit)
 		defer patch.Unpatch()
 
-		testLogger, hook = setupLogs(t)
+		testLogger, hook = setupLogs()
 
 		fsys = fstest.MapFS{
 			testMismatchPath: {Data: []byte(testContent)},
@@ -166,7 +166,7 @@ func TestGetSourceFile(t *testing.T) {
 func TestGetDatasetID(t *testing.T) {
 
 	t.Run("verify it returns the right dataset id", func(t *testing.T) {
-		testLogger, _ = setupLogs(t)
+		testLogger, _ = setupLogs()
 		got := getDatasetID(testDatasetID, testLogger)
 		want := testDatasetID
 
@@ -174,7 +174,7 @@ func TestGetDatasetID(t *testing.T) {
 	})
 
 	t.Run("verify it logs the right dataset id", func(t *testing.T) {
-		testLogger, hook = setupLogs(t)
+		testLogger, hook = setupLogs()
 		_ = getDatasetID(testDatasetID, testLogger)
 
 		gotLogMsg := hook.LastEntry().Message
@@ -191,7 +191,7 @@ func TestGetDatasetID(t *testing.T) {
 		patch := monkey.Patch(os.Exit, fakeExit)
 		defer patch.Unpatch()
 
-		testLogger, hook = setupLogs(t)
+		testLogger, hook = setupLogs()
 		panic := func() { getDatasetID(testNotADataset, testLogger) }
 
 		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
@@ -215,7 +215,7 @@ func TestGetDatasetID(t *testing.T) {
 		patch2 := monkey.Patch(regexp.MatchString, fakeRegexMatch)
 		defer patch2.Unpatch()
 
-		testLogger, hook = setupLogs(t)
+		testLogger, hook = setupLogs()
 		panic := func() { getDatasetID(testNotADataset, testLogger) }
 
 		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
@@ -230,7 +230,7 @@ func TestGetDatasetID(t *testing.T) {
 func TestGetTimeLimit(t *testing.T) {
 
 	t.Run("zero days", func(t *testing.T) {
-		testLogger, hook = setupLogs(t)
+		testLogger, hook = setupLogs()
 
 		var days = int64(0)
 		gotDays := strconv.FormatInt(getTimeLimit(days, testLogger), 10)
@@ -244,7 +244,7 @@ func TestGetTimeLimit(t *testing.T) {
 	})
 
 	t.Run("Multiple days", func(t *testing.T) {
-		testLogger, hook = setupLogs(t)
+		testLogger, hook = setupLogs()
 
 		var now = time.Now().Unix()
 		days := int64(15)
@@ -264,7 +264,7 @@ func TestGetTimeLimit(t *testing.T) {
 func TestGetNonDryRun(t *testing.T) {
 
 	t.Run("default dry run", func(t *testing.T) {
-		testLogger, hook = setupLogs(t)
+		testLogger, hook = setupLogs()
 
 		got := strconv.FormatBool(getNonDryRun(false, testLogger))
 		want := strconv.FormatBool(false)
@@ -278,7 +278,7 @@ func TestGetNonDryRun(t *testing.T) {
 	})
 
 	t.Run("non-dry run execute move", func(t *testing.T) {
-		testLogger, hook = setupLogs(t)
+		testLogger, hook = setupLogs()
 
 		got := strconv.FormatBool(getNonDryRun(true, testLogger))
 		want := strconv.FormatBool(true)
@@ -408,7 +408,7 @@ func assertCorrectString(t testing.TB, got, want string) {
 	}
 }
 
-func setupLogs(t testing.TB) (testLogger *logrus.Logger, hook *test.Hook) {
+func setupLogs() (testLogger *logrus.Logger, hook *test.Hook) {
 	testLogger, hook = test.NewNullLogger()
 	log.SetLogger(testLogger)
 	return

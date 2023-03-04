@@ -28,7 +28,7 @@ const (
 
 func TestGetAsyncProcessedDSID(t *testing.T) {
 	t.Run("should return asyncprocessed dataset", func(t *testing.T) {
-		testLogger, hook = setupLogs(t)
+		testLogger, hook = setupLogs()
 
 		got := getAsyncProcessedDSID(testLogger)
 		want := testDatasetID
@@ -55,7 +55,7 @@ func TestGetAsyncProcessedDSID(t *testing.T) {
 			patch := monkey.Patch(exec.Command, fakeExit)
 			defer patch.Unpatch()
 
-			testLogger, hook = setupLogs(t)
+			testLogger, hook = setupLogs()
 			panic := func() { getAsyncProcessedDSID(testLogger) }
 
 			assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
@@ -70,7 +70,7 @@ func TestGetAsyncProcessedDSID(t *testing.T) {
 
 func TestParseAsyncProcessedDSID(t *testing.T) {
 	t.Run("should parse output and return AsyncProcessedDSID", func(t *testing.T) {
-		testLogger, hook = setupLogs(t)
+		testLogger, hook = setupLogs()
 		got := parseAsyncProcessedDSID(testGbrPoolOutLog, testLogger)
 		want := testDatasetID
 		assertCorrectString(t, got, want)
@@ -88,7 +88,7 @@ func TestParseAsyncProcessedDSID(t *testing.T) {
 		patch := monkey.Patch(os.Exit, fakeExit)
 		defer patch.Unpatch()
 
-		testLogger, hook = setupLogs(t)
+		testLogger, hook = setupLogs()
 		panic := func() { parseAsyncProcessedDSID("", testLogger) }
 
 		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
@@ -110,7 +110,7 @@ func TestAsyncProcessedDSIDErrLog(t *testing.T) {
 		patch := monkey.Patch(os.Exit, fakeExit)
 		defer patch.Unpatch()
 
-		testLogger, hook = setupLogs(t)
+		testLogger, hook = setupLogs()
 		panic := func() { asyncProcessedDSIDErrLog(errors.New(osPanicTrue), testLogger) }
 
 		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)

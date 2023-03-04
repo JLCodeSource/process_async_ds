@@ -73,7 +73,7 @@ func TestParseFile(t *testing.T) {
 
 		for _, tt := range parsingTests {
 			t.Run(tt.name, func(t *testing.T) {
-				testLogger, hook = setupLogs(t)
+				testLogger, hook = setupLogs()
 				fsys = fstest.MapFS{
 					testProcessedFilesOut: {
 						Data: []byte(tt.content)},
@@ -102,7 +102,7 @@ func TestParseFile(t *testing.T) {
 		patch := monkey.Patch(os.Exit, fakeExit)
 		defer patch.Unpatch()
 
-		testLogger, hook = setupLogs(t)
+		testLogger, hook = setupLogs()
 		fsys = fstest.MapFS{
 			testProcessedFilesOut: {
 				Data: []byte(multiline)},
@@ -124,7 +124,7 @@ func TestParseFile(t *testing.T) {
 func TestParseLine(t *testing.T) {
 
 	t.Run("verify ParseLine", func(t *testing.T) {
-		testLogger, hook = setupLogs(t)
+		testLogger, hook = setupLogs()
 		onelineParsed := oneline[0 : len(oneline)-1]
 		workingFile := parseLine(onelineParsed, testLogger)
 
@@ -188,7 +188,7 @@ func TestParseLine(t *testing.T) {
 	t.Run("it should warn if strconv.ParseInt on dateTime fails", func(t *testing.T) {
 		strconvParseIntErr := fmt.Sprintf(testDateNotIntErr, testOldDate)
 
-		testLogger, hook = setupLogs(t)
+		testLogger, hook = setupLogs()
 		parseLine(onelineOldDate, testLogger)
 
 		gotLogMsg := hook.Entries[2].Message
@@ -213,7 +213,7 @@ func TestParseLine(t *testing.T) {
 		patch2 := monkey.Patch(time.LoadLocation, fakeLoadLoc)
 		defer patch2.Unpatch()
 
-		testLogger, hook = setupLogs(t)
+		testLogger, hook = setupLogs()
 		panic := func() { parseLine(onelineOldDate, testLogger) }
 
 		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
@@ -240,7 +240,7 @@ func TestParseLine(t *testing.T) {
 		patch2 := monkey.Patch(time.ParseInLocation, fakeParseInLoc)
 		defer patch2.Unpatch()
 
-		testLogger, hook = setupLogs(t)
+		testLogger, hook = setupLogs()
 		panic := func() { parseLine(onelineOldDate, testLogger) }
 
 		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
