@@ -233,19 +233,19 @@ func TestVerifyTimeLimit(t *testing.T) {
 
 // TestVerifyGBMetadata encompasses verifyInDataset, getMBFileName/DSByFileID
 func TestVerifyGBMetadata(t *testing.T) {
-	/* t.Run("returns true if file.datasetID matches DatasetID", func(t *testing.T) {
+	t.Run("returns true if file.datasetID matches DatasetID", func(t *testing.T) {
 		file = File{
-			smbName:   testName,
+			smbName:   testSmbName,
 			id:        testFileID,
 			datasetID: testDatasetID,
 		}
 		testLogger, hook = setupLogs(t)
 		assert.True(t, file.verifyGBMetadata(testLogger))
-		gotLogMsg := hook.LastEntry().Message
+		/* gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(fDatasetMatchTrueLog, file.smbName, file.id, file.datasetID, testDatasetID)
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
-
-	}) */
+		*/
+	})
 	t.Run("returns false if file.datasetID does not match DatasetID", func(t *testing.T) {
 		file = File{
 			smbName:   testName,
@@ -301,10 +301,8 @@ func TestGetMBFilenameByFileID(t *testing.T) {
 			id:      testFileID,
 		}
 		testLogger, hook = setupLogs(t)
-		got, ok := file.verifyMBFileNameByFileID(testLogger)
-		want := testSmbName
+		ok := file.verifyMBFileNameByFileID(testLogger)
 		assert.True(t, ok)
-		assertCorrectString(t, got, want)
 
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(
@@ -319,10 +317,8 @@ func TestGetMBFilenameByFileID(t *testing.T) {
 			id:      testFileID,
 		}
 		testLogger, hook = setupLogs(t)
-		got, ok := file.verifyMBFileNameByFileID(testLogger)
-		want := testSmbName
+		ok := file.verifyMBFileNameByFileID(testLogger)
 		assert.False(t, ok)
-		assertCorrectString(t, got, want)
 
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(
@@ -337,10 +333,8 @@ func TestGetMBFilenameByFileID(t *testing.T) {
 			id:      testBadFileID,
 		}
 		testLogger, hook = setupLogs(t)
-		got, ok := file.verifyMBFileNameByFileID(testLogger)
-		want := ""
+		ok := file.verifyMBFileNameByFileID(testLogger)
 		assert.False(t, ok)
-		assertCorrectString(t, got, want)
 
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(
@@ -360,10 +354,8 @@ func TestGetMBDatasetByFileID(t *testing.T) {
 			datasetID: testDatasetID,
 		}
 		testLogger, hook = setupLogs(t)
-		got, ok := file.verifyMBDatasetByFileID(testLogger)
-		want := testDatasetID
+		ok := file.verifyMBDatasetByFileID(testLogger)
 		assert.True(t, ok)
-		assertCorrectString(t, got, want)
 
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(fGbrDatasetByFileIDLog, testSmbName, testFileID, testFileID, testDatasetID)
@@ -378,10 +370,8 @@ func TestGetMBDatasetByFileID(t *testing.T) {
 			id:      testBadFileID,
 		}
 		testLogger, hook = setupLogs(t)
-		got, ok := file.verifyMBDatasetByFileID(testLogger)
-		want := ""
+		ok := file.verifyMBDatasetByFileID(testLogger)
 		assert.False(t, ok)
-		assertCorrectString(t, got, want)
 
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(fGbrNoFileNameByFileIDLog, testSmbName, testBadFileID, testBadFileID)

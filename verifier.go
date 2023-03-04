@@ -85,40 +85,37 @@ func (f *File) verifyGBMetadata(logger *logrus.Logger) bool {
 	if !f.verifyInDataset(ds, logger) {
 		return false
 	}
-	_, ok := f.verifyMBFileNameByFileID(logger)
-	if !ok {
+	if !f.verifyMBFileNameByFileID(logger) {
 		return false
 	}
-	_, ok = f.verifyMBDatasetByFileID(logger)
-
-	return ok
+	return f.verifyMBDatasetByFileID(logger)
 }
 
-func (f *File) verifyMBFileNameByFileID(logger *logrus.Logger) (string, bool) {
+func (f *File) verifyMBFileNameByFileID(logger *logrus.Logger) bool {
 	id := f.id
 	cmd := exec.Command("/usr/bin/gbr", "file", "ls", "-i", id)
 	cmdOut, err := cmd.CombinedOutput()
 	if err != nil {
 		f.getByIDErrLog(err, logger)
-		return "", false
+		return false
 	}
 	out := string(cmdOut)
 	out = cleanGbrOut(out)
 	if out == "" {
 		logger.Warn(fmt.Sprintf(fGbrNoFileNameByFileIDLog, f.smbName, id, id))
-		return "", false
+		return false
 	}
 
 	filename := f.parseMBFileNameByFileID(out, logger)
 	if filename != f.smbName {
 		logger.Warn(fmt.Sprintf(fGbrFileNameByFileIDMismatchLog, f.smbName, f.id, f.smbName, filename))
-		return filename, false
+		return false
 	}
 
-	return filename, true
+	return true
 }
 
-func (f *File) verifyMBDatasetByFileID(logger *logrus.Logger) (string, bool) {
+func (f *File) verifyMBDatasetByFileID(logger *logrus.Logger) bool {
 	id := f.id
 	cmd := exec.Command("/usr/bin/gbr", "file", "ls", "-i", id, "-d")
 	cmdOut, err := cmd.CombinedOutput()
@@ -129,16 +126,16 @@ func (f *File) verifyMBDatasetByFileID(logger *logrus.Logger) (string, bool) {
 	out = cleanGbrOut(out)
 	if out == "" {
 		logger.Warn(fmt.Sprintf(fGbrNoFileNameByFileIDLog, f.smbName, id, id))
-		return "", false
+		return false
 	}
 	datasetID := f.parseMBDatasetByFileID(out, f.id, logger)
 
 	if datasetID != f.datasetID {
 		logger.Warn(fmt.Sprintf(fGbrDatasetByFileIDMismatchLog, f.smbName, f.id, f.datasetID, datasetID))
-		return datasetID, false
+		return false
 	}
 
-	return datasetID, true
+	return true
 }
 
 func (f *File) parseMBFileNameByFileID(cmdOut string, logger *logrus.Logger) (filename string) {
