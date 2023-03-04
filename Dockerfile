@@ -17,7 +17,7 @@ RUN go build -o /usr/src/app/process_processed
 
 RUN go test -v ./...
 
-RUN go test -cover
+RUN go test -cover .
 
 RUN gocloc .
 
