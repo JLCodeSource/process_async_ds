@@ -272,7 +272,7 @@ func TestVerifyGBMetadata(t *testing.T) {
 
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(
-			fGbrFileNameByFileIDMismatchLog, testName, testFileID, testName, testSmbName)
+			fSmbNameMatchFileIDNameFalseLog, testName, testFileID, testName, testSmbName)
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 
 	})
@@ -295,7 +295,7 @@ func TestVerifyGBMetadata(t *testing.T) {
 }
 
 func TestGetMBFilenameByFileID(t *testing.T) {
-	t.Run("should return the filename from MB by id if it exists", func(t *testing.T) {
+	t.Run("should return true if it exists", func(t *testing.T) {
 		file = File{
 			smbName: testSmbName,
 			id:      testFileID,
@@ -306,12 +306,12 @@ func TestGetMBFilenameByFileID(t *testing.T) {
 
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(
-			fGbrFileNameByFileIDLog, testSmbName, testFileID, testFileID, testSmbName)
+			fSmbNameMatchFileIDNameTrueLog, testSmbName, testFileID, testSmbName, testSmbName)
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 
 	})
 
-	t.Run("should return filename, false if MB file has different name", func(t *testing.T) {
+	t.Run("should return false if MB file has different name", func(t *testing.T) {
 		file = File{
 			smbName: testName,
 			id:      testFileID,
@@ -322,12 +322,12 @@ func TestGetMBFilenameByFileID(t *testing.T) {
 
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(
-			fGbrFileNameByFileIDMismatchLog, testName, testFileID, testName, testSmbName)
+			fSmbNameMatchFileIDNameFalseLog, testName, testFileID, testName, testSmbName)
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 
 	})
 
-	t.Run("should return empty if no MB file exists", func(t *testing.T) {
+	t.Run("should return false if no MB file exists", func(t *testing.T) {
 		file = File{
 			smbName: testSmbName,
 			id:      testBadFileID,

@@ -107,12 +107,9 @@ func (f *File) verifyMBFileNameByFileID(logger *logrus.Logger) bool {
 	}
 
 	filename := f.parseMBFileNameByFileID(out, logger)
-	if filename != f.smbName {
-		logger.Warn(fmt.Sprintf(fGbrFileNameByFileIDMismatchLog, f.smbName, f.id, f.smbName, filename))
-		return false
-	}
 
-	return true
+	return f.verifyFileIDName(filename, logger)
+
 }
 
 func (f *File) verifyMBDatasetByFileID(logger *logrus.Logger) bool {
