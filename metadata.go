@@ -20,6 +20,7 @@ const (
 
 func getAsyncProcessedDSID(logger *logrus.Logger) string {
 	cmd := exec.Command("/usr/bin/gbr", "pool", "ls", "-d")
+
 	cmdOut, err := cmd.CombinedOutput()
 	if err != nil {
 		asyncProcessedDSIDErrLog(err, logger)
@@ -27,7 +28,7 @@ func getAsyncProcessedDSID(logger *logrus.Logger) string {
 	out := string(cmdOut)
 	out = cleanGbrOut(out)
 	logger.Info(fmt.Sprintf(gbrGetAsyncProcessedDSLog, out))
-
+	out = parseAsyncProcessedDSID(out, logger)
 	return out
 }
 

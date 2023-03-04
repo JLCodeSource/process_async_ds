@@ -31,11 +31,15 @@ func TestGetAsyncProcessedDSID(t *testing.T) {
 		testLogger, hook = setupLogs(t)
 
 		got := getAsyncProcessedDSID(testLogger)
-		want := testGbrPoolOutLog
+		want := testDatasetID
 		assertCorrectString(t, got, want)
 
-		gotLogMsg := hook.LastEntry().Message
+		gotLogMsg := hook.Entries[0].Message
 		wantLogMsg := fmt.Sprintf(gbrGetAsyncProcessedDSLog, testGbrPoolOutLog)
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
+
+		gotLogMsg = hook.Entries[1].Message
+		wantLogMsg = fmt.Sprintf(gbrParseAsyncProcessedDSLog, testDatasetID)
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 
 	})

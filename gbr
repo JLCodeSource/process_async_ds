@@ -10,8 +10,15 @@
 # Consts
 DATASETID=41545AB0788A11ECBD0700155D014E0D
 FILEID=D5B58980A3E311EBBA0AB026285E5610
+FILEID_IN_WRONG_DS=3E4FF671B44E11ED86FF00155D015E0D
 FILENAME=05043fe1-00000006-2f8630d0-608630d0-67d25000-ab66ac56
 NOTAFILEID=not_a_file_id
+
+# Vars
+NUMARGS="$#"
+CMD="$1"
+ID="$4"
+
 
 # Outputs
 
@@ -34,6 +41,23 @@ read -r -d '' FILE_DETAIL << 'EOF'
     parent folder id:   3E4FF671B44E11ED86FF00155D014E0D
     parent folder name: 6132
     parent id:          41545AB0788A11ECBD0700155D014E0D
+    original file name: null
+    file URI:           null
+    fan URI:            ftp://user@192.168.101.210:2121/download/2023_02/1eeb7769-fdb1-4313-8d76-ec719ad7a44c/mnt/nas01/05043fe1-00000006-2f8630d0-608630d0-67d25000-ab66ac56
+    pool id:            41545AB0788A11ECBD0700155D014E0D
+    legal hold:         Enabled=false OwnerID=null MatterID=null Start=Sat Jan 01 05:00:00 EST 1 Release=Sat Jan 01 05:00:00 EST 1
+    policies:
+      RetentionDisposition(null, enabled='true')(start='Mon Feb 27 19:08:25 EST 2023', end='Sat Jan 27 19:08:25 EST 2029', neverDispose='true')
+    file hash:
+EOF
+
+read -r -d '' FILE_IN_WRONG_DS << 'EOF'
+1 - 05043fe1-00000006-2f8630d0-608630d0-67d25000-ab66ac56 (file id: 3E4FF671B44E11ED86FF00155D015E0D)
+    version:            0
+    type:               file
+    parent folder id:   3E4FF671B44E11ED86FF00155D015E0D
+    parent folder name: 6132
+    parent id:          396862B0791111ECA62400155D014E11
     original file name: null
     file URI:           null
     fan URI:            ftp://user@192.168.101.210:2121/download/2023_02/1eeb7769-fdb1-4313-8d76-ec719ad7a44c/mnt/nas01/05043fe1-00000006-2f8630d0-608630d0-67d25000-ab66ac56
@@ -74,6 +98,10 @@ function get_file_detail {
     echo "$FILE_DETAIL"
 }
 
+function get_file_in_wrong_ds {
+    echo "$FILE_IN_WRONG_DS"
+}
+
 function get_file {
     echo "$FILE"
 }
@@ -83,23 +111,27 @@ function get_file_err {
 }
 
 sleep 2
-if [ "$1" = "pool" ] 
+if [ "$CMD" = "pool" ] 
 then
     get_datalake
-elif [ "$1" = "file" ]
+elif [ "$CMD" = "file" ]
 then 
-    if [ "$4" = "$FILEID" ]
+    if [ "$ID" = "$FILEID" ]
     then
         if [ "$#" = "4" ] 
         then
             get_file
         fi
-        if [ "$#" = "5" ]
+        if [ "$NUMARGS" = "5" ]
         then
             get_file_detail
         fi
     fi
-    if [ "$4" = "$NOTAFILEID" ]
+    if [ "$ID" = "$FILEID_IN_WRONG_DS" ]
+    then
+        get_file_in_wrong_ds
+    fi
+    if [ "$ID" = "$NOTAFILEID" ]
     then
         get_file_err
     fi

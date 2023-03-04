@@ -30,9 +30,11 @@ const (
 	fSmbNameMatchFileIDNameFalseLog = "%v (file.id:%v) file.smbName:%v does not match file.id name:%v; skipping file"
 	fStatMatchLog                   = "%v (file.id:%v) file.verifyStat passes all metadata checks for file.stagingPath:%v"
 	fEnvMatchLog                    = "%v (file.id:%v) file.verfiyEnv passes all settings checks for file.stagingPath:%v"
-	fGbrFileNameByFileIDLog         = "%v (file.id:%v) gbr verified file.id:%v as matching filename:%v"
-	fGbrNoFileNameByFileIDLog       = "%v (file.id:%v) gbr could not find file.id:%v"
+	fGbrFileNameByFileIDLog         = "%v (file.id:%v) gbr verified file.id:%v as matching MB filename:%v"
+	fGbrFileNameByFileIDMismatchLog = "%v (file.id:%v) gbr could not verify file; file.smbName:%v does not match MB filename:%v"
+	fGbrNoFileNameByFileIDLog       = "%v (file.id:%v) gbr could not find MB file.id:%v"
 	fGbrDatasetByFileIDLog          = "%v (file.id:%v) gbr verified file.id:%v as matching dataset:%v"
+	fGbrDatasetByFileIDMismatchLog  = "%v (file.id:%v) gbr could not verify file; file.datasetID:%v does not match MB dataset:%v"
 )
 
 // verify config metadata
@@ -78,13 +80,21 @@ func (f *File) verifyTimeLimit(limit time.Time, logger *logrus.Logger) bool {
 }
 
 // Verify GB internal metadata
-/*
 func (f *File) verifyGBMetadata(logger *logrus.Logger) bool {
-	if !f.verifyInProcessedDataset(xxx, logger) {
-		return true
+	ds := getAsyncProcessedDSID(logger)
+	if !f.verifyInDataset(ds, logger) {
+		return false
+	}
+	_, ok := f.getMBFileNameByFileID(logger)
+	if !ok {
+		return false
+	}
+	_, ok = f.getMBDatasetByFileID(logger)
+	if !ok {
+		return false
 	}
 	return true
-} */
+}
 
 func (f *File) getMBFileNameByFileID(logger *logrus.Logger) (string, bool) {
 	id := f.id
@@ -100,7 +110,13 @@ func (f *File) getMBFileNameByFileID(logger *logrus.Logger) (string, bool) {
 		logger.Warn(fmt.Sprintf(fGbrNoFileNameByFileIDLog, f.smbName, id, id))
 		return "", false
 	}
+
 	filename := f.parseMBFileNameByFileID(out, logger)
+	if filename != f.smbName {
+		logger.Warn(fmt.Sprintf(fGbrFileNameByFileIDMismatchLog, f.smbName, f.id, f.smbName, filename))
+		return filename, false
+	}
+
 	return filename, true
 }
 
@@ -118,6 +134,12 @@ func (f *File) getMBDatasetByFileID(logger *logrus.Logger) (string, bool) {
 		return "", false
 	}
 	datasetID := f.parseMBDatasetByFileID(out, f.id, logger)
+
+	if datasetID != f.datasetID {
+		logger.Warn(fmt.Sprintf(fGbrDatasetByFileIDMismatchLog, f.smbName, f.id, f.datasetID, datasetID))
+		return datasetID, false
+	}
+
 	return datasetID, true
 }
 
