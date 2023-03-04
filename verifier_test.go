@@ -428,7 +428,7 @@ func TestVerifyInProcessedDataset(t *testing.T) {
 			datasetID: testDatasetID,
 		}
 		testLogger, hook = setupLogs(t)
-		assert.True(t, file.verifyInProcessedDataset(testDatasetID, testLogger))
+		assert.True(t, file.verifyInDataset(testDatasetID, testLogger))
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(fDatasetMatchTrueLog, file.smbName, file.id, file.datasetID, testDatasetID)
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
@@ -442,7 +442,7 @@ func TestVerifyInProcessedDataset(t *testing.T) {
 		}
 
 		testLogger, hook = setupLogs(t)
-		assert.False(t, file.verifyInProcessedDataset(testWrongDataset, testLogger))
+		assert.False(t, file.verifyInDataset(testWrongDataset, testLogger))
 
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(fDatasetMatchFalseLog, file.smbName, file.id, file.datasetID, testWrongDataset)

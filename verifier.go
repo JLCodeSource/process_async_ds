@@ -148,7 +148,7 @@ func (f *File) getByIDErrLog(err error, logger *logrus.Logger) {
 	logger.Warn(fmt.Sprintf(fGbrNoFileNameByFileIDLog, f.smbName, f.id, f.id))
 }
 
-func (f *File) verifyInProcessedDataset(datasetID string, logger *logrus.Logger) bool {
+func (f *File) verifyInDataset(datasetID string, logger *logrus.Logger) bool {
 	if f.datasetID == datasetID {
 		logger.Info(fmt.Sprintf(fDatasetMatchTrueLog, f.smbName, f.id, f.datasetID, datasetID))
 	} else {
