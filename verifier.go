@@ -31,10 +31,8 @@ const (
 	fStatMatchLog                   = "%v (file.id:%v) file.verifyStat passes all metadata checks for file.stagingPath:%v"
 	fEnvMatchLog                    = "%v (file.id:%v) file.verfiyEnv passes all settings checks for file.stagingPath:%v"
 	fGbrFileNameByFileIDLog         = "%v (file.id:%v) gbr verified file.id:%v as matching MB filename:%v"
-	//fGbrFileNameByFileIDMismatchLog = "%v (file.id:%v) gbr could not verify file; file.smbName:%v does not match MB filename:%v"
-	fGbrNoFileNameByFileIDLog = "%v (file.id:%v) gbr could not find MB file.id:%v"
-	fGbrDatasetByFileIDLog    = "%v (file.id:%v) gbr verified file.id:%v as matching dataset:%v"
-	//fGbrDatasetByFileIDMismatchLog  = "%v (file.id:%v) gbr could not verify file; file.datasetID:%v does not match MB dataset:%v"
+	fGbrNoFileNameByFileIDLog       = "%v (file.id:%v) gbr could not find MB file.id:%v"
+	fGbrDatasetByFileIDLog          = "%v (file.id:%v) gbr verified file.id:%v as matching dataset:%v"
 )
 
 // verify all
@@ -141,14 +139,6 @@ func (f *File) verifyMBDatasetByFileID(logger *logrus.Logger) bool {
 
 	return f.verifyInDataset(datasetID, logger)
 
-	/*
-		 	if datasetID != f.datasetID {
-				logger.Warn(fmt.Sprintf(fGbrDatasetByFileIDMismatchLog, f.smbName, f.id, f.datasetID, datasetID))
-				return false
-			}
-
-			return true
-	*/
 }
 
 func (f *File) parseMBFileNameByFileID(cmdOut string, logger *logrus.Logger) (filename string) {
@@ -216,16 +206,6 @@ func (f *File) verifyStat(fsys fs.FS, logger *logrus.Logger) bool {
 	logger.Info(fmt.Sprintf(fStatMatchLog, f.smbName, f.id, f.stagingPath))
 	return true
 }
-
-/* func (f *File) verifyExists(fsys fs.FS, logger *logrus.Logger) bool {
-	_, err := fs.Stat(fsys, f.stagingPath)
-	if err != nil {
-		logger.Warn(fmt.Sprintf(fExistsFalseLog, f.smbName, f.id, f.stagingPath))
-		return false
-	}
-	logger.Info(fmt.Sprintf(fExistsTrueLog, f.smbName, f.id, f.stagingPath))
-	return true
-} */
 
 func (f *File) verifyFileSize(size int64, logger *logrus.Logger) bool {
 	if size != f.fileInfo.Size() {
