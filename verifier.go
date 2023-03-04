@@ -87,7 +87,8 @@ func (f *File) verifyGBMetadata(logger *logrus.Logger) bool {
 } */
 
 func (f *File) getMBFileNameByFileID(logger *logrus.Logger) (string, bool) {
-	cmd := exec.Command("/usr/bin/gbr", "file", "ls", "-i", f.id)
+	id := f.id
+	cmd := exec.Command("/usr/bin/gbr", "file", "ls", "-i", id)
 	cmdOut, err := cmd.CombinedOutput()
 	if err != nil {
 		f.getByIDErrLog(err, logger)
@@ -96,7 +97,7 @@ func (f *File) getMBFileNameByFileID(logger *logrus.Logger) (string, bool) {
 	out := string(cmdOut)
 	out = cleanGbrOut(out)
 	if out == "" {
-		logger.Warn(fmt.Sprintf(fGbrNoFileNameByFileIDLog, f.smbName, f.id, f.id))
+		logger.Warn(fmt.Sprintf(fGbrNoFileNameByFileIDLog, f.smbName, id, id))
 		return "", false
 	}
 	filename := f.parseMBFileNameByFileID(out, logger)
@@ -104,7 +105,8 @@ func (f *File) getMBFileNameByFileID(logger *logrus.Logger) (string, bool) {
 }
 
 func (f *File) getMBDatasetByFileID(logger *logrus.Logger) (string, bool) {
-	cmd := exec.Command("/usr/bin/gbr", "file", "ls", "-i", f.id, "-d")
+	id := f.id
+	cmd := exec.Command("/usr/bin/gbr", "file", "ls", "-i", id, "-d")
 	cmdOut, err := cmd.CombinedOutput()
 	if err != nil {
 		f.getByIDErrLog(err, logger)
@@ -112,7 +114,7 @@ func (f *File) getMBDatasetByFileID(logger *logrus.Logger) (string, bool) {
 	out := string(cmdOut)
 	out = cleanGbrOut(out)
 	if out == "" {
-		logger.Warn(fmt.Sprintf(fGbrNoFileNameByFileIDLog, f.smbName, f.id, f.id))
+		logger.Warn(fmt.Sprintf(fGbrNoFileNameByFileIDLog, f.smbName, id, id))
 		return "", false
 	}
 	datasetID := f.parseMBDatasetByFileID(out, f.id, logger)
