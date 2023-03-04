@@ -288,7 +288,7 @@ func TestVerifyGBMetadata(t *testing.T) {
 
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(
-			fGbrDatasetByFileIDMismatchLog, testSmbName, testFileIDInWrongDataset, testDatasetID, testWrongDataset)
+			fDatasetMatchFalseLog, testSmbName, testFileIDInWrongDataset, testDatasetID, testWrongDataset)
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 
 	})
@@ -358,7 +358,7 @@ func TestGetMBDatasetByFileID(t *testing.T) {
 		assert.True(t, ok)
 
 		gotLogMsg := hook.LastEntry().Message
-		wantLogMsg := fmt.Sprintf(fGbrDatasetByFileIDLog, testSmbName, testFileID, testFileID, testDatasetID)
+		wantLogMsg := fmt.Sprintf(fDatasetMatchTrueLog, testSmbName, testFileID, testDatasetID, testDatasetID)
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 

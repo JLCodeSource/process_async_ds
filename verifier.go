@@ -18,8 +18,8 @@ const (
 	fIPMatchFalseLog                = "%v (file.id:%v) file.ip:%v does not match comparison ip:%v; skipping file"
 	fCreateTimeAfterTimeLimitLog    = "%v (file.id:%v) file.createTime:%v is after timelimit:%v"
 	fCreateTimeBeforeTimeLimitLog   = "%v (file.id:%v) file.createTime:%v is before timelimit:%v; skipping file"
-	fDatasetMatchTrueLog            = "%v (file.id:%v) file.datasetID:%v matches asyncProcessedDataset:%v"
-	fDatasetMatchFalseLog           = "%v (file.id:%v) file.datasetID:%v does not match asyncProcessedDataset:%v; skipping file"
+	fDatasetMatchTrueLog            = "%v (file.id:%v) file.datasetID:%v matches Dataset:%v"
+	fDatasetMatchFalseLog           = "%v (file.id:%v) file.datasetID:%v does not match Dataset:%v; skipping file"
 	fExistsTrueLog                  = "%v (file.id:%v) exists at file.stagingPath:%v"
 	fExistsFalseLog                 = "%v (file.id:%v) does not exist at file.stagingPath:%v; skipping file"
 	fSizeMatchTrueLog               = "%v (file.id:%v) file.size:%v matches size in file.stagingPath size:%v"
@@ -127,12 +127,16 @@ func (f *File) verifyMBDatasetByFileID(logger *logrus.Logger) bool {
 	}
 	datasetID := f.parseMBDatasetByFileID(out, f.id, logger)
 
-	if datasetID != f.datasetID {
-		logger.Warn(fmt.Sprintf(fGbrDatasetByFileIDMismatchLog, f.smbName, f.id, f.datasetID, datasetID))
-		return false
-	}
+	return f.verifyInDataset(datasetID, logger)
 
-	return true
+	/*
+		 	if datasetID != f.datasetID {
+				logger.Warn(fmt.Sprintf(fGbrDatasetByFileIDMismatchLog, f.smbName, f.id, f.datasetID, datasetID))
+				return false
+			}
+
+			return true
+	*/
 }
 
 func (f *File) parseMBFileNameByFileID(cmdOut string, logger *logrus.Logger) (filename string) {
