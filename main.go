@@ -59,6 +59,7 @@ type File struct {
 
 // Env type holds config and environment settings
 type Env struct {
+	fsys fs.FS
 	//sourceFile string
 	//datasetID string
 	//days       int64
