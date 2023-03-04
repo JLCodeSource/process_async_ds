@@ -37,6 +37,18 @@ const (
 	fGbrDatasetByFileIDMismatchLog  = "%v (file.id:%v) gbr could not verify file; file.datasetID:%v does not match MB dataset:%v"
 )
 
+// verify all
+
+func (f *File) verify(env Env, logger *logrus.Logger) bool {
+	if !f.verifyEnv(env, logger) {
+		return false
+	}
+	if !f.verifyGBMetadata(logger) {
+		return false
+	}
+	return f.verifyStat(env.fsys, logger)
+}
+
 // verify config metadata
 
 func (f *File) verifyEnv(env Env, logger *logrus.Logger) bool {

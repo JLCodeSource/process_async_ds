@@ -71,8 +71,45 @@ const (
 	testLongerContent        = "longer than the test"
 	testWrongDataset         = "396862B0791111ECA62400155D014E11"
 	testFileIDInWrongDataset = "3E4FF671B44E11ED86FF00155D015E0D"
-	testShortPath            = "staging"
+	testShortPath            = "staging/05043fe1-00000006-2f8630d0-608630d0-67d25000-ab66ac56"
 )
+
+// TestVerify encompasses all verification
+// Bit of a hack of setting now to time.Time.IsZero & going back 5 secs
+// But it works...
+func TestVerify(t *testing.T) {
+	// setup server ip
+	hostname, _ := os.Hostname()
+	ips, _ := net.LookupIP(hostname)
+
+	now = time.Time{}
+	afterNow := now.Add(-5 * time.Second)
+
+	fsys = fstest.MapFS{
+		testShortPath: {Data: []byte(testContent)},
+	}
+	env := Env{
+		fsys:  fsys,
+		limit: afterNow,
+		sysIP: ips[0],
+	}
+
+	fileInfo, _ := fsys.Stat(testShortPath)
+	size := int64(4)
+	file = File{
+		smbName:     testSmbName,
+		id:          testFileID,
+		datasetID:   testDatasetID,
+		stagingPath: testShortPath,
+		size:        size,
+		fileInfo:    fileInfo,
+		fanIP:       ips[0],
+	}
+
+	testLogger, hook = setupLogs(t)
+	assert.True(t, file.verify(env, testLogger))
+
+}
 
 // TestVerifyEnvSettings encompasses TestVerifyIP & TestVerifyTimeLimit
 func TestVerifyEnvSettings(t *testing.T) {
