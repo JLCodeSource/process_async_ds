@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"net"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"testing"
@@ -34,6 +35,8 @@ const (
 	testArgsDataset = "-datasetid=%v"
 	testArgsDays    = "-days=123"
 	testArgsHelp    = "-help"
+
+	testPostArgsFile = "./README.md"
 
 	osPanicTrue  = "os.Exit called"
 	osPanicFalse = "os.Exit was not called"
@@ -71,10 +74,15 @@ func TestMainFunc(t *testing.T) {
 
 	t.Run("verify main args work", func(t *testing.T) {
 		_, hook = setupLogs()
+		hostname, _ := os.Hostname()
+		ips, _ := net.LookupIP(hostname)
 
 		os.Args = append(os.Args, testArgsFile)
 		os.Args = append(os.Args, fmt.Sprintf(testArgsDataset, testDatasetID))
 		os.Args = append(os.Args, testArgsDays)
+
+		dir, file := filepath.Split((testPostArgsFile))
+		fsys := os.DirFS(dir)
 
 		main()
 
@@ -82,6 +90,13 @@ func TestMainFunc(t *testing.T) {
 		wantLogMsg := dryRunTrueLog
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
+
+		assert.Equal(t, &env.fsys, fsys)
+		assert.Equal(t, &env.sourceFile, file)
+		assert.Equal(t, &env.datasetID, testDatasetID)
+		assert.Equal(t, &env.limit, testArgsDays)
+		assert.Equal(t, &env.nondryrun, false)
+		assert.Equal(t, &env.sysIP, ips[0])
 	})
 
 	t.Run("verify main help out", func(t *testing.T) {
@@ -233,10 +248,10 @@ func TestGetTimeLimit(t *testing.T) {
 		testLogger, hook = setupLogs()
 
 		var days = int64(0)
-		gotDays := strconv.FormatInt(getTimeLimit(days, testLogger), 10)
-		wantDays := strconv.FormatInt(int64(0), 10)
+		gotDays := getTimeLimit(days, testLogger)
+		wantDays := time.Time{}
 
-		assertCorrectString(t, gotDays, wantDays)
+		assertCorrectString(t, gotDays.String(), wantDays.String())
 
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := timelimitNoDaysLog
@@ -246,13 +261,14 @@ func TestGetTimeLimit(t *testing.T) {
 	t.Run("Multiple days", func(t *testing.T) {
 		testLogger, hook = setupLogs()
 
-		var now = time.Now().Unix()
+		var now = time.Now()
 		days := int64(15)
-		limit := now - days*86400
-		gotDays := strconv.FormatInt(getTimeLimit(days, testLogger), 10)
-		wantDays := strconv.FormatInt(limit, 10)
+		daysInTime := time.Duration(-15 * 24 * time.Hour)
+		limit := now.Add(daysInTime)
+		gotDays := getTimeLimit(days, testLogger)
+		wantDays := limit
 
-		assertCorrectString(t, gotDays, wantDays)
+		assertCorrectString(t, gotDays.Round(time.Millisecond).String(), wantDays.Round(time.Millisecond).String())
 
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(timelimitDaysLog, days, gotDays)

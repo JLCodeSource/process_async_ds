@@ -24,6 +24,7 @@ const (
 	timelimitDaysLog   = "timelimit: Days time limit set to %v days ago which is %v"
 	dryRunTrueLog      = "dryrun: true; skipping exeecute move"
 	dryRunFalseLog     = "dryrun: false; executing move"
+	complexIPLog       = "ipStatus: unexpected; more ips than planned"
 
 	regexDatasetMatch = "^[A-F0-9]{32}$"
 
@@ -40,9 +41,9 @@ const (
 var (
 	sourceFile string
 	datasetID  string
-	days       int64
+	iDays      int64
 	nondryrun  bool
-	//env        Env
+	env        *Env
 )
 
 // File type is a struct which holds its relevant metadata
@@ -59,13 +60,13 @@ type File struct {
 
 // Env type holds config and environment settings
 type Env struct {
-	fsys fs.FS
-	//sourceFile string
-	//datasetID string
+	fsys       fs.FS
+	sourceFile string
+	datasetID  string
 	//days       int64
-	limit time.Time
-	//nondryrun  bool
-	sysIP net.IP
+	limit     time.Time
+	nondryrun bool
+	sysIP     net.IP
 }
 
 func getSourceFile(filesystem fs.FS, f string, logger *logrus.Logger) fs.FileInfo {
@@ -91,16 +92,16 @@ func getDatasetID(id string, logger *logrus.Logger) string {
 	return id
 }
 
-func getTimeLimit(days int64, logger *logrus.Logger) (limit int64) {
+func getTimeLimit(days int64, logger *logrus.Logger) (limit time.Time) {
 
-	limit = 0
+	limit = time.Time{}
 
 	if days == 0 {
 		logger.Warn(timelimitNoDaysLog)
 		return
 	}
-	now := time.Now().Unix()
-	limit = now - days*86400
+	now := time.Now()
+	limit = now.Add(-24 * time.Duration(days) * time.Hour)
 	logger.Info(fmt.Sprintf(timelimitDaysLog, days, limit))
 	return
 
@@ -116,6 +117,10 @@ func getNonDryRun(nondryrun bool, logger *logrus.Logger) bool {
 	return nondryrun
 }
 
+func getEnv() *Env {
+	return env
+}
+
 func init() {
 
 	log.Init()
@@ -123,9 +128,8 @@ func init() {
 
 	flag.StringVar(&sourceFile, sourceFileArgTxt, "", sourceFileArgHelp)
 	flag.StringVar(&datasetID, datasetIDArgTxt, "", datasetIDArgHelp)
-	flag.Int64Var(&days, timelimitArgTxt, 0, timelimitArgHelp)
+	flag.Int64Var(&iDays, timelimitArgTxt, 0, timelimitArgHelp)
 	flag.BoolVar(&nondryrun, nondryrunArgTxt, false, nondryrunArgHelp)
-
 }
 
 func main() {
@@ -137,9 +141,37 @@ func main() {
 	dir, f := filepath.Split((sourceFile))
 	fsys := os.DirFS(dir)
 
-	getSourceFile(fsys, f, logger)
-	getDatasetID(datasetID, logger)
-	getTimeLimit(days, logger)
-	getNonDryRun(nondryrun, logger)
+	fileInfo := getSourceFile(fsys, f, logger)
+	ds := getDatasetID(datasetID, logger)
+	l := getTimeLimit(iDays, logger)
+	ndr := getNonDryRun(nondryrun, logger)
+
+	hostname, err := os.Hostname()
+	if err != nil {
+		logger.Fatal(err)
+	}
+
+	ips, err := net.LookupIP(hostname)
+	if err != nil {
+		logger.Fatal(err)
+	}
+	if len(ips) > 1 {
+		logger.Fatal(complexIPLog)
+	}
+
+	env = new(Env)
+	env = &Env{
+		fsys:       fsys,
+		sourceFile: fileInfo.Name(),
+		datasetID:  ds,
+		limit:      l,
+		nondryrun:  ndr,
+		sysIP:      ips[0],
+	}
+
+	getEnv := getEnv()
+
+	fmt.Printf(env.sourceFile)
+	fmt.Printf(getEnv.sourceFile)
 
 }
