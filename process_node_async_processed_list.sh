@@ -51,7 +51,7 @@ then
       echo "Usage: Arg1 - input file; Arg2 - number of days ago to process (integer); Arg3 - use 'Execute_Move' to cancel dry run default"
       exit
    else
-      time_limit=$(("$now"-("$days"*86400))
+      time_limit=$(("$now"-("$days"*86400)))
    fi
    echo "INFO: Time limit set to $days days ago which is $time_limit in epoch time" 
 else
