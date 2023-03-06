@@ -46,6 +46,7 @@ const (
 	testEmptyRootErr        = "stat %v: os: DirFS with empty root"
 	testOpenDoesNotExistErr = "open %v: file does not exist"
 	testRegexMatchErr       = "Regex match errored"
+	testHostnameErr         = "Hostname err occurred"
 
 	testKarachiTime       = "Asia/Karachi"
 	testKarachiDate       = "Mon Jan 30 17:55:14 PKT 2023"
@@ -131,6 +132,32 @@ func TestMainFunc(t *testing.T) {
 		panic := func() { main() }
 		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
 	})
+
+	t.Run("verify hostname failure", func(t *testing.T) {
+		fakeExit := func(int) {
+			panic(osPanicTrue)
+		}
+		patch := monkey.Patch(os.Exit, fakeExit)
+		defer patch.Unpatch()
+
+		fakeHostname := func() (string, error) {
+			err := errors.New(testHostnameErr)
+			return "", err
+		}
+		patch2 := monkey.Patch(os.Hostname, fakeHostname)
+		defer patch2.Unpatch()
+
+		os.Args = append(os.Args, testArgsFile)
+		os.Args = append(os.Args, fmt.Sprintf(testArgsDataset, testDatasetID))
+		os.Args = append(os.Args, testArgsDays)
+
+		panic := func() { main() }
+		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
+	})
+
+	//	t.Run("verify lookup IP err", func(t *testing.T) {
+
+	//	}
 
 }
 
