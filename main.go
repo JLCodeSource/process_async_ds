@@ -41,7 +41,7 @@ const (
 var (
 	sourceFile string
 	datasetID  string
-	iDays      int64
+	numDays    int64
 	nondryrun  bool
 	env        *Env
 )
@@ -128,7 +128,7 @@ func init() {
 
 	flag.StringVar(&sourceFile, sourceFileArgTxt, "", sourceFileArgHelp)
 	flag.StringVar(&datasetID, datasetIDArgTxt, "", datasetIDArgHelp)
-	flag.Int64Var(&iDays, timelimitArgTxt, 0, timelimitArgHelp)
+	flag.Int64Var(&numDays, timelimitArgTxt, 0, timelimitArgHelp)
 	flag.BoolVar(&nondryrun, nondryrunArgTxt, false, nondryrunArgHelp)
 }
 
@@ -143,7 +143,7 @@ func main() {
 
 	fileInfo := getSourceFile(fsys, f, logger)
 	ds := getDatasetID(datasetID, logger)
-	l := getTimeLimit(iDays, logger)
+	l := getTimeLimit(numDays, logger)
 	ndr := getNonDryRun(nondryrun, logger)
 
 	hostname, err := os.Hostname()
@@ -168,10 +168,5 @@ func main() {
 		nondryrun:  ndr,
 		sysIP:      ips[0],
 	}
-
-	getEnv := getEnv()
-
-	fmt.Printf(env.sourceFile)
-	fmt.Printf(getEnv.sourceFile)
 
 }

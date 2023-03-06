@@ -7,6 +7,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"reflect"
 	"regexp"
 	"strconv"
 	"testing"
@@ -37,6 +38,7 @@ const (
 	testArgsHelp    = "-help"
 
 	testPostArgsFile = "./README.md"
+	testPostArgsDays = int64(123)
 
 	osPanicTrue  = "os.Exit called"
 	osPanicFalse = "os.Exit was not called"
@@ -81,6 +83,8 @@ func TestMainFunc(t *testing.T) {
 		os.Args = append(os.Args, fmt.Sprintf(testArgsDataset, testDatasetID))
 		os.Args = append(os.Args, testArgsDays)
 
+		now = time.Now()
+
 		dir, file := filepath.Split((testPostArgsFile))
 		fsys := os.DirFS(dir)
 
@@ -91,12 +95,28 @@ func TestMainFunc(t *testing.T) {
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 
-		assert.Equal(t, &env.fsys, fsys)
-		assert.Equal(t, &env.sourceFile, file)
-		assert.Equal(t, &env.datasetID, testDatasetID)
-		assert.Equal(t, &env.limit, testArgsDays)
-		assert.Equal(t, &env.nondryrun, false)
-		assert.Equal(t, &env.sysIP, ips[0])
+		f, _ := env.fsys.Open(env.sourceFile)
+		defer f.Close()
+		got, _ := f.Stat()
+
+		f, _ = fsys.Open(file)
+		defer f.Close()
+		want, _ := f.Stat()
+
+		ok := reflect.DeepEqual(got, want)
+
+		assert.True(t, ok)
+
+		assertCorrectString(t, env.sourceFile, file)
+
+		assertCorrectString(t, env.datasetID, testDatasetID)
+
+		limit := now.Add(-24 * time.Duration(123) * time.Hour).Format(time.UnixDate)
+
+		assertCorrectString(t, env.limit.Format(time.UnixDate), limit)
+
+		assert.Equal(t, env.nondryrun, false)
+		assert.Equal(t, env.sysIP, ips[0])
 	})
 
 	t.Run("verify main help out", func(t *testing.T) {
