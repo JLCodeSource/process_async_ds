@@ -10,6 +10,7 @@
 # Consts
 DATASETID=41545AB0788A11ECBD0700155D014E0D
 FILEID=D5B58980A3E311EBBA0AB026285E5610
+BAD_FILEID=3D3D0900791F11ECB6BD00155D014E0D
 FILEID_IN_WRONG_DS=3E4FF671B44E11ED86FF00155D015E0D
 FILENAME=05043fe1-00000006-2f8630d0-608630d0-67d25000-ab66ac56
 NOTAFILEID=not_a_file_id
@@ -22,7 +23,7 @@ ID="$4"
 
 # Outputs
 
-read -r -d '' DATALAKE << 'EOF'
+read -r -d '' POOL << 'EOF'
 ====== + Pools  in datalake 'nmr' ======
 
 - pool01 ( disk pool, primary )
@@ -35,7 +36,7 @@ read -r -d '' DATALAKE << 'EOF'
 EOF
 
 read -r -d '' FILE_DETAIL << 'EOF'
-1 - 05043fe1-00000006-2f8630d0-608630d0-67d25000-ab66ac56 (file id: D5B58980A3E311EBBA0AB026285E5610)
+1 - 05043fe1-00000006-2f8630d0-608630d0-67d25000-ab66ac56 (file id: FILEID)
     version:            0
     type:               file
     parent folder id:   3E4FF671B44E11ED86FF00155D014E0D
@@ -69,7 +70,7 @@ read -r -d '' FILE_IN_WRONG_DS << 'EOF'
 EOF
 
 read -r -d '' FILE << 'EOF'
-1 - 05043fe1-00000006-2f8630d0-608630d0-67d25000-ab66ac56 (file id: D5B58980A3E311EBBA0AB026285E5610)
+1 - 05043fe1-00000006-2f8630d0-608630d0-67d25000-ab66ac56 (file id: FILEID)
 EOF
 
 read -r -d '' FILE_ERR << 'EOF'
@@ -90,20 +91,26 @@ java.lang.NumberFormatException: For input string: "no"
         at com.trm.gb.restapi.client.commands.GbrcCommand.main(GbrcCommand.java:71)
 EOF
 
-function get_datalake {
-    echo "$DATALAKE"
+function get_pool {
+    echo "$POOL"
 }
 
 function get_file_detail {
-    echo "$FILE_DETAIL"
+    local ID="$1"
+    echo "$FILE_DETAIL" | sed "s/FILEID/"$ID"/g"
 }
 
 function get_file_in_wrong_ds {
     echo "$FILE_IN_WRONG_DS"
 }
 
+function get_bad_file_id {
+    exit
+}
+
 function get_file {
-    echo "$FILE"
+    local ID="$1"
+    echo "$FILE" | sed "s/FILEID/"$ID"/g"
 }
 
 function get_file_err {
@@ -113,26 +120,24 @@ function get_file_err {
 sleep 2
 if [ "$CMD" = "pool" ] 
 then
-    get_datalake
+    get_pool
 elif [ "$CMD" = "file" ]
 then 
-    if [ "$ID" = "$FILEID" ]
+    if [ "$ID" = "$BAD_FILEID" ]
     then
-        if [ "$#" = "4" ] 
-        then
-            get_file
-        fi
-        if [ "$NUMARGS" = "5" ]
-        then
-            get_file_detail
-        fi
-    fi
-    if [ "$ID" = "$FILEID_IN_WRONG_DS" ]
+        get_bad_file_id
+    elif [ "$ID" = "$FILEID_IN_WRONG_DS" ]
     then
         get_file_in_wrong_ds
-    fi
-    if [ "$ID" = "$NOTAFILEID" ]
+    elif [ "$ID" = "$NOTAFILEID" ]
     then
         get_file_err
+    elif [ "$NUMARGS" = "4" ] 
+    then
+        get_file $ID
+    elif [ "$NUMARGS" = "5" ]
+    then
+        get_file_detail $ID
     fi
+
 fi

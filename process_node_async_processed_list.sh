@@ -5,14 +5,14 @@
 # to /mount/current_dir.processed
 # Input: Pipe separated file with local staging path|human readable date|file size|file id
 # Usage:
-## Set in_file parameter
 ## Default - dry run on all lines
-## Argument 1 - number of days ago time limit
-## Argument 2 - set to Execute_Move to move
+## Argument 1 - input file
+## Argument 2 - number of days ago time limit
+## Argument 3 - set to Execute_Move to move
 
 
 # Parameters
-in_file=/home/admin/10.41.28.170.out
+in_file=$1
 
 # Constants
 cqlsh=/usr/lib64/GB/DCF/JServices/MbService/bin/cqlsh
@@ -21,17 +21,34 @@ async_processed_files_dataset=$($cqlsh $(hostname -I) 21205 -e "$select" | grep 
 
 # Variables
 now=$(date +"%s")
+ip=$(hostname -I | xargs)
 
 # Arguments
-## Setting the time limit
+## Setting the input file
 if [ ! -z "$1" ]
 then
-   days="$1"
+   in_file=$1
+   if [[ ! -f "$in_file" ]]
+   then
+      # Incorrect usage
+      echo "Usage: Arg1 - input file; Arg2 - number of days ago to process (integer); Arg3 - use 'Execute_Move' to cancel dry run default"
+      exit
+   fi
+else
+      # Incorrect usage
+      echo "Usage: Arg1 - input file; Arg2 - number of days ago to process (integer); Arg3 - use 'Execute_Move' to cancel dry run default"
+      exit
+fi
+
+## Setting the time limit
+if [ ! -z "$2" ]
+then
+   days="$2"
    re='^[0-9]+$'
    if ! [[ "$days" =~ $re ]]
    then
       # Incorrect usage
-      echo "Usage: Arg1 - number of days ago to process (integer); Arg2 - use 'Execute_Move' to cancel dry run default"
+      echo "Usage: Arg1 - input file; Arg2 - number of days ago to process (integer); Arg3 - use 'Execute_Move' to cancel dry run default"
       exit
    else
       time_limit=$(("$now"-("$days"*86400)))
@@ -43,7 +60,7 @@ else
 fi
 
 ## Switching off dry run
-if [ "$2" = "Execute_Move" ]
+if [ "$3" = "Execute_Move" ]
 then
    echo "WARN: Argument Execute_Move; setting dryrun to false" 
    dryrun=
@@ -70,33 +87,48 @@ do
    # Set working variables
 
    ## target_file is staging_path
-   target_file=$(echo $line | cut -d"|" -f1)
+   target_file=$(echo $line | cut -d"|" -f2)
+   
    ### basename is the full basename from staging_path including the {gbtmp-xxx} value
    basename=$(basename $target_file)
+
    ### orig_basename is the original basename in SMB, excluding the {gbtmp-xxx} value
-   orig_basename=$(basename $target_file | cut -d"{" -f1)
+   orig_basename=$(echo $line | cut -d"|" -f1)
    ### dirname is the path from the staging_path
    dirname=$(dirname $target_file)
 
    ## create_time is set based on line input
-   create_time=$(echo $line | cut -d"|" -f2)
+   create_time=$(echo $line | cut -d"|" -f3)
    ### create_time_epoch converts create_time to epoch time
-   create_time_epoch=$(date --date "$create_time" +"%s")
+   ### create_time_epoch=$(date --date "$create_time" +"%s")
 
    ## file_size is set based on line input
-   file_size=$(echo $line | cut -d"|" -f3)
+   file_size=$(echo $line | cut -d"|" -f4)
    ## file_id is set based on line input
-   file_id=$(echo $line | cut -d"|" -f4)
+   file_id=$(echo $line | cut -d"|" -f5)
+
+   ## fan_ip is set based on the line input
+   fan_ip=$(echo $line | cut -d"|" -f6)
 
    # Process lines
 
-   ## Filter out files from before time_limit
-   if [[ $create_time_epoch -lt $time_limit ]]
+   ## Filter out files on other servers
+   if [[ "$fan_ip" == "$ip" ]]
    then
-      echo "WARN: Create time (epoch) $create_time_epoch is before time limit (epoch) $time_limit; skipping file $target_file"
+      echo "INFO: Fan IP $fan_ip matches local IP $ip"
+   else
+      echo "WARN: Fan IP $fan_ip does not match local IP $ip; skipping file $target_file"
+      continue
+   fi
+
+
+   ## Filter out files from before time_limit
+   if [[ $create_time -lt $time_limit ]]
+   then
+      echo "WARN: Create time (epoch) $create_time is before time limit (epoch) $time_limit; skipping file $target_file"
       continue
    else
-      echo "INFO: Create time (epoch) $create_time_epoch is after time limit (epoch) $time_limit for $target_file"
+      echo "INFO: Create time (epoch) $create_time is after time limit (epoch) $time_limit for $target_file"
    fi
 
    ## Verify file is in async processed dataset
@@ -137,11 +169,11 @@ do
    ### Get file create time from stat
    staging_create_time=$(stat --format='%Y' $target_file)
    ### Filter out any files where create time does not match
-   if [ "$create_time_epoch" = "$staging_create_time" ]
+   if [ "$create_time" = "$staging_create_time" ]
    then
-      echo "INFO: create time $create_time_epoch matches staging create time $staging_create_time for $orig_basename"
+      echo "INFO: create time $create_time matches staging create time $staging_create_time for $orig_basename"
    else
-      echo "WARN: create time $create_time_epoch does not match staging create time $staging_create_time; skipping file $orig_basename"
+      echo "WARN: create time $create_time does not match staging create time $staging_create_time; skipping file $orig_basename"
       continue
    fi
 

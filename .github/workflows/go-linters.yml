@@ -30,7 +30,7 @@ jobs:
           # working-directory: somedir
 
           # Optional: golangci-lint command line arguments.
-          args: -E=gofmt -E=govet -E=revive -E=errcheck -E=staticcheck -E=ineffassign -E=misspell -E=gocyclo -E=gosec -E=unused -E=deadcode -E=unparam #--issues-exit-code=0
+          args: -E=gofmt -E=govet -E=revive -E=errcheck -E=staticcheck -E=ineffassign -E=misspell -E=gocyclo -E=gosec -E=unused -E=deadcode -E=unparam -E=depguard -E=goimports #--issues-exit-code=0
 
           # Optional: show only new issues if it's a pull request. The default value is `false`.
           # only-new-issues: true
@@ -44,8 +44,5 @@ jobs:
 
           # Optional: if set to true then the action don't cache or restore ~/.cache/go-build.
           # skip-build-cache: true
-      - name: Golang Static Analysis Checker
-        uses: danhunsaker/golang-github-actions@v1.3.1
-        with:
-          run: misspell, fmt, vet, imports, shadow, staticcheck, lint
+
           

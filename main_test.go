@@ -6,6 +6,8 @@ import (
 	"io/fs"
 	"net"
 	"os"
+	"path/filepath"
+	"reflect"
 	"regexp"
 	"strconv"
 	"testing"
@@ -35,12 +37,16 @@ const (
 	testArgsDays    = "-days=123"
 	testArgsHelp    = "-help"
 
+	testPostArgsFile = "./README.md"
+	testPostArgsDays = int64(123)
+
 	osPanicTrue  = "os.Exit called"
 	osPanicFalse = "os.Exit was not called"
 
 	testEmptyRootErr        = "stat %v: os: DirFS with empty root"
 	testOpenDoesNotExistErr = "open %v: file does not exist"
 	testRegexMatchErr       = "Regex match errored"
+	testHostnameErr         = "Hostname err occurred"
 
 	testKarachiTime       = "Asia/Karachi"
 	testKarachiDate       = "Mon Jan 30 17:55:14 PKT 2023"
@@ -71,10 +77,17 @@ func TestMainFunc(t *testing.T) {
 
 	t.Run("verify main args work", func(t *testing.T) {
 		_, hook = setupLogs()
+		hostname, _ := os.Hostname()
+		ips, _ := net.LookupIP(hostname)
 
 		os.Args = append(os.Args, testArgsFile)
 		os.Args = append(os.Args, fmt.Sprintf(testArgsDataset, testDatasetID))
 		os.Args = append(os.Args, testArgsDays)
+
+		now = time.Now()
+
+		dir, file := filepath.Split((testPostArgsFile))
+		fsys := os.DirFS(dir)
 
 		main()
 
@@ -82,6 +95,29 @@ func TestMainFunc(t *testing.T) {
 		wantLogMsg := dryRunTrueLog
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
+
+		f, _ := env.fsys.Open(env.sourceFile)
+		defer f.Close()
+		got, _ := f.Stat()
+
+		f, _ = fsys.Open(file)
+		defer f.Close()
+		want, _ := f.Stat()
+
+		ok := reflect.DeepEqual(got, want)
+
+		assert.True(t, ok)
+
+		assertCorrectString(t, env.sourceFile, file)
+
+		assertCorrectString(t, env.datasetID, testDatasetID)
+
+		limit := now.Add(-24 * time.Duration(testPostArgsDays) * time.Hour).Format(time.UnixDate)
+
+		assertCorrectString(t, env.limit.Format(time.UnixDate), limit)
+
+		assert.Equal(t, env.nondryrun, false)
+		assert.Equal(t, env.sysIP, ips[0])
 	})
 
 	t.Run("verify main help out", func(t *testing.T) {
@@ -96,6 +132,32 @@ func TestMainFunc(t *testing.T) {
 		panic := func() { main() }
 		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
 	})
+
+	t.Run("verify hostname failure", func(t *testing.T) {
+		fakeExit := func(int) {
+			panic(osPanicTrue)
+		}
+		patch := monkey.Patch(os.Exit, fakeExit)
+		defer patch.Unpatch()
+
+		fakeHostname := func() (string, error) {
+			err := errors.New(testHostnameErr)
+			return "", err
+		}
+		patch2 := monkey.Patch(os.Hostname, fakeHostname)
+		defer patch2.Unpatch()
+
+		os.Args = append(os.Args, testArgsFile)
+		os.Args = append(os.Args, fmt.Sprintf(testArgsDataset, testDatasetID))
+		os.Args = append(os.Args, testArgsDays)
+
+		panic := func() { main() }
+		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
+	})
+
+	//	t.Run("verify lookup IP err", func(t *testing.T) {
+
+	//	}
 
 }
 
@@ -233,10 +295,10 @@ func TestGetTimeLimit(t *testing.T) {
 		testLogger, hook = setupLogs()
 
 		var days = int64(0)
-		gotDays := strconv.FormatInt(getTimeLimit(days, testLogger), 10)
-		wantDays := strconv.FormatInt(int64(0), 10)
+		gotDays := getTimeLimit(days, testLogger)
+		wantDays := time.Time{}
 
-		assertCorrectString(t, gotDays, wantDays)
+		assertCorrectString(t, gotDays.String(), wantDays.String())
 
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := timelimitNoDaysLog
@@ -246,13 +308,14 @@ func TestGetTimeLimit(t *testing.T) {
 	t.Run("Multiple days", func(t *testing.T) {
 		testLogger, hook = setupLogs()
 
-		var now = time.Now().Unix()
+		now = time.Now()
 		days := int64(15)
-		limit := now - days*86400
-		gotDays := strconv.FormatInt(getTimeLimit(days, testLogger), 10)
-		wantDays := strconv.FormatInt(limit, 10)
+		daysInTime := time.Duration(-15 * 24 * time.Hour)
+		limit = now.Add(daysInTime)
+		gotDays := getTimeLimit(days, testLogger)
+		wantDays := limit
 
-		assertCorrectString(t, gotDays, wantDays)
+		assertCorrectString(t, gotDays.Round(time.Millisecond).String(), wantDays.Round(time.Millisecond).String())
 
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(timelimitDaysLog, days, gotDays)

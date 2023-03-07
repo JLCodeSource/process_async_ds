@@ -27,6 +27,7 @@ const (
 func parseFile(fsys fs.FS, f string, logger *logrus.Logger) []string {
 
 	file, err := fsys.Open(f)
+	//defer file.Close()
 
 	if err != nil {
 		logger.Fatal(err)
@@ -42,6 +43,11 @@ func parseFile(fsys fs.FS, f string, logger *logrus.Logger) []string {
 		logger.Info(fmt.Sprintf(parseFileLog, scanner.Text()))
 	}
 
+	err = file.Close()
+	if err != nil {
+		logger.Fatal(err)
+	}
+
 	return lines
 
 }
@@ -52,9 +58,10 @@ func parseLine(line string, logger *logrus.Logger) File {
 	fileMetadata := strings.SplitAfter(line, "|")
 	for i := 0; i < len(fileMetadata); i++ {
 		// The first columns have a | after the content, the last one doesn't
-		if i < (len(fileMetadata) - 1) {
-			fileMetadata[i] = fileMetadata[i][0 : len(fileMetadata[i])-1]
-		}
+		// Added | to end of out
+		//if i < (len(fileMetadata) - 1) {
+		fileMetadata[i] = fileMetadata[i][0 : len(fileMetadata[i])-1]
+		//}
 	}
 
 	id := fileMetadata[4]
