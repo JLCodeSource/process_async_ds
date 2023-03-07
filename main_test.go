@@ -308,10 +308,10 @@ func TestGetTimeLimit(t *testing.T) {
 	t.Run("Multiple days", func(t *testing.T) {
 		testLogger, hook = setupLogs()
 
-		var now = time.Now()
+		now = time.Now()
 		days := int64(15)
 		daysInTime := time.Duration(-15 * 24 * time.Hour)
-		limit := now.Add(daysInTime)
+		limit = now.Add(daysInTime)
 		gotDays := getTimeLimit(days, testLogger)
 		wantDays := limit
 
