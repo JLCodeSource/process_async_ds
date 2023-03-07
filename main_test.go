@@ -112,7 +112,7 @@ func TestMainFunc(t *testing.T) {
 
 		assertCorrectString(t, env.datasetID, testDatasetID)
 
-		limit := now.Add(-24 * time.Duration(123) * time.Hour).Format(time.UnixDate)
+		limit := now.Add(-24 * time.Duration(testPostArgsDays) * time.Hour).Format(time.UnixDate)
 
 		assertCorrectString(t, env.limit.Format(time.UnixDate), limit)
 

@@ -117,9 +117,9 @@ func getNonDryRun(nondryrun bool, logger *logrus.Logger) bool {
 	return nondryrun
 }
 
-func getEnv() *Env {
-	return env
-}
+//func getEnv() *Env {
+//	return env
+//}
 
 func init() {
 
