@@ -10,6 +10,7 @@
 # Consts
 DATASETID=41545AB0788A11ECBD0700155D014E0D
 FILEID=D5B58980A3E311EBBA0AB026285E5610
+BAD_FILEID=3D3D0900791F11ECB6BD00155D014E0D
 FILEID_IN_WRONG_DS=3E4FF671B44E11ED86FF00155D015E0D
 FILENAME=05043fe1-00000006-2f8630d0-608630d0-67d25000-ab66ac56
 NOTAFILEID=not_a_file_id
@@ -103,6 +104,10 @@ function get_file_in_wrong_ds {
     echo "$FILE_IN_WRONG_DS"
 }
 
+function get_bad_file_id {
+    exit
+}
+
 function get_file {
     local ID="$1"
     echo "$FILE" | sed "s/FILEID/"$ID"/g"
@@ -118,7 +123,10 @@ then
     get_pool
 elif [ "$CMD" = "file" ]
 then 
-    if [ "$ID" = "$FILEID_IN_WRONG_DS" ]
+    if [ "$ID" = "$BAD_FILEID" ]
+    then
+        get_bad_file_id
+    elif [ "$ID" = "$FILEID_IN_WRONG_DS" ]
     then
         get_file_in_wrong_ds
     elif [ "$ID" = "$NOTAFILEID" ]
