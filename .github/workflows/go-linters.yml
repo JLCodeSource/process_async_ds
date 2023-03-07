@@ -44,8 +44,5 @@ jobs:
 
           # Optional: if set to true then the action don't cache or restore ~/.cache/go-build.
           # skip-build-cache: true
-      - name: Golang Static Analysis Checker
-        uses: danhunsaker/golang-github-actions@v1.3.1
-        with:
-          run: misspell fmt vet imports shadow staticcheck lint
+
           
