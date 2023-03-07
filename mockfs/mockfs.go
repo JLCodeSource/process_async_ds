@@ -21,9 +21,10 @@ type MockFile struct {
 	size    int64
 	sys     interface{}
 	// MFModTime, MFName, MFSize are public exports to set the internals
-	MFModTime time.Time
-	MFName    string
-	MFSize    int64
+	MFModTime  time.Time
+	MFName     string
+	MFSize     int64
+	MFFileInfo fs.FileInfo
 }
 
 // Stat is a mock implementation of File.Stat
