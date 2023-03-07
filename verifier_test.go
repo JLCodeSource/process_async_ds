@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"path/filepath"
 	"testing"
 	"testing/fstest"
 	"time"
@@ -81,36 +82,122 @@ func TestVerify(t *testing.T) {
 	hostname, _ := os.Hostname()
 	ips, _ := net.LookupIP(hostname)
 
-	now = time.Time{}
-	afterNow := now.Add(-5 * time.Second)
+	// s
 
-	fsys = fstest.MapFS{
-		testShortPath: {Data: []byte(testContent)},
+	files := []File{
+		{
+			smbName:     "b690269c-00000006-ddfca584-63fca584-00241500-04cb015d",
+			stagingPath: "b690269c-00000006-ddfca584-63fca584-00241500-04cb015d{gbtmp-61A79740B69C11EDBF6800155D014E0D}",
+			createTime:  time.Unix(1677501828, 0),
+			size:        120264,
+			id:          "D69DE9A0B69C11EDA19100155D014E11",
+			fanIP:       ips[0],
+		}, /*
+			{
+				smbName:     "1b64bdde-00000006-d8fca584-63fca584-00291500-04cb015d",
+				stagingPath: "/mb/FAN/download/1b64bdde-00000006-d8fca584-63fca584-00291500-04cb015d{gbtmp-64EBECD0B69C11EDBF6800155D014E0D}",
+				createTime:  time.Unix(1677501834, 0),
+				size:        680,
+				id:          "D628B9A0B69C11EDA19100155D014E11",
+				fanIP:       ips[0],
+			},
+			{
+				smbName:     "57165049-00000006-d9fca584-63fca584-00281500-04cb015d",
+				stagingPath: "/data1/staging/57165049-00000006-d9fca584-63fca584-00281500-04cb015d{gbtmp-6237A240B69C11EDBF6800155D014E0D}",
+				createTime:  time.Unix(1677501828, 0),
+				size:        120264,
+				id:          "D2DB6360B69C11EDA19100155D014E11",
+				fanIP:       ips[0],
+			},
+			{
+				smbName:     "713938c6-00000006-dbfca584-63fca584-00261500-04cb015d",
+				stagingPath: "/data1/staging/download/713938c6-00000006-dbfca584-63fca584-00261500-04cb015d{gbtmp-6232E750B69C11EDBF6800155D014E0D}",
+				createTime:  time.Unix(1677501828, 0),
+				size:        228316,
+				id:          "D4CAD750B69C11EDA19100155D014E11",
+				fanIP:       ips[0],
+			},
+			{
+				smbName:     "f456db3d-00000006-ff32ebe5-6332ebe5-00020c00-e4857b29",
+				stagingPath: "/data2/staging/f456db3d-00000006-ff32ebe5-6332ebe5-00020c00-e4857b29{gbtmp-1618C670B44C11ED86FF00155D014E0D}",
+				createTime:  time.Unix(1677247705, 0),
+				size:        2771431872,
+				id:          "2511FA10B44D11ED905500155D014E11",
+				fanIP:       ips[0],
+			},
+			{
+				smbName:     "3d4bd551-00000006-dafca584-63fca584-00271500-04cb015d",
+				stagingPath: "/data2/staging/download/3d4bd551-00000006-dafca584-63fca584-00271500-04cb015d{gbtmp-64CC08C0B69C11EDBF6800155D014E0D}",
+				createTime:  time.Unix(1677501834, 0),
+				size:        616,
+				id:          "D2576650B69C11EDA19100155D014E11",
+				fanIP:       ips[0],
+			},
+			{
+				smbName:     "d394c121-00000006-e0fca579-63fca579-00211500-04cb015d",
+				stagingPath: "/data3/staging/d394c121-00000006-e0fca579-63fca579-00211500-04cb015d{gbtmp-5E954E30B69C11EDBF6800155D014E0D}",
+				createTime:  time.Unix(1677501819, 0),
+				size:        227448,
+				id:          "D548B9E0B69C11EDA19100155D014E11",
+				fanIP:       ips[0],
+			},
+			{
+				smbName:     "fae2cb0b-00000006-dcfca584-63fca584-00251500-04cb015d",
+				stagingPath: "/data3/staging/download/fae2cb0b-00000006-dcfca584-63fca584-00251500-04cb015d{gbtmp-622FB300B69C11EDBF6800155D014E0D}",
+				createTime:  time.Unix(1677501828, 0),
+				size:        717166608,
+				id:          "D49855A0B69C11EDA19100155D014E11",
+				fanIP:       ips[0],
+			},*/
 	}
-	env := Env{
-		fsys:  fsys,
-		limit: afterNow,
-		sysIP: ips[0],
-	}
 
-	fileInfo, _ := fsys.Stat(testShortPath)
-	size := int64(4)
-	file = File{
-		smbName:     testSmbName,
-		id:          testFileID,
-		datasetID:   testDatasetID,
-		stagingPath: testShortPath,
-		size:        size,
-		fileInfo:    fileInfo,
-		fanIP:       ips[0],
-	}
+	mfs = createMockFS(files)
 
-	testLogger, hook = setupLogs()
-	assert.True(t, file.verify(env, testLogger))
+	testLogger, _ = setupLogs()
 
-	gotLogMsg := hook.LastEntry().Message
-	wantLogMsg := fmt.Sprintf(fVerifiedLog, file.smbName, file.id)
-	assertCorrectString(t, gotLogMsg, wantLogMsg)
+	t.Run("Table verify", func(t *testing.T) {
+		for _, f := range files {
+
+			ok := f.verifyStat(mfs, testLogger)
+			assert.True(t, ok)
+		}
+
+	})
+
+	t.Run("Initial verify", func(t *testing.T) {
+
+		now = time.Time{}
+		afterNow := now.Add(-5 * time.Second)
+
+		fsys = fstest.MapFS{
+			testShortPath: {Data: []byte(testContent)},
+		}
+		env := Env{
+			fsys:  fsys,
+			limit: afterNow,
+			sysIP: ips[0],
+		}
+
+		fileInfo, _ := fsys.Stat(testShortPath)
+		size := int64(4)
+		file = File{
+			smbName:     testSmbName,
+			id:          testFileID,
+			datasetID:   testDatasetID,
+			stagingPath: testShortPath,
+			size:        size,
+			fileInfo:    fileInfo,
+			fanIP:       ips[0],
+		}
+
+		testLogger, hook = setupLogs()
+		assert.True(t, file.verify(env, testLogger))
+
+		gotLogMsg := hook.LastEntry().Message
+		wantLogMsg := fmt.Sprintf(fVerifiedLog, file.smbName, file.id)
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
+
+	})
 
 }
 
@@ -784,41 +871,24 @@ func TestVerifyFileIDName(t *testing.T) {
 	})
 }
 
-/*
-Need to work this out for the future
-type function func(File, interface{}, *logrus.Logger) bool
-
-func TestVerify(t *testing.T) {
-	// setup logger
-	var testLogger *logrus.Logger
-	var hook *test.Hook
-
-	// setup file
-	var file File
-
-	// setup server ip
-	hostname, _ := os.Hostname()
-	ips, _ := net.LookupIP(hostname)
-	// set incorrect ip
-	ip := net.ParseIP("192.168.101.1")
-
-	verifyTests := []struct {
-		name     string
-		file     File
-		verify   bool
-		function function
-		log      string
-	}{
-		{
-			name: "returns true if ip is same as the current machine",
-			file: File{
-				smbName: "file.txt",
-				fanIP:   ips[0],
-			},
-			verify:   true,
-			function: File.verifyIP(file, ips[0], testLogger),
-			log:      "file.txt ip:" + file.fanIP.String() + " matches comparison ip:" + ips[0].String(),
-		},
+func createMockFS(files []File) mockfs.MockFS {
+	mfs = mockfs.MockFS{}
+	mf := mockfs.MockFile{}
+	mfFiles := []*mockfs.MockFile{}
+	for _, f := range files {
+		filename := filepath.Base(f.stagingPath)
+		mf = mockfs.MockFile{
+			MFName:     filename,
+			MFModTime:  f.createTime,
+			MFSize:     f.size,
+			MFFileInfo: f.fileInfo,
+		}
+		path := filepath.Dir(f.stagingPath)
+		//parts := strings.Split(path, string(os.PathSeparator))
+		mfFiles = append(mfFiles, mockfs.NewDir(path, mockfs.NewFile(mf)))
 	}
-
-}*/
+	mfs = mockfs.MockFS{
+		mockfs.NewDir("/", mfFiles...),
+	}
+	return mfs
+}

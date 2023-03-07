@@ -20,9 +20,10 @@ type MockFile struct {
 	name    string
 	size    int64
 	sys     interface{}
-	// MFModTime & MFName are public exports to set the internals
+	// MFModTime, MFName, MFSize are public exports to set the internals
 	MFModTime time.Time
 	MFName    string
+	MFSize    int64
 }
 
 // Stat is a mock implementation of File.Stat
@@ -31,6 +32,12 @@ func (m *MockFile) Stat() (fs.FileInfo, error) {
 	// Allow direct setting of m.modTime from outside package
 	if !m.MFModTime.IsZero() {
 		m.modTime = m.MFModTime
+	}
+	if m.MFName != "" {
+		m.name = m.MFName
+	}
+	if m.MFSize != 0 {
+		m.size = m.MFSize
 	}
 
 	return m, nil
@@ -43,6 +50,15 @@ func (m *MockFile) Name() string {
 		m.name = m.MFName
 	}
 	return m.name
+}
+
+// Size is a mock implemntation of File.Size
+// N.B. It has been updated to allow Public setting of Size
+func (m *MockFile) Size() int64 {
+	if m.MFSize != 0 {
+		m.size = m.MFSize
+	}
+	return m.size
 }
 
 // Open is a mock implementation of File.Open
@@ -96,11 +112,6 @@ func (m *MockFile) Info() (fs.FileInfo, error) {
 	return m.Stat()
 }
 
-// Size is a mock implemntation of File.Size
-func (m *MockFile) Size() int64 {
-	return m.size
-}
-
 // Mode is a mock implementation of File.Mode
 func (m *MockFile) Mode() os.FileMode {
 	return m.mode
@@ -152,9 +163,10 @@ func NewFile(m MockFile) *MockFile {
 		modTime: m.modTime,
 		FS:      m.FS,
 		size:    m.size,
-		// Added to modify m.modtime & m.name publicly
+		// Added to modify m.modtime, m.size & m.name publicly
 		MFModTime: m.MFModTime,
 		MFName:    m.MFName,
+		MFSize:    m.MFSize,
 	}
 }
 
