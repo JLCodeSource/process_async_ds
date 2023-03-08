@@ -36,7 +36,7 @@ read -r -d '' POOL << 'EOF'
 EOF
 
 read -r -d '' FILE_DETAIL << 'EOF'
-1 - 05043fe1-00000006-2f8630d0-608630d0-67d25000-ab66ac56 (file id: FILEID)
+1 - FILENAME (file id: FILEID)
     version:            0
     type:               file
     parent folder id:   3E4FF671B44E11ED86FF00155D014E0D
@@ -44,7 +44,7 @@ read -r -d '' FILE_DETAIL << 'EOF'
     parent id:          41545AB0788A11ECBD0700155D014E0D
     original file name: null
     file URI:           null
-    fan URI:            ftp://user@192.168.101.210:2121/download/2023_02/1eeb7769-fdb1-4313-8d76-ec719ad7a44c/mnt/nas01/05043fe1-00000006-2f8630d0-608630d0-67d25000-ab66ac56
+    fan URI:            ftp://user@192.168.101.210:2121/download/2023_02/1eeb7769-fdb1-4313-8d76-ec719ad7a44c/mnt/nas01/FILENAME
     pool id:            41545AB0788A11ECBD0700155D014E0D
     legal hold:         Enabled=false OwnerID=null MatterID=null Start=Sat Jan 01 05:00:00 EST 1 Release=Sat Jan 01 05:00:00 EST 1
     policies:
@@ -70,7 +70,7 @@ read -r -d '' FILE_IN_WRONG_DS << 'EOF'
 EOF
 
 read -r -d '' FILE << 'EOF'
-1 - 05043fe1-00000006-2f8630d0-608630d0-67d25000-ab66ac56 (file id: FILEID)
+1 - FILENAME (file id: FILEID)
 EOF
 
 read -r -d '' FILE_ERR << 'EOF'
@@ -95,6 +95,14 @@ function get_pool {
     echo "$POOL"
 }
 
+function get_file {
+    local ID="$1"
+    LINE=$(cat gbr.list | grep $ID)
+    FN=$(echo $LINE | cut -d',' -f2)
+    echo "$FILE" | sed "s/FILEID/"$ID"/g" | sed "s/FILENAME/"$FN"/g"
+}
+
+
 function get_file_detail {
     local ID="$1"
     echo "$FILE_DETAIL" | sed "s/FILEID/"$ID"/g"
@@ -108,16 +116,12 @@ function get_bad_file_id {
     exit
 }
 
-function get_file {
-    local ID="$1"
-    echo "$FILE" | sed "s/FILEID/"$ID"/g"
-}
 
 function get_file_err {
     >&2 echo "$FILE_ERR" 
 }
 
-sleep 2
+#sleep 2
 if [ "$CMD" = "pool" ] 
 then
     get_pool

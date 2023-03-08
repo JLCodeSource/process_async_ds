@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"log"
 	"math/rand"
 	"net"
 	"os"
@@ -78,6 +79,8 @@ const (
 	letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 	guidBytes   = "0123456789abcdef"
 	fileIDBytes = "0123456789ABCDEF"
+
+	gbrList = "gbr.list"
 )
 
 // TestVerify encompasses all verification
@@ -94,8 +97,9 @@ func TestVerify(t *testing.T) {
 
 	t.Run("Table verify", func(t *testing.T) {
 		for _, f := range files {
-
-			ok := f.verifyStat(fsys, testLogger)
+			ok := f.verifyGBMetadata(testLogger)
+			assert.True(t, ok)
+			ok = f.verifyStat(fsys, testLogger)
 			assert.True(t, ok)
 		}
 
@@ -810,7 +814,21 @@ func TestVerifyFileIDName(t *testing.T) {
 	})
 }
 
+func manageGbrListFile() {
+	if _, err := os.Stat(gbrList); err == nil {
+		os.Remove(gbrList)
+	}
+}
+
 func createFSTest(numFiles int) (fstest.MapFS, []File) {
+	// handle gbr input
+	manageGbrListFile()
+	out, err := os.OpenFile(gbrList, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer out.Close()
+
 	fsys = fstest.MapFS{}
 	var files []File
 	var dirs = []string{}
@@ -860,7 +878,8 @@ func createFSTest(numFiles int) (fstest.MapFS, []File) {
 			fmt.Printf(err.Error())
 		}
 		files = append(files, f)
-		fmt.Println("f.smbName: " + f.smbName)
+
+		/* fmt.Println("f.smbName: " + f.smbName)
 		fmt.Println("f.stagingPath: " + f.stagingPath)
 		fmt.Println("f.createTime: " + f.createTime.String())
 		fmt.Println("f.size: " + strconv.Itoa(int(f.size)))
@@ -868,7 +887,12 @@ func createFSTest(numFiles int) (fstest.MapFS, []File) {
 		fmt.Println("f.fanIP: " + f.fanIP.String())
 		fmt.Println("f.datasetID: " + f.datasetID)
 		fmt.Println("f.fileInfo.ModTime: " + f.fileInfo.ModTime().String())
-		fmt.Println("f.fileInfo.Size: " + strconv.Itoa(int(f.fileInfo.Size())))
+		fmt.Println("f.fileInfo.Size: " + strconv.Itoa(int(f.fileInfo.Size()))) */
+
+		_, err = out.WriteString(fmt.Sprintf("%v,%v\n", f.id, f.smbName))
+		if err != nil {
+			log.Fatal(err)
+		}
 
 	}
 
