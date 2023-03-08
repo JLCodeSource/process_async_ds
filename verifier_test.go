@@ -822,19 +822,19 @@ func createFSTest(numFiles int) (fstest.MapFS, []File) {
 	for i := 0; i < numFiles; i++ {
 		f := File{}
 		// set name
-		guid := genGuid()
+		guid := genGUID()
 		f.smbName = guid
 		// set staging path
-		dir := dirs[rand.Intn(len(dirs))]
+		dir := dirs[rand.Intn(len(dirs))] //#nosec - random testing code can be insecure
 		gbtmp := "{gbtmp-" + string(genRandom(32, fileIDBytes)) + "}"
 		f.stagingPath = dir + guid + gbtmp
 		// set createTime
 		now := time.Now()
-		duration := time.Hour * time.Duration(rand.Intn(14)) * time.Duration(24)
+		duration := time.Hour * time.Duration(rand.Intn(14)) * time.Duration(24) //#nosec - random testing code can be insecure
 		beforeNow := now.Add(-duration)
 		f.createTime = beforeNow
 		// set size
-		f.size = int64(rand.Intn(100000))
+		f.size = int64(rand.Intn(100000)) //#nosec - random testing code can be insecure
 		// set content
 		data := genRandom(f.size, letterBytes)
 		// set id
@@ -853,7 +853,7 @@ func createFSTest(numFiles int) (fstest.MapFS, []File) {
 		fi, err := fs.Stat(fsys, f.stagingPath)
 		f.fileInfo = fi
 		if err != nil {
-			fmt.Printf(err.Error())
+			fmt.Print(err.Error())
 		}
 		files = append(files, f)
 
@@ -880,12 +880,12 @@ func createFSTest(numFiles int) (fstest.MapFS, []File) {
 func genRandom(i int64, s string) (random []byte) {
 	random = make([]byte, i)
 	for j := range random {
-		random[j] = s[rand.Intn(len(s))]
+		random[j] = s[rand.Intn(len(s))] //#nosec - random testing code can be insecure
 	}
 	return
 }
 
-func genGuid() (guid string) {
+func genGUID() (guid string) {
 	for i := 0; i < 6; i++ {
 		if i == 1 {
 			guid = guid + "00000006-"
