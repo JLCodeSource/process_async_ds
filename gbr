@@ -97,10 +97,17 @@ function get_pool {
 
 function get_file {
     local ID="$1"
-    LINE=$(cat gbr.list | grep $ID)
-    FN=$(echo $LINE | cut -d',' -f2)
-    echo "$FILE" | sed "s/FILEID/"$ID"/g" | sed "s/FILENAME/"$FN"/g"
+    if [[ "$ID" == "$FILEID" ]]
+    then
+        echo "$FILE" | sed "s/FILEID/"$ID"/g" | sed "s/FILENAME/"$FILENAME"/g"
+    else 
+        
+        LINE=$(cat gbr.list | grep $ID)
+        FN=$(echo $LINE | cut -d',' -f2)
+        echo "$FILE" | sed "s/FILEID/"$ID"/g" | sed "s/FILENAME/"$FN"/g"
+    fi
 }
+
 
 
 function get_file_detail {

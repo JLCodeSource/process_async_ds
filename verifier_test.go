@@ -285,17 +285,14 @@ func TestVerifyTimeLimit(t *testing.T) {
 // TestVerifyGBMetadata encompasses verifyInDataset, getMBFileName/DSByFileID
 func TestVerifyGBMetadata(t *testing.T) {
 	t.Run("returns true if file.datasetID matches DatasetID", func(t *testing.T) {
-		file = File{
-			smbName:   testSmbName,
-			id:        testFileID,
-			datasetID: testDatasetID,
-		}
+		_, files := createFSTest(1)
+
 		testLogger, hook = setupLogs()
-		assert.True(t, file.verifyGBMetadata(testLogger))
-		/* gotLogMsg := hook.LastEntry().Message
-		wantLogMsg := fmt.Sprintf(fDatasetMatchTrueLog, file.smbName, file.id, file.datasetID, testDatasetID)
+		assert.True(t, files[0].verifyGBMetadata(testLogger))
+		gotLogMsg := hook.LastEntry().Message
+		wantLogMsg := fmt.Sprintf(fDatasetMatchTrueLog, files[0].smbName, files[0].id, files[0].datasetID, testDatasetID)
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
-		*/
+
 	})
 	t.Run("returns false if file.datasetID does not match DatasetID", func(t *testing.T) {
 		file = File{
