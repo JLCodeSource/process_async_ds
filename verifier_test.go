@@ -857,16 +857,6 @@ func createFSTest(numFiles int) (fstest.MapFS, []File) {
 		}
 		files = append(files, f)
 
-		/* fmt.Println("f.smbName: " + f.smbName)
-		fmt.Println("f.stagingPath: " + f.stagingPath)
-		fmt.Println("f.createTime: " + f.createTime.String())
-		fmt.Println("f.size: " + strconv.Itoa(int(f.size)))
-		fmt.Println("f.id: " + f.id)
-		fmt.Println("f.fanIP: " + f.fanIP.String())
-		fmt.Println("f.datasetID: " + f.datasetID)
-		fmt.Println("f.fileInfo.ModTime: " + f.fileInfo.ModTime().String())
-		fmt.Println("f.fileInfo.Size: " + strconv.Itoa(int(f.fileInfo.Size()))) */
-
 		_, err = out.WriteString(fmt.Sprintf("%v,%v\n", f.id, f.smbName))
 		if err != nil {
 			log.Fatal(err)
