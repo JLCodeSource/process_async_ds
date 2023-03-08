@@ -3,15 +3,18 @@ package main
 import (
 	"errors"
 	"fmt"
+	"io/fs"
+	"log"
+	"math/rand"
 	"net"
 	"os"
+	"strconv"
 	"testing"
 	"testing/fstest"
 	"time"
 
 	"bou.ke/monkey"
 	"github.com/stretchr/testify/assert"
-	"github.com/JLCodeSource/process_async_ds/mockfs"
 )
 
 const (
@@ -71,46 +74,53 @@ const (
 	testWrongDataset         = "396862B0791111ECA62400155D014E11"
 	testFileIDInWrongDataset = "3E4FF671B44E11ED86FF00155D015E0D"
 	testShortPath            = "staging/05043fe1-00000006-2f8630d0-608630d0-67d25000-ab66ac56"
+
+	letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	guidBytes   = "0123456789abcdef"
+	fileIDBytes = "0123456789ABCDEF"
+
+	gbrList = "gbr.list"
 )
 
 // TestVerify encompasses all verification
-// Bit of a hack of setting now to time.Time.IsZero & going back 5 secs
-// But it works...
 func TestVerify(t *testing.T) {
 	// setup server ip
 	hostname, _ := os.Hostname()
 	ips, _ := net.LookupIP(hostname)
 
-	now = time.Time{}
-	afterNow := now.Add(-5 * time.Second)
+	// Setup env
+
+	now = time.Now()
+	afterNow := now.Add(-10000 * time.Hour)
 
 	fsys = fstest.MapFS{
-		testShortPath: {Data: []byte(testContent)},
+		testShortPath: {Data: []byte(testContent),
+			ModTime: now},
 	}
+
+	var files []File
+
+	fsys, files = createFSTest(8)
+
 	env := Env{
 		fsys:  fsys,
 		limit: afterNow,
 		sysIP: ips[0],
 	}
 
-	fileInfo, _ := fsys.Stat(testShortPath)
-	size := int64(4)
-	file = File{
-		smbName:     testSmbName,
-		id:          testFileID,
-		datasetID:   testDatasetID,
-		stagingPath: testShortPath,
-		size:        size,
-		fileInfo:    fileInfo,
-		fanIP:       ips[0],
-	}
-
 	testLogger, hook = setupLogs()
-	assert.True(t, file.verify(env, testLogger))
 
-	gotLogMsg := hook.LastEntry().Message
-	wantLogMsg := fmt.Sprintf(fVerifiedLog, file.smbName, file.id)
-	assertCorrectString(t, gotLogMsg, wantLogMsg)
+	t.Run("Gen verify", func(t *testing.T) {
+		for _, f := range files {
+			ok := f.verify(env, testLogger)
+			assert.True(t, ok)
+
+			gotLogMsg := hook.LastEntry().Message
+			wantLogMsg := fmt.Sprintf(fVerifiedLog, f.smbName, f.id)
+			assertCorrectString(t, gotLogMsg, wantLogMsg)
+		}
+
+	})
 
 }
 
@@ -274,17 +284,14 @@ func TestVerifyTimeLimit(t *testing.T) {
 // TestVerifyGBMetadata encompasses verifyInDataset, getMBFileName/DSByFileID
 func TestVerifyGBMetadata(t *testing.T) {
 	t.Run("returns true if file.datasetID matches DatasetID", func(t *testing.T) {
-		file = File{
-			smbName:   testSmbName,
-			id:        testFileID,
-			datasetID: testDatasetID,
-		}
+		_, files := createFSTest(1)
+
 		testLogger, hook = setupLogs()
-		assert.True(t, file.verifyGBMetadata(testLogger))
-		/* gotLogMsg := hook.LastEntry().Message
-		wantLogMsg := fmt.Sprintf(fDatasetMatchTrueLog, file.smbName, file.id, file.datasetID, testDatasetID)
+		assert.True(t, files[0].verifyGBMetadata(testLogger))
+		gotLogMsg := hook.LastEntry().Message
+		wantLogMsg := fmt.Sprintf(fDatasetMatchTrueLog, files[0].smbName, files[0].id, files[0].datasetID, testDatasetID)
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
-		*/
+
 	})
 	t.Run("returns false if file.datasetID does not match DatasetID", func(t *testing.T) {
 		file = File{
@@ -602,19 +609,18 @@ func TestVerifyStat(t *testing.T) {
 	})
 
 	t.Run("returns false if file.CreateTime does not match comparator", func(t *testing.T) {
-		mfs = mockfs.MockFS{}
+		fsys = fstest.MapFS{}
 		now := time.Now()
 		afterNow := now.Add(5 * time.Second)
-		mf := mockfs.MockFile{
-			FS:        mfs,
-			MFModTime: afterNow,
-			MFName:    testName,
-		}
-		mfs = mockfs.MockFS{
-			mockfs.NewFile(mf),
+		fsys[testName] = &fstest.MapFile{
+			ModTime: afterNow,
 		}
 
-		fileInfo, _ := mf.Stat()
+		fileInfo, err := fs.Stat(fsys, testName)
+		if err != nil {
+			fmt.Print(err.Error())
+		}
+
 		file = File{
 			smbName:     testName,
 			id:          testFileID,
@@ -624,7 +630,7 @@ func TestVerifyStat(t *testing.T) {
 		}
 
 		testLogger, hook = setupLogs()
-		assert.False(t, file.verifyStat(mfs, testLogger))
+		assert.False(t, file.verifyStat(fsys, testLogger))
 
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(fCreateTimeMatchFalseLog,
@@ -688,18 +694,17 @@ func TestVerifyFileSize(t *testing.T) {
 
 func TestVerifyFileCreateTime(t *testing.T) {
 	t.Run("returns true if file.createTime matches comparator", func(t *testing.T) {
-		mfs = mockfs.MockFS{}
+		fsys = fstest.MapFS{}
 		now := time.Now()
-		mf := mockfs.MockFile{
-			FS:        mfs,
-			MFModTime: now,
-			MFName:    testName,
-		}
-		mfs = mockfs.MockFS{
-			mockfs.NewFile(mf),
+		fsys[testName] = &fstest.MapFile{
+			ModTime: now,
 		}
 
-		fileInfo, _ := mf.Stat()
+		fileInfo, err := fs.Stat(fsys, testName)
+		if err != nil {
+			fmt.Print(err.Error())
+		}
+
 		file = File{
 			smbName:     testName,
 			id:          testFileID,
@@ -721,19 +726,18 @@ func TestVerifyFileCreateTime(t *testing.T) {
 	})
 
 	t.Run("returns false if file.CreateTime does not match comparator", func(t *testing.T) {
-		mfs = mockfs.MockFS{}
+		fsys = fstest.MapFS{}
 		now := time.Now()
 		afterNow := now.Add(5 * time.Second)
-		mf := mockfs.MockFile{
-			FS:        mfs,
-			MFModTime: afterNow,
-			MFName:    testName,
-		}
-		mfs = mockfs.MockFS{
-			mockfs.NewFile(mf),
+		fsys[testName] = &fstest.MapFile{
+			ModTime: afterNow,
 		}
 
-		fileInfo, _ := mf.Stat()
+		fileInfo, err := fs.Stat(fsys, testName)
+		if err != nil {
+			fmt.Print(err.Error())
+		}
+
 		file = File{
 			smbName:     testName,
 			id:          testFileID,
@@ -784,41 +788,98 @@ func TestVerifyFileIDName(t *testing.T) {
 	})
 }
 
-/*
-Need to work this out for the future
-type function func(File, interface{}, *logrus.Logger) bool
+func manageGbrListFile() {
+	if _, err := os.Stat(gbrList); err == nil {
+		os.Remove(gbrList)
+	}
+}
 
-func TestVerify(t *testing.T) {
-	// setup logger
-	var testLogger *logrus.Logger
-	var hook *test.Hook
+func createFSTest(numFiles int) (fstest.MapFS, []File) {
+	// handle gbr input
+	manageGbrListFile()
+	out, err := os.OpenFile(gbrList, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer out.Close()
 
-	// setup file
-	var file File
+	fsys = fstest.MapFS{}
+	var files []File
+	var dirs = []string{}
 
-	// setup server ip
-	hostname, _ := os.Hostname()
-	ips, _ := net.LookupIP(hostname)
-	// set incorrect ip
-	ip := net.ParseIP("192.168.101.1")
+	dirs = append(dirs, "mb/FAN/")
+	dirs = append(dirs, "mb/FAN/download/")
 
-	verifyTests := []struct {
-		name     string
-		file     File
-		verify   bool
-		function function
-		log      string
-	}{
-		{
-			name: "returns true if ip is same as the current machine",
-			file: File{
-				smbName: "file.txt",
-				fanIP:   ips[0],
-			},
-			verify:   true,
-			function: File.verifyIP(file, ips[0], testLogger),
-			log:      "file.txt ip:" + file.fanIP.String() + " matches comparison ip:" + ips[0].String(),
-		},
+	for i := 1; i < 4; i++ {
+		dirs = append(dirs, "datav"+strconv.Itoa(i)+"/staging/")
+		dirs = append(dirs, "datav"+strconv.Itoa(i)+"/staging/download/")
 	}
 
-}*/
+	for i := 0; i < numFiles; i++ {
+		f := File{}
+		// set name
+		guid := genGUID()
+		f.smbName = guid
+		// set staging path
+		dir := dirs[rand.Intn(len(dirs))] //#nosec - random testing code can be insecure
+		gbtmp := "{gbtmp-" + string(genRandom(32, fileIDBytes)) + "}"
+		f.stagingPath = dir + guid + gbtmp
+		// set createTime
+		now := time.Now()
+		duration := time.Hour * time.Duration(rand.Intn(14)) * time.Duration(24) //#nosec - random testing code can be insecure
+		beforeNow := now.Add(-duration)
+		f.createTime = beforeNow
+		// set size
+		f.size = int64(rand.Intn(100000)) //#nosec - random testing code can be insecure
+		// set content
+		data := genRandom(f.size, letterBytes)
+		// set id
+		f.id = string(genRandom(32, fileIDBytes))
+		// set fanIP
+		hostname, _ := os.Hostname()
+		ips, _ := net.LookupIP(hostname)
+		f.fanIP = ips[0]
+		// set datasetID
+		f.datasetID = testDatasetID
+
+		fsys[f.stagingPath] = &fstest.MapFile{
+			Data:    []byte(data),
+			ModTime: f.createTime,
+		}
+		fi, err := fs.Stat(fsys, f.stagingPath)
+		f.fileInfo = fi
+		if err != nil {
+			fmt.Print(err.Error())
+		}
+		files = append(files, f)
+
+		_, err = out.WriteString(fmt.Sprintf("%v,%v\n", f.id, f.smbName))
+		if err != nil {
+			log.Fatal(err)
+		}
+
+	}
+
+	return fsys, files
+}
+
+func genRandom(i int64, s string) (random []byte) {
+	random = make([]byte, i)
+	for j := range random {
+		random[j] = s[rand.Intn(len(s))] //#nosec - random testing code can be insecure
+	}
+	return
+}
+
+func genGUID() (guid string) {
+	for i := 0; i < 6; i++ {
+		if i == 1 {
+			guid = guid + "00000006-"
+		} else if i == 5 {
+			guid = guid + string(genRandom(6, guidBytes))
+		} else {
+			guid = guid + string(genRandom(6, guidBytes)) + "-"
+		}
+	}
+	return
+}
