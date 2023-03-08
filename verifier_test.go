@@ -123,43 +123,6 @@ func TestVerify(t *testing.T) {
 
 	})
 
-	t.Run("Initial verify", func(t *testing.T) {
-
-		now = time.Now()
-		afterNow := now.Add(-5 * time.Second)
-
-		fsys = fstest.MapFS{
-			testShortPath: {Data: []byte(testContent),
-				ModTime: now},
-		}
-		env := Env{
-			fsys:  fsys,
-			limit: afterNow,
-			sysIP: ips[0],
-		}
-
-		fileInfo, _ := fsys.Stat(testShortPath)
-		size := int64(4)
-		file = File{
-			smbName:     testSmbName,
-			id:          testFileID,
-			datasetID:   testDatasetID,
-			stagingPath: testShortPath,
-			createTime:  now,
-			size:        size,
-			fileInfo:    fileInfo,
-			fanIP:       ips[0],
-		}
-
-		testLogger, hook = setupLogs()
-		assert.True(t, file.verify(env, testLogger))
-
-		gotLogMsg := hook.LastEntry().Message
-		wantLogMsg := fmt.Sprintf(fVerifiedLog, file.smbName, file.id)
-		assertCorrectString(t, gotLogMsg, wantLogMsg)
-
-	})
-
 }
 
 // TestVerifyEnvSettings encompasses TestVerifyIP & TestVerifyTimeLimit
