@@ -7,6 +7,7 @@ import (
 	"math/rand"
 	"net"
 	"os"
+	"strconv"
 	"testing"
 	"testing/fstest"
 	"time"
@@ -75,6 +76,8 @@ const (
 	testShortPath            = "staging/05043fe1-00000006-2f8630d0-608630d0-67d25000-ab66ac56"
 
 	letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	guidBytes   = "0123456789abcdef"
+	fileIDBytes = "0123456789ABCDEF"
 )
 
 // TestVerify encompasses all verification
@@ -83,74 +86,9 @@ func TestVerify(t *testing.T) {
 	hostname, _ := os.Hostname()
 	ips, _ := net.LookupIP(hostname)
 
-	files := []File{
-		{
-			smbName:     "b690269c-00000006-ddfca584-63fca584-00241500-04cb015d",
-			stagingPath: "mb/FAN/b690269c-00000006-ddfca584-63fca584-00241500-04cb015d{gbtmp-61A79740B69C11EDBF6800155D014E0D}",
-			createTime:  time.Unix(1677501834, 0),
-			size:        4,
-			id:          "D69DE9A0B69C11EDA19100155D014E11",
-			fanIP:       ips[0],
-		},
-		{
-			smbName:     "1b64bdde-00000006-d8fca584-63fca584-00291500-04cb015d",
-			stagingPath: "mb/FAN/download/1b64bdde-00000006-d8fca584-63fca584-00291500-04cb015d{gbtmp-64EBECD0B69C11EDBF6800155D014E0D}",
-			createTime:  time.Unix(1677501834, 0),
-			size:        680,
-			id:          "D628B9A0B69C11EDA19100155D014E11",
-			fanIP:       ips[0],
-		},
-		{
-			smbName:     "57165049-00000006-d9fca584-63fca584-00281500-04cb015d",
-			stagingPath: "data1/staging/57165049-00000006-d9fca584-63fca584-00281500-04cb015d{gbtmp-6237A240B69C11EDBF6800155D014E0D}",
-			createTime:  time.Unix(1677501828, 0),
-			size:        120264,
-			id:          "D2DB6360B69C11EDA19100155D014E11",
-			fanIP:       ips[0],
-		},
-		{
-			smbName:     "713938c6-00000006-dbfca584-63fca584-00261500-04cb015d",
-			stagingPath: "data1/staging/download/713938c6-00000006-dbfca584-63fca584-00261500-04cb015d{gbtmp-6232E750B69C11EDBF6800155D014E0D}",
-			createTime:  time.Unix(1677501828, 0),
-			size:        228316,
-			id:          "D4CAD750B69C11EDA19100155D014E11",
-			fanIP:       ips[0],
-		},
-		{
-			smbName:     "f456db3d-00000006-ff32ebe5-6332ebe5-00020c00-e4857b29",
-			stagingPath: "data2/staging/f456db3d-00000006-ff32ebe5-6332ebe5-00020c00-e4857b29{gbtmp-1618C670B44C11ED86FF00155D014E0D}",
-			createTime:  time.Unix(1677247705, 0),
-			size:        27714,
-			id:          "2511FA10B44D11ED905500155D014E11",
-			fanIP:       ips[0],
-		},
-		{
-			smbName:     "3d4bd551-00000006-dafca584-63fca584-00271500-04cb015d",
-			stagingPath: "data2/staging/download/3d4bd551-00000006-dafca584-63fca584-00271500-04cb015d{gbtmp-64CC08C0B69C11EDBF6800155D014E0D}",
-			createTime:  time.Unix(1677501834, 0),
-			size:        616,
-			id:          "D2576650B69C11EDA19100155D014E11",
-			fanIP:       ips[0],
-		},
-		{
-			smbName:     "d394c121-00000006-e0fca579-63fca579-00211500-04cb015d",
-			stagingPath: "data3/staging/d394c121-00000006-e0fca579-63fca579-00211500-04cb015d{gbtmp-5E954E30B69C11EDBF6800155D014E0D}",
-			createTime:  time.Unix(1677501819, 0),
-			size:        2274,
-			id:          "D548B9E0B69C11EDA19100155D014E11",
-			fanIP:       ips[0],
-		},
-		{
-			smbName:     "fae2cb0b-00000006-dcfca584-63fca584-00251500-04cb015d",
-			stagingPath: "data3/staging/download/fae2cb0b-00000006-dcfca584-63fca584-00251500-04cb015d{gbtmp-622FB300B69C11EDBF6800155D014E0D}",
-			createTime:  time.Unix(1677501828, 0),
-			size:        71716,
-			id:          "D49855A0B69C11EDA19100155D014E11",
-			fanIP:       ips[0],
-		},
-	}
+	var files []File
 
-	fsys, files = createFSTest(files)
+	fsys, files = createFSTest(8)
 
 	testLogger, _ = setupLogs()
 
@@ -872,33 +810,48 @@ func TestVerifyFileIDName(t *testing.T) {
 	})
 }
 
-func createFSTest(files []File) (fstest.MapFS, []File) {
+func createFSTest(numFiles int) (fstest.MapFS, []File) {
 	fsys = fstest.MapFS{}
-	//var dirs = []string{}
-	//var testfs fstest.MapFS = make(map[string]*fstest.MapFile)
+	var files []File
+	var dirs = []string{}
 
-	/* 	dirs = append(dirs, "/mb/")
-	   	dirs = append(dirs, "/mb/FAN")
-	   	dirs = append(dirs, "/mb/FAN/downloap")
+	dirs = append(dirs, "mb/FAN/")
+	dirs = append(dirs, "mb/FAN/download/")
 
-	   	for i := 1; i < 4; i++ {
-	   		dirs = append(dirs, "/datav"+strconv.Itoa(i))
-	   		dirs = append(dirs, "/datav"+strconv.Itoa(i)+"/staging")
-	   		dirs = append(dirs, "/datav"+strconv.Itoa(i)+"/staging/downloap")
-	   	}
+	for i := 1; i < 4; i++ {
+		dirs = append(dirs, "datav"+strconv.Itoa(i)+"/staging/")
+		dirs = append(dirs, "datav"+strconv.Itoa(i)+"/staging/download/")
+	}
 
-	   	for _, d := range dirs {
-	   		fsys[d] = &fstest.MapFile{Mode: fs.ModeDir}
-	   	} */
-
-	for i, f := range files {
-		b := make([]byte, f.size)
-		for j := range b {
-			b[j] = letterBytes[rand.Intn(len(letterBytes))]
-		}
+	for i := 0; i < numFiles; i++ {
+		f := File{}
+		// set name
+		guid := genGuid()
+		f.smbName = guid
+		// set staging path
+		dir := dirs[rand.Intn(len(dirs))]
+		gbtmp := "{gbtmp-" + string(genRandom(32, fileIDBytes)) + "}"
+		f.stagingPath = dir + guid + gbtmp
+		// set createTime
+		now := time.Now()
+		duration := time.Hour * time.Duration(rand.Intn(14)) * time.Duration(24)
+		beforeNow := now.Add(-duration)
+		f.createTime = beforeNow
+		// set size
+		f.size = int64(rand.Intn(100000))
+		// set content
+		data := genRandom(f.size, letterBytes)
+		// set id
+		f.id = string(genRandom(32, fileIDBytes))
+		// set fanIP
+		hostname, _ := os.Hostname()
+		ips, _ := net.LookupIP(hostname)
+		f.fanIP = ips[0]
+		// set datasetID
+		f.datasetID = testDatasetID
 
 		fsys[f.stagingPath] = &fstest.MapFile{
-			Data:    []byte(b),
+			Data:    []byte(data),
 			ModTime: f.createTime,
 		}
 		fi, err := fs.Stat(fsys, f.stagingPath)
@@ -906,8 +859,39 @@ func createFSTest(files []File) (fstest.MapFS, []File) {
 		if err != nil {
 			fmt.Printf(err.Error())
 		}
-		files[i] = f
+		files = append(files, f)
+		fmt.Println("f.smbName: " + f.smbName)
+		fmt.Println("f.stagingPath: " + f.stagingPath)
+		fmt.Println("f.createTime: " + f.createTime.String())
+		fmt.Println("f.size: " + strconv.Itoa(int(f.size)))
+		fmt.Println("f.id: " + f.id)
+		fmt.Println("f.fanIP: " + f.fanIP.String())
+		fmt.Println("f.datasetID: " + f.datasetID)
+		fmt.Println("f.fileInfo.ModTime: " + f.fileInfo.ModTime().String())
+		fmt.Println("f.fileInfo.Size: " + strconv.Itoa(int(f.fileInfo.Size())))
+
 	}
 
 	return fsys, files
+}
+
+func genRandom(i int64, s string) (random []byte) {
+	random = make([]byte, i)
+	for j := range random {
+		random[j] = s[rand.Intn(len(s))]
+	}
+	return
+}
+
+func genGuid() (guid string) {
+	for i := 0; i < 6; i++ {
+		if i == 1 {
+			guid = guid + "00000006-"
+		} else if i == 5 {
+			guid = guid + string(genRandom(6, guidBytes))
+		} else {
+			guid = guid + string(genRandom(6, guidBytes)) + "-"
+		}
+	}
+	return
 }
