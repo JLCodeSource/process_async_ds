@@ -20,7 +20,6 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	log "github.com/JLCodeSource/process_async_ds/logger"
-	"github.com/JLCodeSource/process_async_ds/mockfs"
 )
 
 const (
@@ -70,7 +69,6 @@ var (
 
 	// setup fsys
 	fsys fstest.MapFS
-	mfs  mockfs.MockFS
 )
 
 func TestMainFunc(t *testing.T) {

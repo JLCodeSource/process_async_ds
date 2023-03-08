@@ -15,7 +15,6 @@ import (
 
 	"bou.ke/monkey"
 	"github.com/stretchr/testify/assert"
-	"github.com/JLCodeSource/process_async_ds/mockfs"
 )
 
 const (
@@ -610,19 +609,18 @@ func TestVerifyStat(t *testing.T) {
 	})
 
 	t.Run("returns false if file.CreateTime does not match comparator", func(t *testing.T) {
-		mfs = mockfs.MockFS{}
+		fsys = fstest.MapFS{}
 		now := time.Now()
 		afterNow := now.Add(5 * time.Second)
-		mf := mockfs.MockFile{
-			FS:        mfs,
-			MFModTime: afterNow,
-			MFName:    testName,
-		}
-		mfs = mockfs.MockFS{
-			mockfs.NewFile(mf),
+		fsys[testName] = &fstest.MapFile{
+			ModTime: afterNow,
 		}
 
-		fileInfo, _ := mf.Stat()
+		fileInfo, err := fs.Stat(fsys, testName)
+		if err != nil {
+			fmt.Print(err.Error())
+		}
+
 		file = File{
 			smbName:     testName,
 			id:          testFileID,
@@ -632,7 +630,7 @@ func TestVerifyStat(t *testing.T) {
 		}
 
 		testLogger, hook = setupLogs()
-		assert.False(t, file.verifyStat(mfs, testLogger))
+		assert.False(t, file.verifyStat(fsys, testLogger))
 
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(fCreateTimeMatchFalseLog,
@@ -696,18 +694,17 @@ func TestVerifyFileSize(t *testing.T) {
 
 func TestVerifyFileCreateTime(t *testing.T) {
 	t.Run("returns true if file.createTime matches comparator", func(t *testing.T) {
-		mfs = mockfs.MockFS{}
+		fsys = fstest.MapFS{}
 		now := time.Now()
-		mf := mockfs.MockFile{
-			FS:        mfs,
-			MFModTime: now,
-			MFName:    testName,
-		}
-		mfs = mockfs.MockFS{
-			mockfs.NewFile(mf),
+		fsys[testName] = &fstest.MapFile{
+			ModTime: now,
 		}
 
-		fileInfo, _ := mf.Stat()
+		fileInfo, err := fs.Stat(fsys, testName)
+		if err != nil {
+			fmt.Print(err.Error())
+		}
+
 		file = File{
 			smbName:     testName,
 			id:          testFileID,
@@ -729,19 +726,18 @@ func TestVerifyFileCreateTime(t *testing.T) {
 	})
 
 	t.Run("returns false if file.CreateTime does not match comparator", func(t *testing.T) {
-		mfs = mockfs.MockFS{}
+		fsys = fstest.MapFS{}
 		now := time.Now()
 		afterNow := now.Add(5 * time.Second)
-		mf := mockfs.MockFile{
-			FS:        mfs,
-			MFModTime: afterNow,
-			MFName:    testName,
-		}
-		mfs = mockfs.MockFS{
-			mockfs.NewFile(mf),
+		fsys[testName] = &fstest.MapFile{
+			ModTime: afterNow,
 		}
 
-		fileInfo, _ := mf.Stat()
+		fileInfo, err := fs.Stat(fsys, testName)
+		if err != nil {
+			fmt.Print(err.Error())
+		}
+
 		file = File{
 			smbName:     testName,
 			id:          testFileID,
