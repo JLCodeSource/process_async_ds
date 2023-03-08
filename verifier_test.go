@@ -89,18 +89,36 @@ func TestVerify(t *testing.T) {
 	hostname, _ := os.Hostname()
 	ips, _ := net.LookupIP(hostname)
 
+	// Setup env
+
+	now = time.Now()
+	afterNow := now.Add(-10000 * time.Hour)
+
+	fsys = fstest.MapFS{
+		testShortPath: {Data: []byte(testContent),
+			ModTime: now},
+	}
+
 	var files []File
 
 	fsys, files = createFSTest(8)
 
-	testLogger, _ = setupLogs()
+	env := Env{
+		fsys:  fsys,
+		limit: afterNow,
+		sysIP: ips[0],
+	}
 
-	t.Run("Table verify", func(t *testing.T) {
+	testLogger, hook = setupLogs()
+
+	t.Run("Gen verify", func(t *testing.T) {
 		for _, f := range files {
-			ok := f.verifyGBMetadata(testLogger)
+			ok := f.verify(env, testLogger)
 			assert.True(t, ok)
-			ok = f.verifyStat(fsys, testLogger)
-			assert.True(t, ok)
+
+			gotLogMsg := hook.LastEntry().Message
+			wantLogMsg := fmt.Sprintf(fVerifiedLog, f.smbName, f.id)
+			assertCorrectString(t, gotLogMsg, wantLogMsg)
 		}
 
 	})
