@@ -3,9 +3,10 @@ package main
 import (
 	"errors"
 	"fmt"
+	"io/fs"
+	"math/rand"
 	"net"
 	"os"
-	"path/filepath"
 	"testing"
 	"testing/fstest"
 	"time"
@@ -72,93 +73,91 @@ const (
 	testWrongDataset         = "396862B0791111ECA62400155D014E11"
 	testFileIDInWrongDataset = "3E4FF671B44E11ED86FF00155D015E0D"
 	testShortPath            = "staging/05043fe1-00000006-2f8630d0-608630d0-67d25000-ab66ac56"
+
+	letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 )
 
 // TestVerify encompasses all verification
-// Bit of a hack of setting now to time.Time.IsZero & going back 5 secs
-// But it works...
 func TestVerify(t *testing.T) {
 	// setup server ip
 	hostname, _ := os.Hostname()
 	ips, _ := net.LookupIP(hostname)
 
-	// s
-
 	files := []File{
 		{
 			smbName:     "b690269c-00000006-ddfca584-63fca584-00241500-04cb015d",
-			stagingPath: "b690269c-00000006-ddfca584-63fca584-00241500-04cb015d{gbtmp-61A79740B69C11EDBF6800155D014E0D}",
-			createTime:  time.Unix(1677501828, 0),
-			size:        120264,
+			stagingPath: "mb/FAN/b690269c-00000006-ddfca584-63fca584-00241500-04cb015d{gbtmp-61A79740B69C11EDBF6800155D014E0D}",
+			createTime:  time.Unix(1677501834, 0),
+			size:        4,
 			id:          "D69DE9A0B69C11EDA19100155D014E11",
 			fanIP:       ips[0],
-		}, /*
-			{
-				smbName:     "1b64bdde-00000006-d8fca584-63fca584-00291500-04cb015d",
-				stagingPath: "/mb/FAN/download/1b64bdde-00000006-d8fca584-63fca584-00291500-04cb015d{gbtmp-64EBECD0B69C11EDBF6800155D014E0D}",
-				createTime:  time.Unix(1677501834, 0),
-				size:        680,
-				id:          "D628B9A0B69C11EDA19100155D014E11",
-				fanIP:       ips[0],
-			},
-			{
-				smbName:     "57165049-00000006-d9fca584-63fca584-00281500-04cb015d",
-				stagingPath: "/data1/staging/57165049-00000006-d9fca584-63fca584-00281500-04cb015d{gbtmp-6237A240B69C11EDBF6800155D014E0D}",
-				createTime:  time.Unix(1677501828, 0),
-				size:        120264,
-				id:          "D2DB6360B69C11EDA19100155D014E11",
-				fanIP:       ips[0],
-			},
-			{
-				smbName:     "713938c6-00000006-dbfca584-63fca584-00261500-04cb015d",
-				stagingPath: "/data1/staging/download/713938c6-00000006-dbfca584-63fca584-00261500-04cb015d{gbtmp-6232E750B69C11EDBF6800155D014E0D}",
-				createTime:  time.Unix(1677501828, 0),
-				size:        228316,
-				id:          "D4CAD750B69C11EDA19100155D014E11",
-				fanIP:       ips[0],
-			},
-			{
-				smbName:     "f456db3d-00000006-ff32ebe5-6332ebe5-00020c00-e4857b29",
-				stagingPath: "/data2/staging/f456db3d-00000006-ff32ebe5-6332ebe5-00020c00-e4857b29{gbtmp-1618C670B44C11ED86FF00155D014E0D}",
-				createTime:  time.Unix(1677247705, 0),
-				size:        2771431872,
-				id:          "2511FA10B44D11ED905500155D014E11",
-				fanIP:       ips[0],
-			},
-			{
-				smbName:     "3d4bd551-00000006-dafca584-63fca584-00271500-04cb015d",
-				stagingPath: "/data2/staging/download/3d4bd551-00000006-dafca584-63fca584-00271500-04cb015d{gbtmp-64CC08C0B69C11EDBF6800155D014E0D}",
-				createTime:  time.Unix(1677501834, 0),
-				size:        616,
-				id:          "D2576650B69C11EDA19100155D014E11",
-				fanIP:       ips[0],
-			},
-			{
-				smbName:     "d394c121-00000006-e0fca579-63fca579-00211500-04cb015d",
-				stagingPath: "/data3/staging/d394c121-00000006-e0fca579-63fca579-00211500-04cb015d{gbtmp-5E954E30B69C11EDBF6800155D014E0D}",
-				createTime:  time.Unix(1677501819, 0),
-				size:        227448,
-				id:          "D548B9E0B69C11EDA19100155D014E11",
-				fanIP:       ips[0],
-			},
-			{
-				smbName:     "fae2cb0b-00000006-dcfca584-63fca584-00251500-04cb015d",
-				stagingPath: "/data3/staging/download/fae2cb0b-00000006-dcfca584-63fca584-00251500-04cb015d{gbtmp-622FB300B69C11EDBF6800155D014E0D}",
-				createTime:  time.Unix(1677501828, 0),
-				size:        717166608,
-				id:          "D49855A0B69C11EDA19100155D014E11",
-				fanIP:       ips[0],
-			},*/
+		},
+		{
+			smbName:     "1b64bdde-00000006-d8fca584-63fca584-00291500-04cb015d",
+			stagingPath: "mb/FAN/download/1b64bdde-00000006-d8fca584-63fca584-00291500-04cb015d{gbtmp-64EBECD0B69C11EDBF6800155D014E0D}",
+			createTime:  time.Unix(1677501834, 0),
+			size:        680,
+			id:          "D628B9A0B69C11EDA19100155D014E11",
+			fanIP:       ips[0],
+		},
+		{
+			smbName:     "57165049-00000006-d9fca584-63fca584-00281500-04cb015d",
+			stagingPath: "data1/staging/57165049-00000006-d9fca584-63fca584-00281500-04cb015d{gbtmp-6237A240B69C11EDBF6800155D014E0D}",
+			createTime:  time.Unix(1677501828, 0),
+			size:        120264,
+			id:          "D2DB6360B69C11EDA19100155D014E11",
+			fanIP:       ips[0],
+		},
+		{
+			smbName:     "713938c6-00000006-dbfca584-63fca584-00261500-04cb015d",
+			stagingPath: "data1/staging/download/713938c6-00000006-dbfca584-63fca584-00261500-04cb015d{gbtmp-6232E750B69C11EDBF6800155D014E0D}",
+			createTime:  time.Unix(1677501828, 0),
+			size:        228316,
+			id:          "D4CAD750B69C11EDA19100155D014E11",
+			fanIP:       ips[0],
+		},
+		{
+			smbName:     "f456db3d-00000006-ff32ebe5-6332ebe5-00020c00-e4857b29",
+			stagingPath: "data2/staging/f456db3d-00000006-ff32ebe5-6332ebe5-00020c00-e4857b29{gbtmp-1618C670B44C11ED86FF00155D014E0D}",
+			createTime:  time.Unix(1677247705, 0),
+			size:        27714,
+			id:          "2511FA10B44D11ED905500155D014E11",
+			fanIP:       ips[0],
+		},
+		{
+			smbName:     "3d4bd551-00000006-dafca584-63fca584-00271500-04cb015d",
+			stagingPath: "data2/staging/download/3d4bd551-00000006-dafca584-63fca584-00271500-04cb015d{gbtmp-64CC08C0B69C11EDBF6800155D014E0D}",
+			createTime:  time.Unix(1677501834, 0),
+			size:        616,
+			id:          "D2576650B69C11EDA19100155D014E11",
+			fanIP:       ips[0],
+		},
+		{
+			smbName:     "d394c121-00000006-e0fca579-63fca579-00211500-04cb015d",
+			stagingPath: "data3/staging/d394c121-00000006-e0fca579-63fca579-00211500-04cb015d{gbtmp-5E954E30B69C11EDBF6800155D014E0D}",
+			createTime:  time.Unix(1677501819, 0),
+			size:        2274,
+			id:          "D548B9E0B69C11EDA19100155D014E11",
+			fanIP:       ips[0],
+		},
+		{
+			smbName:     "fae2cb0b-00000006-dcfca584-63fca584-00251500-04cb015d",
+			stagingPath: "data3/staging/download/fae2cb0b-00000006-dcfca584-63fca584-00251500-04cb015d{gbtmp-622FB300B69C11EDBF6800155D014E0D}",
+			createTime:  time.Unix(1677501828, 0),
+			size:        71716,
+			id:          "D49855A0B69C11EDA19100155D014E11",
+			fanIP:       ips[0],
+		},
 	}
 
-	mfs = createMockFS(files)
+	fsys, files = createFSTest(files)
 
 	testLogger, _ = setupLogs()
 
 	t.Run("Table verify", func(t *testing.T) {
 		for _, f := range files {
 
-			ok := f.verifyStat(mfs, testLogger)
+			ok := f.verifyStat(fsys, testLogger)
 			assert.True(t, ok)
 		}
 
@@ -166,11 +165,12 @@ func TestVerify(t *testing.T) {
 
 	t.Run("Initial verify", func(t *testing.T) {
 
-		now = time.Time{}
+		now = time.Now()
 		afterNow := now.Add(-5 * time.Second)
 
 		fsys = fstest.MapFS{
-			testShortPath: {Data: []byte(testContent)},
+			testShortPath: {Data: []byte(testContent),
+				ModTime: now},
 		}
 		env := Env{
 			fsys:  fsys,
@@ -185,6 +185,7 @@ func TestVerify(t *testing.T) {
 			id:          testFileID,
 			datasetID:   testDatasetID,
 			stagingPath: testShortPath,
+			createTime:  now,
 			size:        size,
 			fileInfo:    fileInfo,
 			fanIP:       ips[0],
@@ -871,24 +872,42 @@ func TestVerifyFileIDName(t *testing.T) {
 	})
 }
 
-func createMockFS(files []File) mockfs.MockFS {
-	mfs = mockfs.MockFS{}
-	mf := mockfs.MockFile{}
-	mfFiles := []*mockfs.MockFile{}
-	for _, f := range files {
-		filename := filepath.Base(f.stagingPath)
-		mf = mockfs.MockFile{
-			MFName:     filename,
-			MFModTime:  f.createTime,
-			MFSize:     f.size,
-			MFFileInfo: f.fileInfo,
+func createFSTest(files []File) (fstest.MapFS, []File) {
+	fsys = fstest.MapFS{}
+	//var dirs = []string{}
+	//var testfs fstest.MapFS = make(map[string]*fstest.MapFile)
+
+	/* 	dirs = append(dirs, "/mb/")
+	   	dirs = append(dirs, "/mb/FAN")
+	   	dirs = append(dirs, "/mb/FAN/downloap")
+
+	   	for i := 1; i < 4; i++ {
+	   		dirs = append(dirs, "/datav"+strconv.Itoa(i))
+	   		dirs = append(dirs, "/datav"+strconv.Itoa(i)+"/staging")
+	   		dirs = append(dirs, "/datav"+strconv.Itoa(i)+"/staging/downloap")
+	   	}
+
+	   	for _, d := range dirs {
+	   		fsys[d] = &fstest.MapFile{Mode: fs.ModeDir}
+	   	} */
+
+	for i, f := range files {
+		b := make([]byte, f.size)
+		for j := range b {
+			b[j] = letterBytes[rand.Intn(len(letterBytes))]
 		}
-		path := filepath.Dir(f.stagingPath)
-		//parts := strings.Split(path, string(os.PathSeparator))
-		mfFiles = append(mfFiles, mockfs.NewDir(path, mockfs.NewFile(mf)))
+
+		fsys[f.stagingPath] = &fstest.MapFile{
+			Data:    []byte(b),
+			ModTime: f.createTime,
+		}
+		fi, err := fs.Stat(fsys, f.stagingPath)
+		f.fileInfo = fi
+		if err != nil {
+			fmt.Printf(err.Error())
+		}
+		files[i] = f
 	}
-	mfs = mockfs.MockFS{
-		mockfs.NewDir("/", mfFiles...),
-	}
-	return mfs
+
+	return fsys, files
 }
