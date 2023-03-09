@@ -102,7 +102,7 @@ function get_file {
         echo "$FILE" | sed "s/FILEID/"$ID"/g" | sed "s/FILENAME/"$FILENAME"/g"
     else 
         
-        LINE=$(cat gbr.list | grep $ID)
+        LINE=$(cat /workspaces/process_async_ds/gbr.list | grep $ID)
         FN=$(echo $LINE | cut -d',' -f2)
         echo "$FILE" | sed "s/FILEID/"$ID"/g" | sed "s/FILENAME/"$FN"/g"
     fi
