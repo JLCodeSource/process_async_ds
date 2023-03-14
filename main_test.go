@@ -104,17 +104,19 @@ func TestMainFunc(t *testing.T) {
 			t.Fatal(err)
 		}
 
+		fmt.Print("Line 107")
 		f, err = fsys.Open(env.sourceFile)
 		if err != nil {
 			t.Fatal(err)
 		}
 		defer f.Close()
+		fmt.Print("Line 113")
 
 		want, err := f.Stat()
 		if err != nil {
 			t.Fatal(err)
 		}
-
+		fmt.Print("Line 119")
 		ok := reflect.DeepEqual(got, want)
 
 		assert.True(t, ok)
