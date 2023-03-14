@@ -102,7 +102,10 @@ func TestRootFSMap(t *testing.T) {
 		dots = dots + "../"
 	}
 	fmt.Println(dots)
-	os.Chdir(dots)
+	err = os.Chdir(dots)
+	if err != nil {
+		t.Fatal(err)
+	}
 	fmt.Println(os.Executable())
 	fmt.Println(os.Getwd())
 	fsys := os.DirFS(".")

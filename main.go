@@ -130,7 +130,10 @@ func setPWD(ex string, logger *logrus.Logger) string {
 		dots = dots + "../"
 	}
 	//fmt.Println(dots)
-	os.Chdir(dots)
+	err := os.Chdir(dots)
+	if err != nil {
+		logger.Fatal(err)
+	}
 	//fmt.Println(os.Executable())
 	//fmt.Println(os.Getwd())
 
