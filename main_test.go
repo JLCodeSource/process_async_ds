@@ -6,7 +6,6 @@ import (
 	"io/fs"
 	"net"
 	"os"
-	"path/filepath"
 	"reflect"
 	"regexp"
 	"strconv"
@@ -31,12 +30,12 @@ const (
 	testMismatchPath = "data1/staging/testMismatch.txt"
 	testNotADataset  = "123"
 
-	testArgsFile    = "-sourcefile=./README.md"
+	testArgsFile    = "-sourcefile=workspaces/process_async_processed/README.md"
 	testArgsDataset = "-datasetid=%v"
 	testArgsDays    = "-days=123"
 	testArgsHelp    = "-help"
 
-	testPostArgsFile = "./README.md"
+	testPostArgsFile = "workspaces/process_async_processed/README.md"
 	testPostArgsDays = int64(123)
 
 	osPanicTrue  = "os.Exit called"
@@ -84,8 +83,8 @@ func TestMainFunc(t *testing.T) {
 
 		now = time.Now()
 
-		dir, file := filepath.Split((testPostArgsFile))
-		fsys := os.DirFS(dir)
+		//_, file := filepath.Split((testPostArgsFile))
+		fsys := os.DirFS("//")
 
 		main()
 
@@ -94,19 +93,33 @@ func TestMainFunc(t *testing.T) {
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 
-		f, _ := env.fsys.Open(env.sourceFile)
+		f, err := env.fsys.Open(env.sourceFile)
+		if err != nil {
+			t.Fatal(err)
+		}
 		defer f.Close()
-		got, _ := f.Stat()
 
-		f, _ = fsys.Open(file)
+		got, err := f.Stat()
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		f, err = fsys.Open(env.sourceFile)
+		if err != nil {
+			t.Fatal(err)
+		}
 		defer f.Close()
-		want, _ := f.Stat()
+
+		want, err := f.Stat()
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		ok := reflect.DeepEqual(got, want)
 
 		assert.True(t, ok)
 
-		assertCorrectString(t, env.sourceFile, file)
+		assertCorrectString(t, env.sourceFile, testPostArgsFile)
 
 		assertCorrectString(t, env.datasetID, testDatasetID)
 
@@ -352,6 +365,29 @@ func TestGetNonDryRun(t *testing.T) {
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 
 	})
+}
+
+func TestSetPWD(t *testing.T) {
+	t.Run("getPWD should shift execution to root from current path", func(t *testing.T) {
+		testLogger, _ = setupLogs()
+		ex, _ := os.Executable()
+
+		got := setPWD(ex, testLogger)
+		want := "/"
+		assertCorrectString(t, got, want)
+
+	})
+
+	t.Run("getPWD should shift execution to root from any path", func(t *testing.T) {
+		testLogger, _ = setupLogs()
+		ex := "/workflows/process_async_processed/logger/logger.go"
+
+		got := setPWD(ex, testLogger)
+		want := "/"
+		assertCorrectString(t, got, want)
+
+	})
+
 }
 
 func TestFileMetadata(t *testing.T) {
