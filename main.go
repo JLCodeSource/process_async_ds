@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 
 	log "github.com/JLCodeSource/process_async_ds/logger"
 
@@ -67,6 +68,7 @@ type Env struct {
 	limit     time.Time
 	nondryrun bool
 	sysIP     net.IP
+	pwd       string
 }
 
 func getSourceFile(filesystem fs.FS, f string, logger *logrus.Logger) fs.FileInfo {
@@ -117,6 +119,32 @@ func getNonDryRun(nondryrun bool, logger *logrus.Logger) bool {
 	return nondryrun
 }
 
+func setPWD(ex string, logger *logrus.Logger) string {
+	// job needs to run in root dir
+
+	exPath := filepath.Dir(ex)
+	//fmt.Println(exPath)
+	parts := strings.Split(exPath, "/")
+	dots := ""
+	for i := 0; i < (len(parts) - 1); i++ {
+		dots = dots + "../"
+	}
+	//fmt.Println(dots)
+	err := os.Chdir(dots)
+	if err != nil {
+		logger.Fatal(err)
+	}
+	//fmt.Println(os.Executable())
+	//fmt.Println(os.Getwd())
+
+	pwd, err := os.Getwd()
+	if err != nil {
+		logger.Fatal(err)
+	}
+
+	return pwd
+}
+
 //func getEnv() *Env {
 //	return env
 //}
@@ -138,10 +166,15 @@ func main() {
 
 	flag.Parse()
 
-	dir, f := filepath.Split((sourceFile))
-	fsys := os.DirFS(dir)
+	ex, err := os.Executable()
+	if err != nil {
+		logger.Fatal(err)
+	}
+	root := setPWD(ex, logger)
 
-	fileInfo := getSourceFile(fsys, f, logger)
+	fsys := os.DirFS(root)
+
+	getSourceFile(fsys, sourceFile, logger)
 	ds := getDatasetID(datasetID, logger)
 	l := getTimeLimit(numDays, logger)
 	ndr := getNonDryRun(nondryrun, logger)
@@ -162,7 +195,7 @@ func main() {
 	env = new(Env)
 	env = &Env{
 		fsys:       fsys,
-		sourceFile: fileInfo.Name(),
+		sourceFile: sourceFile,
 		datasetID:  ds,
 		limit:      l,
 		nondryrun:  ndr,

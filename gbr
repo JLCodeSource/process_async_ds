@@ -101,8 +101,14 @@ function get_file {
     then
         echo "$FILE" | sed "s/FILEID/"$ID"/g" | sed "s/FILENAME/"$FILENAME"/g"
     else 
-        
-        LINE=$(cat gbr.list | grep $ID)
+        # Hack to handle testing for both local devcontainer & build container
+        if [ -f "/workspaces/process_async_ds/gbr.list" ]
+        then 
+            LINE=$(cat /workspaces/process_async_ds/gbr.list | grep $ID)
+        elif [ -f "/usr/src/app/gbr.list" ]
+        then
+            LINE=$(cat /usr/src/app/gbr.list | grep $ID)
+        fi
         FN=$(echo $LINE | cut -d',' -f2)
         echo "$FILE" | sed "s/FILEID/"$ID"/g" | sed "s/FILENAME/"$FN"/g"
     fi

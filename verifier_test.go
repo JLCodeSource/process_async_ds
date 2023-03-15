@@ -8,7 +8,10 @@ import (
 	"math/rand"
 	"net"
 	"os"
+	"path"
+	"path/filepath"
 	"strconv"
+	"strings"
 	"testing"
 	"testing/fstest"
 	"time"
@@ -79,8 +82,45 @@ const (
 	guidBytes   = "0123456789abcdef"
 	fileIDBytes = "0123456789ABCDEF"
 
-	gbrList = "gbr.list"
+	gbrList = "%v/gbr.list"
 )
+
+var (
+	workDirs = []string{"/workspaces/process_async_ds/", "/usr/src/app/"}
+)
+
+func TestRootFSMap(t *testing.T) {
+
+	// prove that the fsys tooling + dump to root path works
+
+	ex, err := os.Executable()
+	if err != nil {
+		t.Fatal(err)
+	}
+	exPath := filepath.Dir(ex)
+	fmt.Println(exPath)
+	parts := strings.Split(exPath, "/")
+	dots := ""
+	for i := 0; i < (len(parts) - 1); i++ {
+		dots = dots + "../"
+	}
+	fmt.Println(dots)
+	err = os.Chdir(dots)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println(os.Executable())
+	fmt.Println(os.Getwd())
+	fsys := os.DirFS("/")
+	ls, err := fs.ReadDir(fsys, ".")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, f := range ls {
+		fmt.Println(f.Name())
+	}
+
+}
 
 // TestVerify encompasses all verification
 func TestVerify(t *testing.T) {
@@ -100,12 +140,13 @@ func TestVerify(t *testing.T) {
 
 	var files []File
 
-	fsys, files = createFSTest(8)
+	fsys, files = createFSTest(10)
 
 	env := Env{
 		fsys:  fsys,
 		limit: afterNow,
 		sysIP: ips[0],
+		pwd:   testEnv.pwd,
 	}
 
 	testLogger, hook = setupLogs()
@@ -118,6 +159,7 @@ func TestVerify(t *testing.T) {
 			gotLogMsg := hook.LastEntry().Message
 			wantLogMsg := fmt.Sprintf(fVerifiedLog, f.smbName, f.id)
 			assertCorrectString(t, gotLogMsg, wantLogMsg)
+			fmt.Printf(fVerifiedLog, f.smbName, f.id)
 		}
 
 	})
@@ -283,6 +325,19 @@ func TestVerifyTimeLimit(t *testing.T) {
 
 // TestVerifyGBMetadata encompasses verifyInDataset, getMBFileName/DSByFileID
 func TestVerifyGBMetadata(t *testing.T) {
+
+	ex, _ := os.Executable()
+	dir, _ := path.Split(ex)
+	list := fmt.Sprintf(gbrList, dir)
+	if err := os.Truncate(list, 0); err != nil {
+		log.Printf("Failed to truncate: %v", err)
+	}
+	out, err := os.OpenFile(list, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	defer out.Close()
 	t.Run("returns true if file.datasetID matches DatasetID", func(t *testing.T) {
 		_, files := createFSTest(1)
 
@@ -788,19 +843,25 @@ func TestVerifyFileIDName(t *testing.T) {
 	})
 }
 
-func manageGbrListFile() {
-	if _, err := os.Stat(gbrList); err == nil {
-		os.Remove(gbrList)
-	}
-}
-
 func createFSTest(numFiles int) (fstest.MapFS, []File) {
 	// handle gbr input
-	manageGbrListFile()
-	out, err := os.OpenFile(gbrList, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	var list string
+
+	for _, d := range workDirs {
+		list = fmt.Sprintf(gbrList, d)
+		if err := os.Truncate(list, 0); err != nil {
+			log.Printf("Failed to truncate: %v", err)
+		} else {
+			break
+		}
+
+	}
+
+	out, err := os.OpenFile(list, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	defer out.Close()
 
 	fsys = fstest.MapFS{}
