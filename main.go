@@ -72,7 +72,13 @@ type Env struct {
 }
 
 func getSourceFile(filesystem fs.FS, f string, logger *logrus.Logger) fs.FileInfo {
-	file, err := fs.Stat(filesystem, f)
+	var path string
+	if strings.HasPrefix(f, string(os.PathSeparator)) {
+		path = f[1:]
+	} else {
+		path = f
+	}
+	file, err := fs.Stat(filesystem, path)
 	if err != nil {
 		logger.Fatal(err.Error())
 	}
@@ -123,19 +129,16 @@ func setPWD(ex string, logger *logrus.Logger) string {
 	// job needs to run in root dir
 
 	exPath := filepath.Dir(ex)
-	//fmt.Println(exPath)
+
 	parts := strings.Split(exPath, "/")
 	dots := ""
 	for i := 0; i < (len(parts) - 1); i++ {
 		dots = dots + "../"
 	}
-	//fmt.Println(dots)
 	err := os.Chdir(dots)
 	if err != nil {
 		logger.Fatal(err)
 	}
-	//fmt.Println(os.Executable())
-	//fmt.Println(os.Getwd())
 
 	pwd, err := os.Getwd()
 	if err != nil {
@@ -166,10 +169,11 @@ func main() {
 
 	flag.Parse()
 
-	ex, err := os.Executable()
+	ex := wrapOsExecutable(logger)
+	/* ex, err := os.Executable()
 	if err != nil {
 		logger.Fatal(err)
-	}
+	} */
 	root := setPWD(ex, logger)
 
 	fsys := os.DirFS(root)
@@ -202,4 +206,12 @@ func main() {
 		sysIP:      ips[0],
 	}
 
+}
+
+func wrapOsExecutable(logger *logrus.Logger) string {
+	pwd, err := os.Executable()
+	if err != nil {
+		logger.Fatal(err)
+	}
+	return pwd
 }

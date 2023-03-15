@@ -27,6 +27,7 @@ const (
 	testBadFileID    = "3D3D0900791F11ECB6BD00155D014E0D"
 	testName         = "test.txt"
 	testPath         = "data1/staging/test.txt"
+	testBadPath      = "/not/a/path"
 	testMismatchPath = "data1/staging/testMismatch.txt"
 	testNotADataset  = "123"
 
@@ -44,7 +45,10 @@ const (
 	testEmptyRootErr        = "stat %v: os: DirFS with empty root"
 	testOpenDoesNotExistErr = "open %v: file does not exist"
 	testRegexMatchErr       = "Regex match errored"
-	testHostnameErr         = "Hostname err occurred"
+	testHostnameErr         = "os.Hostname err occurred"
+	testChdirErr            = "os.Chdir err occurred"
+	testGetwdErr            = "os.Getwd err occurred"
+	testOsExecutableErr     = "os.Executable err occurred"
 
 	testKarachiTime       = "Asia/Karachi"
 	testKarachiDate       = "Mon Jan 30 17:55:14 PKT 2023"
@@ -176,6 +180,45 @@ func TestMainFunc(t *testing.T) {
 
 }
 
+func TestOsExecutableWrapper(t *testing.T) {
+	t.Run("wrapOsExecutable should return the path", func(t *testing.T) {
+		testLogger, _ = setupLogs()
+
+		pwd := wrapOsExecutable(testLogger)
+		ex, _ := os.Executable()
+
+		assertCorrectString(t, pwd, ex)
+	})
+
+	/*
+		 	t.Run("wrapOsExecutable should panic & log an error on err", func(t *testing.T) {
+				fakeExit := func(int) {
+					panic(osPanicTrue)
+				}
+				patch := monkey.Patch(os.Exit, fakeExit)
+				defer patch.Unpatch()
+
+				fakeOsExecutable := func() (string, error) {
+					err := errors.New(testOsExecutableErr)
+					return "", err
+				}
+				patch2 := monkey.Patch(os.Executable, fakeOsExecutable)
+				defer patch2.Unpatch()
+
+				testLogger, _ = setupLogs()
+				panic := func() {
+					wrapOsExecutable(testLogger)
+				}
+				assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
+
+				/*gotLogMsg := hook.LastEntry().Message
+				wantLogMsg := testOsExecutableErr
+				assertCorrectString(t, gotLogMsg, wantLogMsg)
+
+			})
+	*/
+}
+
 func TestGetSourceFile(t *testing.T) {
 	t.Run("check for source file", func(t *testing.T) {
 		testLogger, hook = setupLogs()
@@ -192,6 +235,23 @@ func TestGetSourceFile(t *testing.T) {
 		wantLogMsg := fmt.Sprintf(sourceLog, testPath)
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
+
+	t.Run("should handle full path", func(t *testing.T) {
+		testLogger, hook = setupLogs()
+		fsys = fstest.MapFS{
+			testPath: {Data: []byte(testContent)},
+		}
+		fullpath := string(os.PathSeparator) + testPath
+		file := getSourceFile(fsys, string(os.PathSeparator)+testPath, testLogger)
+
+		got := file.Name()
+		want := testName
+		assertCorrectString(t, got, want)
+
+		gotLogMsg := hook.LastEntry().Message
+		wantLogMsg := fmt.Sprintf(sourceLog, fullpath)
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
+	})
 	t.Run("check for empty root", func(t *testing.T) {
 		fakeExit := func(int) {
 			panic(osPanicTrue)
@@ -203,8 +263,7 @@ func TestGetSourceFile(t *testing.T) {
 		fs := os.DirFS("")
 
 		panic := func() {
-			file := getSourceFile(fs, testDoesNotExistFile, testLogger)
-			println(file)
+			getSourceFile(fs, testDoesNotExistFile, testLogger)
 		}
 
 		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
@@ -372,7 +431,7 @@ func TestGetNonDryRun(t *testing.T) {
 }
 
 func TestSetPWD(t *testing.T) {
-	t.Run("getPWD should shift execution to root from current path", func(t *testing.T) {
+	t.Run("setPWD should shift execution to root from current path", func(t *testing.T) {
 		testLogger, _ = setupLogs()
 		ex, _ := os.Executable()
 
@@ -382,7 +441,7 @@ func TestSetPWD(t *testing.T) {
 
 	})
 
-	t.Run("getPWD should shift execution to root from any path", func(t *testing.T) {
+	t.Run("setPWD should shift execution to root from any path", func(t *testing.T) {
 		testLogger, _ = setupLogs()
 		ex := "/workflows/process_async_processed/logger/logger.go"
 
@@ -390,6 +449,55 @@ func TestSetPWD(t *testing.T) {
 		want := "/"
 		assertCorrectString(t, got, want)
 
+	})
+
+	t.Run("setPWD should log an error & panic if it can't chdir", func(t *testing.T) {
+		fakeExit := func(int) {
+			panic(osPanicTrue)
+		}
+		patch := monkey.Patch(os.Exit, fakeExit)
+		defer patch.Unpatch()
+		fakeChdir := func(string) error {
+			err := errors.New(testChdirErr)
+			return err
+		}
+
+		patch2 := monkey.Patch(os.Chdir, fakeChdir)
+		defer patch2.Unpatch()
+		testLogger, hook = setupLogs()
+
+		panic := func() { setPWD(testBadPath, testLogger) }
+
+		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
+		gotLogMsg := hook.LastEntry().Message
+		wantLogMsg := testChdirErr
+
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
+	})
+
+	t.Run("setPWD should log an error & panic if it can't Getwd", func(t *testing.T) {
+		fakeExit := func(int) {
+			panic(osPanicTrue)
+		}
+		patch := monkey.Patch(os.Exit, fakeExit)
+		defer patch.Unpatch()
+
+		fakeGetwd := func() (string, error) {
+			err := errors.New(testGetwdErr)
+			return "", err
+		}
+
+		patch2 := monkey.Patch(os.Getwd, fakeGetwd)
+		defer patch2.Unpatch()
+		testLogger, hook = setupLogs()
+
+		panic := func() { setPWD(testBadPath, testLogger) }
+
+		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
+		gotLogMsg := hook.LastEntry().Message
+		wantLogMsg := testGetwdErr
+
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
 
 }
