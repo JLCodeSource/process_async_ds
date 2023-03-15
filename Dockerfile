@@ -4,22 +4,23 @@ WORKDIR /usr/src/app
 
 RUN apk update && apk upgrade && apk add bash
 
-COPY . .
-
 COPY gbr /usr/bin/gbr
+
 RUN chmod +x /usr/bin/gbr
 
 RUN go install github.com/hhatto/gocloc/cmd/gocloc@latest
 
-RUN go mod download
+COPY . .
 
-RUN go build -o /usr/src/app/process_processed
+RUN go mod download
 
 RUN go test -v ./...
 
 RUN go test -cover .
 
 RUN gocloc .
+
+RUN go build -o /usr/src/app/process_processed
 
 FROM gcr.io/distroless/base-debian10
 
