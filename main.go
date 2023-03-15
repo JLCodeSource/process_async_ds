@@ -68,7 +68,7 @@ type Env struct {
 	limit     time.Time
 	nondryrun bool
 	sysIP     net.IP
-	//pwd       string
+	pwd       string
 }
 
 func getSourceFile(filesystem fs.FS, f string, logger *logrus.Logger) fs.FileInfo {

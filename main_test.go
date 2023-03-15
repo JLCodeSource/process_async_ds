@@ -30,12 +30,12 @@ const (
 	testMismatchPath = "data1/staging/testMismatch.txt"
 	testNotADataset  = "123"
 
-	testArgsFile    = "-sourcefile=workspaces/process_async_processed/README.md"
+	testArgsFile    = "-sourcefile=%v/README.md"
 	testArgsDataset = "-datasetid=%v"
 	testArgsDays    = "-days=123"
 	testArgsHelp    = "-help"
 
-	testPostArgsFile = "workspaces/process_async_processed/README.md"
+	testPostArgsFile = "%v/README.md"
 	testPostArgsDays = int64(123)
 
 	osPanicTrue  = "os.Exit called"
@@ -76,8 +76,11 @@ func TestMainFunc(t *testing.T) {
 		_, hook = setupLogs()
 		hostname, _ := os.Hostname()
 		ips, _ := net.LookupIP(hostname)
-
-		os.Args = append(os.Args, testArgsFile)
+		pwd, err := os.Getwd()
+		if err != nil {
+			t.Fatal(err)
+		}
+		os.Args = append(os.Args, fmt.Sprintf(testArgsFile, pwd[1:]))
 		os.Args = append(os.Args, fmt.Sprintf(testArgsDataset, testDatasetID))
 		os.Args = append(os.Args, testArgsDays)
 
@@ -88,6 +91,8 @@ func TestMainFunc(t *testing.T) {
 
 		main()
 
+		// Set for other tests
+		testEnv.pwd = pwd
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := dryRunTrueLog
 
@@ -104,24 +109,21 @@ func TestMainFunc(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		fmt.Print("Line 107")
 		f, err = fsys.Open(env.sourceFile)
 		if err != nil {
 			t.Fatal(err)
 		}
 		defer f.Close()
-		fmt.Print("Line 113")
 
 		want, err := f.Stat()
 		if err != nil {
 			t.Fatal(err)
 		}
-		fmt.Print("Line 119")
 		ok := reflect.DeepEqual(got, want)
 
 		assert.True(t, ok)
 
-		assertCorrectString(t, env.sourceFile, testPostArgsFile)
+		assertCorrectString(t, env.sourceFile, fmt.Sprintf(testPostArgsFile, pwd[1:]))
 
 		assertCorrectString(t, env.datasetID, testDatasetID)
 

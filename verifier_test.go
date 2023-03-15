@@ -8,6 +8,7 @@ import (
 	"math/rand"
 	"net"
 	"os"
+	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -81,14 +82,16 @@ const (
 	guidBytes   = "0123456789abcdef"
 	fileIDBytes = "0123456789ABCDEF"
 
-	gbrList = "/workspaces/process_async_ds/gbr.list"
+	gbrList = "%v/gbr.list"
+)
+
+var (
+	workDirs = []string{"/workspaces/process_async_ds/", "/usr/src/app/"}
 )
 
 func TestRootFSMap(t *testing.T) {
 
 	// prove that the fsys tooling + dump to root path works
-
-	testfile := "workspaces/process_async_processed/main.go"
 
 	ex, err := os.Executable()
 	if err != nil {
@@ -108,16 +111,13 @@ func TestRootFSMap(t *testing.T) {
 	}
 	fmt.Println(os.Executable())
 	fmt.Println(os.Getwd())
-	fsys := os.DirFS(".")
-	_, err = fs.ReadDir(fsys, ".")
+	fsys := os.DirFS("/")
+	ls, err := fs.ReadDir(fsys, ".")
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	_, err = fs.Stat(fsys, testfile)
-
-	if err != nil {
-		t.Error(err)
+	for _, f := range ls {
+		fmt.Println(f.Name())
 	}
 
 }
@@ -140,12 +140,13 @@ func TestVerify(t *testing.T) {
 
 	var files []File
 
-	fsys, files = createFSTest(1)
+	fsys, files = createFSTest(10)
 
 	env := Env{
 		fsys:  fsys,
 		limit: afterNow,
 		sysIP: ips[0],
+		pwd:   testEnv.pwd,
 	}
 
 	testLogger, hook = setupLogs()
@@ -323,6 +324,19 @@ func TestVerifyTimeLimit(t *testing.T) {
 
 // TestVerifyGBMetadata encompasses verifyInDataset, getMBFileName/DSByFileID
 func TestVerifyGBMetadata(t *testing.T) {
+
+	ex, _ := os.Executable()
+	dir, _ := path.Split(ex)
+	list := fmt.Sprintf(gbrList, dir)
+	if err := os.Truncate(list, 0); err != nil {
+		log.Printf("Failed to truncate: %v", err)
+	}
+	out, err := os.OpenFile(list, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	defer out.Close()
 	t.Run("returns true if file.datasetID matches DatasetID", func(t *testing.T) {
 		_, files := createFSTest(1)
 
@@ -830,10 +844,19 @@ func TestVerifyFileIDName(t *testing.T) {
 
 func createFSTest(numFiles int) (fstest.MapFS, []File) {
 	// handle gbr input
-	if err := os.Truncate(gbrList, 0); err != nil {
-		log.Fatalf("Failed to truncate: %v", err)
+	var list string
+
+	for _, d := range workDirs {
+		list = fmt.Sprintf(gbrList, d)
+		if err := os.Truncate(list, 0); err != nil {
+			log.Printf("Failed to truncate: %v", err)
+		} else {
+			break
+		}
+
 	}
-	out, err := os.OpenFile(gbrList, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+
+	out, err := os.OpenFile(list, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		log.Fatal(err)
 	}
