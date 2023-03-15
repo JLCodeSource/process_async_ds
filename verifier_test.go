@@ -159,6 +159,7 @@ func TestVerify(t *testing.T) {
 			gotLogMsg := hook.LastEntry().Message
 			wantLogMsg := fmt.Sprintf(fVerifiedLog, f.smbName, f.id)
 			assertCorrectString(t, gotLogMsg, wantLogMsg)
+			fmt.Printf(fVerifiedLog, f.smbName, f.id)
 		}
 
 	})
