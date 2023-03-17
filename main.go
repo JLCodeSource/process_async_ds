@@ -25,7 +25,11 @@ const (
 	timelimitDaysLog   = "timelimit: Days time limit set to %v days ago which is %v"
 	dryRunTrueLog      = "dryrun: true; skipping exeecute move"
 	dryRunFalseLog     = "dryrun: false; executing move"
-	complexIPLog       = "ipStatus: unexpected; more ips than planned"
+	complexIPLog       = "net.LookupIP: unexpected; more ips than expected"
+	wrapOsLog          = "%v: %v"
+	osHostnameLog      = "os.Hostname"
+	osExecutableLog    = "os.Executable"
+	wrapLookupIPLog    = "net.LookupIP: %v=%v"
 
 	regexDatasetMatch = "^[A-F0-9]{32}$"
 
@@ -169,11 +173,8 @@ func main() {
 
 	flag.Parse()
 
-	ex := wrapOsExecutable(logger)
-	/* ex, err := os.Executable()
-	if err != nil {
-		logger.Fatal(err)
-	} */
+	ex := wrapOs(logger, osExecutableLog, os.Executable)
+
 	root := setPWD(ex, logger)
 
 	fsys := os.DirFS(root)
@@ -183,18 +184,16 @@ func main() {
 	l := getTimeLimit(numDays, logger)
 	ndr := getNonDryRun(nondryrun, logger)
 
-	hostname, err := os.Hostname()
-	if err != nil {
-		logger.Fatal(err)
-	}
+	hostname := wrapOs(logger, osHostnameLog, os.Hostname)
 
-	ips, err := net.LookupIP(hostname)
+	ip := wrapLookupIP(logger, hostname, net.LookupIP)
+	/* ips, err := net.LookupIP(hostname)
 	if err != nil {
 		logger.Fatal(err)
 	}
 	if len(ips) > 1 {
 		logger.Fatal(complexIPLog)
-	}
+	} */
 
 	env = new(Env)
 	env = &Env{
@@ -203,15 +202,36 @@ func main() {
 		datasetID:  ds,
 		limit:      l,
 		nondryrun:  ndr,
-		sysIP:      ips[0],
+		sysIP:      ip,
 	}
 
 }
 
-func wrapOsExecutable(logger *logrus.Logger) string {
-	pwd, err := os.Executable()
+func wrapOs(logger *logrus.Logger, wrapped string, f func() (string, error)) string {
+	out, err := f()
 	if err != nil {
 		logger.Fatal(err)
 	}
-	return pwd
+	logger.Info(fmt.Sprintf(wrapOsLog, wrapped, out))
+	return out
 }
+
+func wrapLookupIP(logger *logrus.Logger, hostname string, f func(string) ([]net.IP, error)) net.IP {
+	ips, err := net.LookupIP(hostname)
+	if err != nil {
+		logger.Fatal(err)
+	} else if len(ips) > 1 {
+		logger.Fatal(complexIPLog)
+	}
+
+	ip := ips[0]
+	logger.Info(fmt.Sprintf(wrapLookupIPLog, hostname, ip.String()))
+	return ip
+}
+
+/*
+//go:generate mockery --name osWrapper
+type Wrapper interface {
+	wrapOs(logger *logrus.Logger, f func() (string, error)) string
+}
+*/

@@ -49,6 +49,7 @@ const (
 	testChdirErr            = "os.Chdir err occurred"
 	testGetwdErr            = "os.Getwd err occurred"
 	testOsExecutableErr     = "os.Executable err occurred"
+	testLookupIPErr         = "net.LookupIP err occurred"
 
 	testKarachiTime       = "Asia/Karachi"
 	testKarachiDate       = "Mon Jan 30 17:55:14 PKT 2023"
@@ -98,7 +99,7 @@ func TestMainFunc(t *testing.T) {
 		// Set for other tests
 		testEnv.pwd = pwd
 		gotLogMsg := hook.LastEntry().Message
-		wantLogMsg := dryRunTrueLog
+		wantLogMsg := fmt.Sprintf(wrapLookupIPLog, hostname, ips[0].String())
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 
@@ -180,43 +181,162 @@ func TestMainFunc(t *testing.T) {
 
 }
 
-func TestOsExecutableWrapper(t *testing.T) {
-	t.Run("wrapOsExecutable should return the path", func(t *testing.T) {
-		testLogger, _ = setupLogs()
+type SpyWrapper struct {
+	Calls int
+}
 
-		pwd := wrapOsExecutable(testLogger)
+func (s *SpyWrapper) wrapOS(*logrus.Logger) {
+	s.Calls++
+}
+
+func TestOsWrapper(t *testing.T) {
+	t.Run("wrapOsExecutable should return & log the path", func(t *testing.T) {
+		testLogger, hook = setupLogs()
+
+		pwd := wrapOs(testLogger, "os.Executable", os.Executable)
 		ex, _ := os.Executable()
 
 		assertCorrectString(t, pwd, ex)
+
+		gotLogMsg := hook.LastEntry().Message
+		wantLogMsg := fmt.Sprintf(wrapOsLog, osExecutableLog, ex)
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
+
 	})
 
-	/*
-		 	t.Run("wrapOsExecutable should panic & log an error on err", func(t *testing.T) {
-				fakeExit := func(int) {
-					panic(osPanicTrue)
-				}
-				patch := monkey.Patch(os.Exit, fakeExit)
-				defer patch.Unpatch()
+	t.Run("wrapOs.Executable should panic & log an error on err", func(t *testing.T) {
+		fakeExit := func(int) {
+			panic(osPanicTrue)
+		}
+		patch := monkey.Patch(os.Exit, fakeExit)
+		defer patch.Unpatch()
 
-				fakeOsExecutable := func() (string, error) {
-					err := errors.New(testOsExecutableErr)
-					return "", err
-				}
-				patch2 := monkey.Patch(os.Executable, fakeOsExecutable)
-				defer patch2.Unpatch()
+		fakeOsExecutable := func() (string, error) {
+			err := errors.New(testOsExecutableErr)
+			return "", err
+		}
+		patch2 := monkey.Patch(os.Executable, fakeOsExecutable)
+		defer patch2.Unpatch()
 
-				testLogger, _ = setupLogs()
-				panic := func() {
-					wrapOsExecutable(testLogger)
-				}
-				assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
+		testLogger, hook = setupLogs()
+		panic := func() { wrapOs(testLogger, osExecutableLog, os.Executable) }
+		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
 
-				/*gotLogMsg := hook.LastEntry().Message
-				wantLogMsg := testOsExecutableErr
-				assertCorrectString(t, gotLogMsg, wantLogMsg)
+		gotLogMsg := hook.LastEntry().Message
+		wantLogMsg := testOsExecutableErr
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
 
-			})
-	*/
+	})
+
+	t.Run("wrapOs.Hostname should return & log the path", func(t *testing.T) {
+		testLogger, hook = setupLogs()
+
+		out := wrapOs(testLogger, osHostnameLog, os.Hostname)
+		hostname, _ := os.Hostname()
+
+		assertCorrectString(t, out, hostname)
+
+		gotLogMsg := hook.LastEntry().Message
+		wantLogMsg := fmt.Sprintf(wrapOsLog, osHostnameLog, hostname)
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
+
+	})
+
+	t.Run("wrapOs.Hostname should panic & log an error on err", func(t *testing.T) {
+		fakeExit := func(int) {
+			panic(osPanicTrue)
+		}
+		patch := monkey.Patch(os.Exit, fakeExit)
+		defer patch.Unpatch()
+
+		fakeHostname := func() (string, error) {
+			err := errors.New(testHostnameErr)
+			return "", err
+		}
+		patch2 := monkey.Patch(os.Hostname, fakeHostname)
+		defer patch2.Unpatch()
+
+		testLogger, hook = setupLogs()
+		panic := func() { wrapOs(testLogger, osHostnameLog, os.Hostname) }
+		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
+
+		gotLogMsg := hook.LastEntry().Message
+		wantLogMsg := testHostnameErr
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
+
+	})
+}
+
+func TestWrapLookupIP(t *testing.T) {
+	t.Run("wrapLookupIP should return & log the IP", func(t *testing.T) {
+		testLogger, hook = setupLogs()
+
+		hostname, _ := os.Hostname()
+		ips, _ := net.LookupIP(hostname)
+
+		ip := wrapLookupIP(testLogger, hostname, net.LookupIP)
+
+		assertCorrectString(t, ip.String(), ips[0].String())
+
+		gotLogMsg := hook.LastEntry().Message
+		wantLogMsg := fmt.Sprintf(wrapLookupIPLog, hostname, ip)
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
+
+	})
+
+	t.Run("wrapLookupIP should panic & log the err on err", func(t *testing.T) {
+		fakeExit := func(int) {
+			panic(osPanicTrue)
+		}
+		patch := monkey.Patch(os.Exit, fakeExit)
+		defer patch.Unpatch()
+
+		fakeLookupIP := func(string) ([]net.IP, error) {
+			err := errors.New(testLookupIPErr)
+			return nil, err
+		}
+		patch2 := monkey.Patch(net.LookupIP, fakeLookupIP)
+		defer patch2.Unpatch()
+
+		hostname, _ := os.Hostname()
+
+		testLogger, hook = setupLogs()
+		panic := func() { wrapLookupIP(testLogger, hostname, net.LookupIP) }
+		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
+
+		gotLogMsg := hook.LastEntry().Message
+		wantLogMsg := testLookupIPErr
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
+	})
+
+	t.Run("wrapLookupIP should panic & log an err if there are more than one IP", func(t *testing.T) {
+		fakeExit := func(int) {
+			panic(osPanicTrue)
+		}
+		patch := monkey.Patch(os.Exit, fakeExit)
+		defer patch.Unpatch()
+
+		fakeLookupIP := func(string) ([]net.IP, error) {
+			var ips []net.IP
+			ip1 := net.ParseIP("192.168.101.1")
+			ip2 := net.ParseIP("192.168.101.2")
+			ips = append(ips, ip1)
+			ips = append(ips, ip2)
+			return ips, nil
+		}
+		patch2 := monkey.Patch(net.LookupIP, fakeLookupIP)
+		defer patch2.Unpatch()
+
+		hostname, _ := os.Hostname()
+
+		testLogger, hook = setupLogs()
+		panic := func() { wrapLookupIP(testLogger, hostname, net.LookupIP) }
+		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
+
+		gotLogMsg := hook.LastEntry().Message
+		wantLogMsg := complexIPLog
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
+	})
 }
 
 func TestGetSourceFile(t *testing.T) {
