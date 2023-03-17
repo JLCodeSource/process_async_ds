@@ -217,7 +217,7 @@ func wrapOs(logger *logrus.Logger, wrapped string, f func() (string, error)) str
 }
 
 func wrapLookupIP(logger *logrus.Logger, hostname string, f func(string) ([]net.IP, error)) net.IP {
-	ips, err := net.LookupIP(hostname)
+	ips, err := f(hostname)
 	if err != nil {
 		logger.Fatal(err)
 	} else if len(ips) > 1 {

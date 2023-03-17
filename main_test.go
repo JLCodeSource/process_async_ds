@@ -181,13 +181,13 @@ func TestMainFunc(t *testing.T) {
 
 }
 
-type SpyWrapper struct {
+/* type SpyWrapper struct {
 	Calls int
 }
 
 func (s *SpyWrapper) wrapOS(*logrus.Logger) {
 	s.Calls++
-}
+} */
 
 func TestOsWrapper(t *testing.T) {
 	t.Run("wrapOsExecutable should return & log the path", func(t *testing.T) {
