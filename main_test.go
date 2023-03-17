@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"net"
 	"os"
+	"path"
 	"reflect"
 	"regexp"
 	"strconv"
@@ -27,6 +28,7 @@ const (
 	testBadFileID    = "3D3D0900791F11ECB6BD00155D014E0D"
 	testName         = "test.txt"
 	testPath         = "data1/staging/test.txt"
+	testBadPath      = "/not/a/path"
 	testMismatchPath = "data1/staging/testMismatch.txt"
 	testNotADataset  = "123"
 
@@ -44,7 +46,11 @@ const (
 	testEmptyRootErr        = "stat %v: os: DirFS with empty root"
 	testOpenDoesNotExistErr = "open %v: file does not exist"
 	testRegexMatchErr       = "Regex match errored"
-	testHostnameErr         = "Hostname err occurred"
+	testHostnameErr         = "os.Hostname err occurred"
+	testChdirErr            = "os.Chdir err occurred"
+	testGetwdErr            = "os.Getwd err occurred"
+	testOsExecutableErr     = "os.Executable err occurred"
+	testLookupIPErr         = "net.LookupIP err occurred"
 
 	testKarachiTime       = "Asia/Karachi"
 	testKarachiDate       = "Mon Jan 30 17:55:14 PKT 2023"
@@ -94,7 +100,7 @@ func TestMainFunc(t *testing.T) {
 		// Set for other tests
 		testEnv.pwd = pwd
 		gotLogMsg := hook.LastEntry().Message
-		wantLogMsg := dryRunTrueLog
+		wantLogMsg := fmt.Sprintf(wrapLookupIPLog, hostname, ips[0].String())
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 
@@ -176,13 +182,171 @@ func TestMainFunc(t *testing.T) {
 
 }
 
+/* type SpyWrapper struct {
+	Calls int
+}
+
+func (s *SpyWrapper) wrapOS(*logrus.Logger) {
+	s.Calls++
+} */
+
+func TestOsWrapper(t *testing.T) {
+	t.Run("wrapOsExecutable should return & log the path", func(t *testing.T) {
+		testLogger, hook = setupLogs()
+
+		pwd := wrapOs(testLogger, "os.Executable", os.Executable)
+		ex, _ := os.Executable()
+
+		assertCorrectString(t, pwd, ex)
+
+		gotLogMsg := hook.LastEntry().Message
+		wantLogMsg := fmt.Sprintf(wrapOsLog, osExecutableLog, ex)
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
+
+	})
+
+	t.Run("wrapOs.Executable should panic & log an error on err", func(t *testing.T) {
+		fakeExit := func(int) {
+			panic(osPanicTrue)
+		}
+		patch := monkey.Patch(os.Exit, fakeExit)
+		defer patch.Unpatch()
+
+		fakeOsExecutable := func() (string, error) {
+			err := errors.New(testOsExecutableErr)
+			return "", err
+		}
+		patch2 := monkey.Patch(os.Executable, fakeOsExecutable)
+		defer patch2.Unpatch()
+
+		testLogger, hook = setupLogs()
+		panic := func() { wrapOs(testLogger, osExecutableLog, os.Executable) }
+		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
+
+		gotLogMsg := hook.LastEntry().Message
+		wantLogMsg := testOsExecutableErr
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
+
+	})
+
+	t.Run("wrapOs.Hostname should return & log the path", func(t *testing.T) {
+		testLogger, hook = setupLogs()
+
+		out := wrapOs(testLogger, osHostnameLog, os.Hostname)
+		hostname, _ := os.Hostname()
+
+		assertCorrectString(t, out, hostname)
+
+		gotLogMsg := hook.LastEntry().Message
+		wantLogMsg := fmt.Sprintf(wrapOsLog, osHostnameLog, hostname)
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
+
+	})
+
+	t.Run("wrapOs.Hostname should panic & log an error on err", func(t *testing.T) {
+		fakeExit := func(int) {
+			panic(osPanicTrue)
+		}
+		patch := monkey.Patch(os.Exit, fakeExit)
+		defer patch.Unpatch()
+
+		fakeHostname := func() (string, error) {
+			err := errors.New(testHostnameErr)
+			return "", err
+		}
+		patch2 := monkey.Patch(os.Hostname, fakeHostname)
+		defer patch2.Unpatch()
+
+		testLogger, hook = setupLogs()
+		panic := func() { wrapOs(testLogger, osHostnameLog, os.Hostname) }
+		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
+
+		gotLogMsg := hook.LastEntry().Message
+		wantLogMsg := testHostnameErr
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
+
+	})
+}
+
+func TestWrapLookupIP(t *testing.T) {
+	t.Run("wrapLookupIP should return & log the IP", func(t *testing.T) {
+		testLogger, hook = setupLogs()
+
+		hostname, _ := os.Hostname()
+		ips, _ := net.LookupIP(hostname)
+
+		ip := wrapLookupIP(testLogger, hostname, net.LookupIP)
+
+		assertCorrectString(t, ip.String(), ips[0].String())
+
+		gotLogMsg := hook.LastEntry().Message
+		wantLogMsg := fmt.Sprintf(wrapLookupIPLog, hostname, ip)
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
+
+	})
+
+	t.Run("wrapLookupIP should panic & log the err on err", func(t *testing.T) {
+		fakeExit := func(int) {
+			panic(osPanicTrue)
+		}
+		patch := monkey.Patch(os.Exit, fakeExit)
+		defer patch.Unpatch()
+
+		fakeLookupIP := func(string) ([]net.IP, error) {
+			err := errors.New(testLookupIPErr)
+			return nil, err
+		}
+		patch2 := monkey.Patch(net.LookupIP, fakeLookupIP)
+		defer patch2.Unpatch()
+
+		hostname, _ := os.Hostname()
+
+		testLogger, hook = setupLogs()
+		panic := func() { wrapLookupIP(testLogger, hostname, net.LookupIP) }
+		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
+
+		gotLogMsg := hook.LastEntry().Message
+		wantLogMsg := testLookupIPErr
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
+	})
+
+	t.Run("wrapLookupIP should panic & log an err if there are more than one IP", func(t *testing.T) {
+		fakeExit := func(int) {
+			panic(osPanicTrue)
+		}
+		patch := monkey.Patch(os.Exit, fakeExit)
+		defer patch.Unpatch()
+
+		fakeLookupIP := func(string) ([]net.IP, error) {
+			var ips []net.IP
+			ip1 := net.ParseIP("192.168.101.1")
+			ip2 := net.ParseIP("192.168.101.2")
+			ips = append(ips, ip1)
+			ips = append(ips, ip2)
+			return ips, nil
+		}
+		patch2 := monkey.Patch(net.LookupIP, fakeLookupIP)
+		defer patch2.Unpatch()
+
+		hostname, _ := os.Hostname()
+
+		testLogger, hook = setupLogs()
+		panic := func() { wrapLookupIP(testLogger, hostname, net.LookupIP) }
+		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
+
+		gotLogMsg := hook.LastEntry().Message
+		wantLogMsg := complexIPLog
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
+	})
+}
+
 func TestGetSourceFile(t *testing.T) {
 	t.Run("check for source file", func(t *testing.T) {
 		testLogger, hook = setupLogs()
 		fsys = fstest.MapFS{
 			testPath: {Data: []byte(testContent)},
 		}
-		file := getSourceFile(fsys, testPath, testLogger)
+		file := getSourceFile(fsys, "", testPath, testLogger)
 
 		got := file.Name()
 		want := testName
@@ -191,6 +355,45 @@ func TestGetSourceFile(t *testing.T) {
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(sourceLog, testPath)
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
+	})
+
+	t.Run("should handle full path", func(t *testing.T) {
+		testLogger, hook = setupLogs()
+		fsys = fstest.MapFS{
+			testPath: {Data: []byte(testContent)},
+		}
+		fullpath := string(os.PathSeparator) + testPath
+		file := getSourceFile(fsys, "", string(os.PathSeparator)+testPath, testLogger)
+
+		got := file.Name()
+		want := testName
+		assertCorrectString(t, got, want)
+
+		gotLogMsg := hook.LastEntry().Message
+		wantLogMsg := fmt.Sprintf(sourceLog, fullpath)
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
+	})
+
+	t.Run("should warn to use full path on local path", func(t *testing.T) {
+		testLogger, hook = setupLogs()
+		ex, _ := os.Executable()
+		dir, _ := path.Split(ex)
+		path := dir + testName
+		path = path[1:]
+		fsys = fstest.MapFS{
+			path: {Data: []byte(testContent)},
+		}
+
+		file := getSourceFile(fsys, ex, testName, testLogger)
+
+		got := file.Name()
+		want := testName
+		assertCorrectString(t, got, want)
+
+		gotLogMsg := hook.LastEntry().Message
+		wantLogMsg := fmt.Sprintf(sourceLog, testName)
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
+
 	})
 	t.Run("check for empty root", func(t *testing.T) {
 		fakeExit := func(int) {
@@ -203,8 +406,7 @@ func TestGetSourceFile(t *testing.T) {
 		fs := os.DirFS("")
 
 		panic := func() {
-			file := getSourceFile(fs, testDoesNotExistFile, testLogger)
-			println(file)
+			getSourceFile(fs, "/", testDoesNotExistFile, testLogger)
 		}
 
 		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
@@ -228,7 +430,7 @@ func TestGetSourceFile(t *testing.T) {
 		}
 
 		panic := func() {
-			file := getSourceFile(fsys, testDoesNotExistFile, testLogger)
+			file := getSourceFile(fsys, "/", testDoesNotExistFile, testLogger)
 			println(file)
 		}
 
@@ -238,6 +440,7 @@ func TestGetSourceFile(t *testing.T) {
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
+
 }
 
 func TestGetDatasetID(t *testing.T) {
@@ -372,7 +575,7 @@ func TestGetNonDryRun(t *testing.T) {
 }
 
 func TestSetPWD(t *testing.T) {
-	t.Run("getPWD should shift execution to root from current path", func(t *testing.T) {
+	t.Run("setPWD should shift execution to root from current path", func(t *testing.T) {
 		testLogger, _ = setupLogs()
 		ex, _ := os.Executable()
 
@@ -382,7 +585,7 @@ func TestSetPWD(t *testing.T) {
 
 	})
 
-	t.Run("getPWD should shift execution to root from any path", func(t *testing.T) {
+	t.Run("setPWD should shift execution to root from any path", func(t *testing.T) {
 		testLogger, _ = setupLogs()
 		ex := "/workflows/process_async_processed/logger/logger.go"
 
@@ -390,6 +593,55 @@ func TestSetPWD(t *testing.T) {
 		want := "/"
 		assertCorrectString(t, got, want)
 
+	})
+
+	t.Run("setPWD should log an error & panic if it can't chdir", func(t *testing.T) {
+		fakeExit := func(int) {
+			panic(osPanicTrue)
+		}
+		patch := monkey.Patch(os.Exit, fakeExit)
+		defer patch.Unpatch()
+		fakeChdir := func(string) error {
+			err := errors.New(testChdirErr)
+			return err
+		}
+
+		patch2 := monkey.Patch(os.Chdir, fakeChdir)
+		defer patch2.Unpatch()
+		testLogger, hook = setupLogs()
+
+		panic := func() { setPWD(testBadPath, testLogger) }
+
+		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
+		gotLogMsg := hook.LastEntry().Message
+		wantLogMsg := testChdirErr
+
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
+	})
+
+	t.Run("setPWD should log an error & panic if it can't Getwd", func(t *testing.T) {
+		fakeExit := func(int) {
+			panic(osPanicTrue)
+		}
+		patch := monkey.Patch(os.Exit, fakeExit)
+		defer patch.Unpatch()
+
+		fakeGetwd := func() (string, error) {
+			err := errors.New(testGetwdErr)
+			return "", err
+		}
+
+		patch2 := monkey.Patch(os.Getwd, fakeGetwd)
+		defer patch2.Unpatch()
+		testLogger, hook = setupLogs()
+
+		panic := func() { setPWD(testBadPath, testLogger) }
+
+		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
+		gotLogMsg := hook.LastEntry().Message
+		wantLogMsg := testGetwdErr
+
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
 
 }

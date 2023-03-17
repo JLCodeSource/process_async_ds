@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"net"
 	"os"
+	"path"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -25,7 +26,11 @@ const (
 	timelimitDaysLog   = "timelimit: Days time limit set to %v days ago which is %v"
 	dryRunTrueLog      = "dryrun: true; skipping exeecute move"
 	dryRunFalseLog     = "dryrun: false; executing move"
-	complexIPLog       = "ipStatus: unexpected; more ips than planned"
+	complexIPLog       = "net.LookupIP: unexpected; more ips than expected"
+	wrapOsLog          = "%v: %v"
+	osHostnameLog      = "os.Hostname"
+	osExecutableLog    = "os.Executable"
+	wrapLookupIPLog    = "net.LookupIP: %v=%v"
 
 	regexDatasetMatch = "^[A-F0-9]{32}$"
 
@@ -71,8 +76,19 @@ type Env struct {
 	pwd       string
 }
 
-func getSourceFile(filesystem fs.FS, f string, logger *logrus.Logger) fs.FileInfo {
-	file, err := fs.Stat(filesystem, f)
+func getSourceFile(filesystem fs.FS, ex string, f string, logger *logrus.Logger) fs.FileInfo {
+	var pth string
+	dir, fn := path.Split(f)
+	if strings.HasPrefix(f, string(os.PathSeparator)) {
+		pth = f[1:]
+	} else if dir == "./" || dir == "" {
+		dir, _ = path.Split(ex)
+		pth = dir + fn
+		pth = pth[1:]
+	} else {
+		pth = f
+	}
+	file, err := fs.Stat(filesystem, pth)
 	if err != nil {
 		logger.Fatal(err.Error())
 	}
@@ -123,19 +139,16 @@ func setPWD(ex string, logger *logrus.Logger) string {
 	// job needs to run in root dir
 
 	exPath := filepath.Dir(ex)
-	//fmt.Println(exPath)
+
 	parts := strings.Split(exPath, "/")
 	dots := ""
 	for i := 0; i < (len(parts) - 1); i++ {
 		dots = dots + "../"
 	}
-	//fmt.Println(dots)
 	err := os.Chdir(dots)
 	if err != nil {
 		logger.Fatal(err)
 	}
-	//fmt.Println(os.Executable())
-	//fmt.Println(os.Getwd())
 
 	pwd, err := os.Getwd()
 	if err != nil {
@@ -166,31 +179,27 @@ func main() {
 
 	flag.Parse()
 
-	ex, err := os.Executable()
-	if err != nil {
-		logger.Fatal(err)
-	}
+	ex := wrapOs(logger, osExecutableLog, os.Executable)
+
 	root := setPWD(ex, logger)
 
 	fsys := os.DirFS(root)
 
-	getSourceFile(fsys, sourceFile, logger)
+	getSourceFile(fsys, ex, sourceFile, logger)
 	ds := getDatasetID(datasetID, logger)
 	l := getTimeLimit(numDays, logger)
 	ndr := getNonDryRun(nondryrun, logger)
 
-	hostname, err := os.Hostname()
-	if err != nil {
-		logger.Fatal(err)
-	}
+	hostname := wrapOs(logger, osHostnameLog, os.Hostname)
 
-	ips, err := net.LookupIP(hostname)
+	ip := wrapLookupIP(logger, hostname, net.LookupIP)
+	/* ips, err := net.LookupIP(hostname)
 	if err != nil {
 		logger.Fatal(err)
 	}
 	if len(ips) > 1 {
 		logger.Fatal(complexIPLog)
-	}
+	} */
 
 	env = new(Env)
 	env = &Env{
@@ -199,7 +208,36 @@ func main() {
 		datasetID:  ds,
 		limit:      l,
 		nondryrun:  ndr,
-		sysIP:      ips[0],
+		sysIP:      ip,
 	}
 
 }
+
+func wrapOs(logger *logrus.Logger, wrapped string, f func() (string, error)) string {
+	out, err := f()
+	if err != nil {
+		logger.Fatal(err)
+	}
+	logger.Info(fmt.Sprintf(wrapOsLog, wrapped, out))
+	return out
+}
+
+func wrapLookupIP(logger *logrus.Logger, hostname string, f func(string) ([]net.IP, error)) net.IP {
+	ips, err := f(hostname)
+	if err != nil {
+		logger.Fatal(err)
+	} else if len(ips) > 1 {
+		logger.Fatal(complexIPLog)
+	}
+
+	ip := ips[0]
+	logger.Info(fmt.Sprintf(wrapLookupIPLog, hostname, ip.String()))
+	return ip
+}
+
+/*
+//go:generate mockery --name osWrapper
+type Wrapper interface {
+	wrapOs(logger *logrus.Logger, f func() (string, error)) string
+}
+*/

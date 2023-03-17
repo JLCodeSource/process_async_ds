@@ -98,27 +98,27 @@ func TestRootFSMap(t *testing.T) {
 		t.Fatal(err)
 	}
 	exPath := filepath.Dir(ex)
-	fmt.Println(exPath)
+	//fmt.Println(exPath)
 	parts := strings.Split(exPath, "/")
 	dots := ""
 	for i := 0; i < (len(parts) - 1); i++ {
 		dots = dots + "../"
 	}
-	fmt.Println(dots)
+	//fmt.Println(dots)
 	err = os.Chdir(dots)
 	if err != nil {
 		t.Fatal(err)
 	}
-	fmt.Println(os.Executable())
-	fmt.Println(os.Getwd())
+	//fmt.Println(os.Executable())
+	//fmt.Println(os.Getwd())
 	fsys := os.DirFS("/")
-	ls, err := fs.ReadDir(fsys, ".")
+	_, err = fs.ReadDir(fsys, ".")
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, f := range ls {
+	/* 	for _, f := range ls {
 		fmt.Println(f.Name())
-	}
+	} */
 
 }
 
@@ -159,7 +159,6 @@ func TestVerify(t *testing.T) {
 			gotLogMsg := hook.LastEntry().Message
 			wantLogMsg := fmt.Sprintf(fVerifiedLog, f.smbName, f.id)
 			assertCorrectString(t, gotLogMsg, wantLogMsg)
-			fmt.Printf(fVerifiedLog, f.smbName, f.id)
 		}
 
 	})
