@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"net"
 	"os"
+	"path"
 	"reflect"
 	"regexp"
 	"strconv"
@@ -345,7 +346,7 @@ func TestGetSourceFile(t *testing.T) {
 		fsys = fstest.MapFS{
 			testPath: {Data: []byte(testContent)},
 		}
-		file := getSourceFile(fsys, testPath, testLogger)
+		file := getSourceFile(fsys, "", testPath, testLogger)
 
 		got := file.Name()
 		want := testName
@@ -362,7 +363,7 @@ func TestGetSourceFile(t *testing.T) {
 			testPath: {Data: []byte(testContent)},
 		}
 		fullpath := string(os.PathSeparator) + testPath
-		file := getSourceFile(fsys, string(os.PathSeparator)+testPath, testLogger)
+		file := getSourceFile(fsys, "", string(os.PathSeparator)+testPath, testLogger)
 
 		got := file.Name()
 		want := testName
@@ -371,6 +372,28 @@ func TestGetSourceFile(t *testing.T) {
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(sourceLog, fullpath)
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
+	})
+
+	t.Run("should warn to use full path on local path", func(t *testing.T) {
+		testLogger, hook = setupLogs()
+		ex, _ := os.Executable()
+		dir, _ := path.Split(ex)
+		path := dir + testName
+		path = path[1:]
+		fsys = fstest.MapFS{
+			path: {Data: []byte(testContent)},
+		}
+
+		file := getSourceFile(fsys, ex, testName, testLogger)
+
+		got := file.Name()
+		want := testName
+		assertCorrectString(t, got, want)
+
+		gotLogMsg := hook.LastEntry().Message
+		wantLogMsg := fmt.Sprintf(sourceLog, testName)
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
+
 	})
 	t.Run("check for empty root", func(t *testing.T) {
 		fakeExit := func(int) {
@@ -383,7 +406,7 @@ func TestGetSourceFile(t *testing.T) {
 		fs := os.DirFS("")
 
 		panic := func() {
-			getSourceFile(fs, testDoesNotExistFile, testLogger)
+			getSourceFile(fs, "/", testDoesNotExistFile, testLogger)
 		}
 
 		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
@@ -407,7 +430,7 @@ func TestGetSourceFile(t *testing.T) {
 		}
 
 		panic := func() {
-			file := getSourceFile(fsys, testDoesNotExistFile, testLogger)
+			file := getSourceFile(fsys, "/", testDoesNotExistFile, testLogger)
 			println(file)
 		}
 
@@ -417,6 +440,7 @@ func TestGetSourceFile(t *testing.T) {
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
+
 }
 
 func TestGetDatasetID(t *testing.T) {

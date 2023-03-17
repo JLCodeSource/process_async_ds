@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"net"
 	"os"
+	"path"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -75,14 +76,19 @@ type Env struct {
 	pwd       string
 }
 
-func getSourceFile(filesystem fs.FS, f string, logger *logrus.Logger) fs.FileInfo {
-	var path string
+func getSourceFile(filesystem fs.FS, ex string, f string, logger *logrus.Logger) fs.FileInfo {
+	var pth string
+	dir, fn := path.Split(f)
 	if strings.HasPrefix(f, string(os.PathSeparator)) {
-		path = f[1:]
+		pth = f[1:]
+	} else if dir == "./" || dir == "" {
+		dir, _ = path.Split(ex)
+		pth = dir + fn
+		pth = pth[1:]
 	} else {
-		path = f
+		pth = f
 	}
-	file, err := fs.Stat(filesystem, path)
+	file, err := fs.Stat(filesystem, pth)
 	if err != nil {
 		logger.Fatal(err.Error())
 	}
@@ -179,7 +185,7 @@ func main() {
 
 	fsys := os.DirFS(root)
 
-	getSourceFile(fsys, sourceFile, logger)
+	getSourceFile(fsys, ex, sourceFile, logger)
 	ds := getDatasetID(datasetID, logger)
 	l := getTimeLimit(numDays, logger)
 	ndr := getNonDryRun(nondryrun, logger)
