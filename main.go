@@ -140,7 +140,7 @@ func setPWD(ex string, logger *logrus.Logger) string {
 
 	exPath := filepath.Dir(ex)
 
-	parts := strings.Split(exPath, "/")
+	parts := strings.Split(exPath, string(os.PathSeparator))
 	dots := ""
 	for i := 0; i < (len(parts) - 1); i++ {
 		dots = dots + "../"
@@ -193,13 +193,6 @@ func main() {
 	hostname := wrapOs(logger, osHostnameLog, os.Hostname)
 
 	ip := wrapLookupIP(logger, hostname, net.LookupIP)
-	/* ips, err := net.LookupIP(hostname)
-	if err != nil {
-		logger.Fatal(err)
-	}
-	if len(ips) > 1 {
-		logger.Fatal(complexIPLog)
-	} */
 
 	env = new(Env)
 	env = &Env{
