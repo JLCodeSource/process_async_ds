@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/sha256"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -893,6 +894,9 @@ func createFSTest(numFiles int) (fstest.MapFS, []File) {
 		f.size = int64(rand.Intn(100000)) //#nosec - random testing code can be insecure
 		// set content
 		data := genRandom(f.size, letterBytes)
+		// set hash
+		f.hash = sha256.Sum256(data)
+
 		// set id
 		f.id = string(genRandom(32, fileIDBytes))
 		// set fanIP

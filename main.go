@@ -62,6 +62,7 @@ type File struct {
 	fanIP       net.IP
 	datasetID   string
 	fileInfo    fs.FileInfo
+	hash        [32]byte
 }
 
 // Env type holds config and environment settings
@@ -69,11 +70,12 @@ type Env struct {
 	fsys       fs.FS
 	sourceFile string
 	datasetID  string
+	limit      time.Time
+	nondryrun  bool
+	sysIP      net.IP
+	pwd        string
 	//days       int64
-	limit     time.Time
-	nondryrun bool
-	sysIP     net.IP
-	pwd       string
+
 }
 
 func getSourceFile(filesystem fs.FS, ex string, f string, logger *logrus.Logger) fs.FileInfo {
