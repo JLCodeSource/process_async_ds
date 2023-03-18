@@ -85,6 +85,7 @@ func TestMainFunc(t *testing.T) {
 		hostname, _ := os.Hostname()
 		ips, _ := net.LookupIP(hostname)
 		pwd, err := os.Getwd()
+		env = &testEnv
 		if err != nil {
 			t.Fatal(err)
 		}
