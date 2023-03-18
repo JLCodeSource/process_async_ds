@@ -69,8 +69,9 @@ var (
 	ip      net.IP
 
 	// setup file
-	file File
-	now  time.Time
+	file  File
+	files []File
+	now   time.Time
 
 	// setup fsys
 	fsys fstest.MapFS
