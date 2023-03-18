@@ -183,7 +183,6 @@ func TestWrapAferoMkdirAll(t *testing.T) {
 
 }
 
-// Needs huge refactor; but necessary
 func createAferoTest(t *testing.T, numFiles int) (afero.Fs, []File) {
 	// handle gbr input
 
