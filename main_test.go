@@ -17,6 +17,7 @@ import (
 	"bou.ke/monkey"
 	"github.com/sirupsen/logrus"
 	"github.com/sirupsen/logrus/hooks/test"
+	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 
 	log "github.com/JLCodeSource/process_async_ds/logger"
@@ -547,11 +548,16 @@ func TestGetNonDryRun(t *testing.T) {
 
 	t.Run("default dry run", func(t *testing.T) {
 		testLogger, hook = setupLogs()
+		env = &testEnv
 
 		got := strconv.FormatBool(getNonDryRun(false, testLogger))
 		want := strconv.FormatBool(false)
 
 		assertCorrectString(t, got, want)
+
+		typ := reflect.TypeOf(env.afs)
+		rofs := new(afero.ReadOnlyFs)
+		assert.Equal(t, typ, reflect.TypeOf(rofs))
 
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := dryRunTrueLog
@@ -561,11 +567,16 @@ func TestGetNonDryRun(t *testing.T) {
 
 	t.Run("non-dry run execute move", func(t *testing.T) {
 		testLogger, hook = setupLogs()
+		env = &testEnv
 
 		got := strconv.FormatBool(getNonDryRun(true, testLogger))
 		want := strconv.FormatBool(true)
 
 		assertCorrectString(t, got, want)
+
+		typ := reflect.TypeOf(env.afs)
+		osfs := new(afero.OsFs)
+		assert.Equal(t, typ, reflect.TypeOf(osfs))
 
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := dryRunFalseLog
