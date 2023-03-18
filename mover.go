@@ -2,30 +2,32 @@ package main
 
 import (
 	"fmt"
-	"io/fs"
 	"os"
 	"path"
 	"strings"
 
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/afero"
 )
 
 const (
 	fMoveFileLog = "%v: (file.id:%v) oldPath:%v, newPath:%v"
 )
 
-func (f *File) Move(fsys fs.FS, logger *logrus.Logger) {
+func (f *File) Move(afsys afero.Fs, logger *logrus.Logger) {
 	oldLocation := f.stagingPath
 	newLocation := newPath(f)
-	_, err := fsys.Open(newLocation)
+	dir, _ := path.Split(newLocation)
+	_, err := afsys.Stat(dir)
 	if err != nil {
 		logger.Warn(err)
-		wrapOsMkdirAll(newLocation, logger)
+		wrapAferoMkdirAll(afsys, dir, logger)
 	}
-	err = os.Rename(oldLocation, newLocation)
+	err = afsys.Rename(oldLocation, newLocation)
 	if err != nil {
 		logger.Fatal(err)
 	}
+	f.stagingPath = newLocation
 	logger.Info(fmt.Sprintf(fMoveFileLog, f.smbName, f.id, oldLocation, newLocation))
 }
 
@@ -39,8 +41,8 @@ func newPath(f *File) string {
 	return fp + ".processed" + string(os.PathSeparator) + lp + fn
 }
 
-func wrapOsMkdirAll(path string, logger *logrus.Logger) bool {
-	err := os.MkdirAll(path, 0755)
+func wrapAferoMkdirAll(afsys afero.Fs, path string, logger *logrus.Logger) bool {
+	err := afsys.MkdirAll(path, 0755)
 	if err != nil && !os.IsExist(err) {
 		logger.Fatal(err)
 	}
