@@ -59,7 +59,7 @@ func TestMoveFile(t *testing.T) {
 
 			assertCorrectString(t, f.stagingPath, newPath)
 
-			gotLogMsg := hook.LastEntry().Message
+			gotLogMsg := hook.Entries[0].Message
 			wantLogMsg := fmt.Sprintf(fMoveFileLog,
 				f.smbName,
 				f.id,
@@ -86,8 +86,56 @@ func TestMoveFile(t *testing.T) {
 
 			f.Move(fs, testLogger)
 
-			gotLogMsg := hook.Entries[0].Message
+			gotLogMsg := hook.LastEntry().Message
 			wantLogMsg := fmt.Sprintf(testFsysDoesNotExistErr, dir[:len(dir)-1])
+
+			assertCorrectString(t, gotLogMsg, wantLogMsg)
+
+		}
+	})
+
+	t.Run("should check for dryrun & log not executing move", func(t *testing.T) {
+		for _, f := range files {
+			fs := afero.NewMemMapFs()
+			afs := &afero.Afero{Fs: fs}
+			err := afero.WriteFile(afs, f.stagingPath, []byte{}, 0755)
+			if err != nil {
+				t.Fatal(err)
+			}
+			testLogger, hook = setupLogs()
+
+			env = &Env{
+				nondryrun: false,
+			}
+
+			f.Move(fs, testLogger)
+
+			gotLogMsg := hook.LastEntry().Message
+			wantLogMsg := fmt.Sprintf(fMoveDryRunTrueLog, f.smbName, f.id)
+
+			assertCorrectString(t, gotLogMsg, wantLogMsg)
+
+		}
+	})
+
+	t.Run("should check for nondryrun & log executing move", func(t *testing.T) {
+		for _, f := range files {
+			fs := afero.NewMemMapFs()
+			afs := &afero.Afero{Fs: fs}
+			err := afero.WriteFile(afs, f.stagingPath, []byte{}, 0755)
+			if err != nil {
+				t.Fatal(err)
+			}
+			testLogger, hook = setupLogs()
+
+			env = &Env{
+				nondryrun: true,
+			}
+
+			f.Move(fs, testLogger)
+
+			gotLogMsg := hook.Entries[1].Message
+			wantLogMsg := fmt.Sprintf(fMoveDryRunFalseLog, f.smbName, f.id)
 
 			assertCorrectString(t, gotLogMsg, wantLogMsg)
 

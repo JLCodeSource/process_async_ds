@@ -11,24 +11,32 @@ import (
 )
 
 const (
-	fMoveFileLog = "%v: (file.id:%v) oldPath:%v, newPath:%v"
+	fMoveFileLog        = "%v: (file.id:%v) oldPath:%v, newPath:%v"
+	fMoveDryRunTrueLog  = "%v: (file.id:%v) Dryrun skipping execute move"
+	fMoveDryRunFalseLog = "%v: (file.id:%v) Nondryrun executing move"
 )
 
 func (f *File) Move(afsys afero.Fs, logger *logrus.Logger) {
 	oldLocation := f.stagingPath
 	newLocation := newPath(f)
-	dir, _ := path.Split(newLocation)
-	_, err := afsys.Stat(dir)
-	if err != nil {
-		logger.Warn(err)
-		wrapAferoMkdirAll(afsys, dir, logger)
-	}
-	err = afsys.Rename(oldLocation, newLocation)
-	if err != nil {
-		logger.Fatal(err)
-	}
-	f.stagingPath = newLocation
 	logger.Info(fmt.Sprintf(fMoveFileLog, f.smbName, f.id, oldLocation, newLocation))
+	if env.nondryrun {
+		logger.Warn(fmt.Sprintf(fMoveDryRunFalseLog, f.smbName, f.id))
+		dir, _ := path.Split(newLocation)
+		_, err := afsys.Stat(dir)
+		if err != nil {
+			logger.Warn(err)
+			wrapAferoMkdirAll(afsys, dir, logger)
+		}
+		err = afsys.Rename(oldLocation, newLocation)
+		if err != nil {
+			logger.Fatal(err)
+		}
+		f.stagingPath = newLocation
+	} else {
+		logger.Info(fmt.Sprintf(fMoveDryRunTrueLog, f.smbName, f.id))
+	}
+
 }
 
 func newPath(f *File) string {
