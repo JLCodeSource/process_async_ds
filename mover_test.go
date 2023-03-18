@@ -71,23 +71,28 @@ func TestMoveFile(t *testing.T) {
 		}
 	})
 
-	/* 	t.Run("should report error if folder doesn't exist, log it & create it", func(t *testing.T) {
+	t.Run("should report error if folder doesn't exist, log it & create it", func(t *testing.T) {
 		for _, f := range files {
+			fs := afero.NewMemMapFs()
+			afs := &afero.Afero{Fs: fs}
+			err := afero.WriteFile(afs, f.stagingPath, []byte{}, 0755)
+			if err != nil {
+				t.Fatal(err)
+			}
 			testLogger, hook = setupLogs()
+
 			newPath := newPath(&f)
+			dir, _ := path.Split(newPath)
 
-			f.Move(appFs, testLogger)
-
-			_, err := appFs.Stat(newPath)
-			assert.Error(t, err)
+			f.Move(fs, testLogger)
 
 			gotLogMsg := hook.Entries[0].Message
-			wantLogMsg := fmt.Sprintf(testFsysDoesNotExistErr, newPath)
+			wantLogMsg := fmt.Sprintf(testFsysDoesNotExistErr, dir[:len(dir)-1])
 
 			assertCorrectString(t, gotLogMsg, wantLogMsg)
 
 		}
-	}) */
+	})
 
 }
 
