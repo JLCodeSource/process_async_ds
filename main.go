@@ -10,6 +10,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/spf13/afero"
 	log "github.com/JLCodeSource/process_async_ds/logger"
 
 	"flag"
@@ -49,7 +50,8 @@ var (
 	datasetID  string
 	numDays    int64
 	nondryrun  bool
-	env        *Env
+	//afs        afero.Fs
+	env *Env
 )
 
 // File type is a struct which holds its relevant metadata
@@ -68,6 +70,7 @@ type File struct {
 // Env type holds config and environment settings
 type Env struct {
 	fsys       fs.FS
+	afs        afero.Fs
 	sourceFile string
 	datasetID  string
 	limit      time.Time
@@ -129,8 +132,10 @@ func getTimeLimit(days int64, logger *logrus.Logger) (limit time.Time) {
 
 func getNonDryRun(nondryrun bool, logger *logrus.Logger) bool {
 	if nondryrun {
+		env.afs = afero.NewOsFs()
 		logger.Warn(dryRunFalseLog)
 	} else {
+		env.afs = afero.NewReadOnlyFs(afero.NewOsFs())
 		logger.Info(dryRunTrueLog)
 	}
 
