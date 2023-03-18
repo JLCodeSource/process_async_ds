@@ -33,7 +33,7 @@ func TestNewPath(t *testing.T) {
 			lastParts := parts[2:]
 			firstParts := parts[:2]
 
-			got := newPath(&f)
+			got := newPath(&f) //#nosec - testing code can be insecure
 			fp := strings.Join(firstParts, string(os.PathSeparator))
 			lp := strings.Join(lastParts, string(os.PathSeparator))
 			want := fp + ".processed" + string(os.PathSeparator) + lp + fn
@@ -49,7 +49,7 @@ func TestMoveFile(t *testing.T) {
 		for _, f := range files {
 			testLogger, hook = setupLogs()
 			oldPath := f.stagingPath
-			newPath := newPath(&f)
+			newPath := newPath(&f) //#nosec - testing code can be insecure
 			env = &Env{
 				nondryrun: true,
 			}
@@ -84,7 +84,7 @@ func TestMoveFile(t *testing.T) {
 			}
 			testLogger, hook = setupLogs()
 
-			newPath := newPath(&f)
+			newPath := newPath(&f) //#nosec - testing code can be insecure
 			dir, _ := path.Split(newPath)
 
 			f.Move(fs, testLogger)
@@ -154,8 +154,11 @@ func TestWrapAferoMkdirAll(t *testing.T) {
 		path := tempdir1 + tempdir2
 		testLogger, hook = setupLogs()
 		ok := wrapAferoMkdirAll(appFs, path, testLogger)
-		defer appFs.RemoveAll(tempdir1)
 
+		err := appFs.RemoveAll(tempdir1)
+		if err != nil {
+			t.Fatal(err)
+		}
 		assert.True(t, ok)
 
 	})
@@ -255,7 +258,10 @@ func createAferoTest(t *testing.T, numFiles int) (afero.Fs, []File) {
 			t.Fatal(err)
 		}
 
-		fs.Chtimes(f.stagingPath, beforeNow, beforeNow)
+		err = fs.Chtimes(f.stagingPath, beforeNow, beforeNow)
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		fi, err := fs.Stat(f.stagingPath)
 		f.fileInfo = fi

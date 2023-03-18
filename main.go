@@ -50,8 +50,8 @@ var (
 	datasetID  string
 	numDays    int64
 	nondryrun  bool
-	afs        afero.Fs
-	env        *Env
+	//afs        afero.Fs
+	env *Env
 )
 
 // File type is a struct which holds its relevant metadata
