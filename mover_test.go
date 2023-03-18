@@ -50,6 +50,9 @@ func TestMoveFile(t *testing.T) {
 			testLogger, hook = setupLogs()
 			oldPath := f.stagingPath
 			newPath := newPath(&f)
+			env = &Env{
+				nondryrun: true,
+			}
 			f.Move(appFs, testLogger)
 			assert.NotEqual(t, oldPath, newPath)
 			_, err := appFs.Stat(newPath)
