@@ -86,9 +86,7 @@ func TestMainFunc(t *testing.T) {
 		ips, _ := net.LookupIP(hostname)
 		pwd, err := os.Getwd()
 		env = &testEnv
-		if err != nil {
-			t.Fatal(err)
-		}
+		env.afs = afero.NewOsFs()
 		os.Args = append(os.Args, fmt.Sprintf(testArgsFile, pwd[1:]))
 		os.Args = append(os.Args, fmt.Sprintf(testArgsDataset, testDatasetID))
 		os.Args = append(os.Args, testArgsDays)

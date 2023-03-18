@@ -50,8 +50,8 @@ var (
 	datasetID  string
 	numDays    int64
 	nondryrun  bool
-	//afs        afero.Fs
-	env *Env
+	afs        afero.Fs
+	env        *Env
 )
 
 // File type is a struct which holds its relevant metadata
@@ -191,6 +191,7 @@ func main() {
 	root := setPWD(ex, logger)
 
 	fsys := os.DirFS(root)
+	afs = afero.NewOsFs()
 
 	getSourceFile(fsys, ex, sourceFile, logger)
 	ds := getDatasetID(datasetID, logger)
@@ -204,6 +205,7 @@ func main() {
 	env = new(Env)
 	env = &Env{
 		fsys:       fsys,
+		afs:        afs,
 		sourceFile: sourceFile,
 		datasetID:  ds,
 		limit:      l,
