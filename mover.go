@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io/fs"
 	"os"
 	"path"
 	"strings"
@@ -13,7 +14,22 @@ const (
 	fMoveFileLog = "%v: (file.id:%v) oldPath:%v, newPath:%v"
 )
 
-func (f *File) UpdatePath() string {
+func (f *File) Move(fsys fs.FS, logger *logrus.Logger) {
+	oldLocation := f.stagingPath
+	newLocation := newPath(f)
+	_, err := fsys.Open(newLocation)
+	if err != nil {
+		logger.Warn(err)
+		wrapOsMkdirAll(newLocation, logger)
+	}
+	err = os.Rename(oldLocation, newLocation)
+	if err != nil {
+		logger.Fatal(err)
+	}
+	logger.Info(fmt.Sprintf(fMoveFileLog, f.smbName, f.id, oldLocation, newLocation))
+}
+
+func newPath(f *File) string {
 	oldDir, fn := path.Split(f.stagingPath)
 	parts := strings.Split(oldDir, string(os.PathSeparator))
 	lastParts := parts[2:]
@@ -23,11 +39,10 @@ func (f *File) UpdatePath() string {
 	return fp + ".processed" + string(os.PathSeparator) + lp + fn
 }
 
-func (f *File) Move(newLocation string, logger *logrus.Logger) {
-	oldLocation := f.stagingPath
-	_ = os.Rename(oldLocation, newLocation)
-	//if err != nil {
-	//	logger.Fatal(err)
-	//}
-	logger.Info(fmt.Sprintf(fMoveFileLog, f.smbName, f.id, oldLocation, newLocation))
+func wrapOsMkdirAll(path string, logger *logrus.Logger) bool {
+	err := os.MkdirAll(path, 0755)
+	if err != nil && !os.IsExist(err) {
+		logger.Fatal(err)
+	}
+	return true
 }
