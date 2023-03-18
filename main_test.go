@@ -230,7 +230,7 @@ func TestOsWrapper(t *testing.T) {
 
 	})
 
-	t.Run("wrapOs.Hostname should return & log the path", func(t *testing.T) {
+	t.Run("wrapOs.Hostname should return & log the hostname", func(t *testing.T) {
 		testLogger, hook = setupLogs()
 
 		out := wrapOs(testLogger, osHostnameLog, os.Hostname)
