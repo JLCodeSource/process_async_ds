@@ -102,6 +102,7 @@ func TestRootFSMap(t *testing.T) {
 	//fmt.Println(exPath)
 	parts := strings.Split(exPath, "/")
 	dots := ""
+
 	for i := 0; i < (len(parts) - 1); i++ {
 		dots = dots + "../"
 	}
@@ -865,7 +866,9 @@ func createFSTest(numFiles int) (fstest.MapFS, []File) {
 	defer out.Close()
 
 	fsys = fstest.MapFS{}
+
 	var files []File
+
 	var dirs = []string{}
 
 	dirs = append(dirs, "mb/FAN/")
@@ -915,6 +918,7 @@ func createFSTest(numFiles int) (fstest.MapFS, []File) {
 		if err != nil {
 			fmt.Print(err.Error())
 		}
+
 		files = append(files, f)
 
 		_, err = out.WriteString(fmt.Sprintf("%v,%v\n", f.id, f.smbName))
