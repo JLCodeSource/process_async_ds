@@ -186,6 +186,8 @@ func main() {
 
 	flag.Parse()
 
+	env = new(Env)
+
 	ex := wrapOs(logger, osExecutableLog, os.Executable)
 
 	root := setPWD(ex, logger)
@@ -202,7 +204,6 @@ func main() {
 
 	ip := wrapLookupIP(logger, hostname, net.LookupIP)
 
-	env = new(Env)
 	env = &Env{
 		fsys:       fsys,
 		afs:        afs,
