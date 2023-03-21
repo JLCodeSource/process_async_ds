@@ -46,6 +46,7 @@ func newPath(f *File) string {
 	firstParts := parts[:2]
 	fp := strings.Join(firstParts, string(os.PathSeparator))
 	lp := strings.Join(lastParts, string(os.PathSeparator))
+
 	return fp + ".processed" + string(os.PathSeparator) + lp + fn
 }
 
@@ -54,5 +55,6 @@ func wrapAferoMkdirAll(afsys afero.Fs, path string, logger *logrus.Logger) bool 
 	if err != nil && !os.IsExist(err) {
 		logger.Fatal(err)
 	}
+
 	return true
 }
