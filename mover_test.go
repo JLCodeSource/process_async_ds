@@ -26,6 +26,7 @@ const (
 
 func TestNewPath(t *testing.T) {
 	fsys, files = createFSTest(10)
+
 	t.Run("should return path of xxx.processed", func(t *testing.T) {
 		for _, f := range files {
 			oldDir, fn := path.Split(f.stagingPath)
@@ -183,12 +184,9 @@ func TestWrapAferoMkdirAll(t *testing.T) {
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
-
 }
 
 func createAferoTest(t *testing.T, numFiles int) (afero.Fs, []File) {
-	// handle gbr input
-
 	// Create gbrList file
 	var list string
 
@@ -212,7 +210,9 @@ func createAferoTest(t *testing.T, numFiles int) (afero.Fs, []File) {
 	// Create AferoFs
 	fs := afero.NewMemMapFs()
 	afs := &afero.Afero{Fs: fs}
+
 	var files []File
+
 	var dirs = []string{}
 
 	dirs = append(dirs, "mb/FAN/download/")
@@ -265,7 +265,9 @@ func createAferoTest(t *testing.T, numFiles int) (afero.Fs, []File) {
 
 		fi, err := fs.Stat(f.stagingPath)
 		f.fileInfo = fi
+
 		assert.Nil(t, err)
+
 		files = append(files, f)
 
 		_, err = out.WriteString(fmt.Sprintf("%v,%v\n", f.id, f.smbName))
