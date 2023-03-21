@@ -141,7 +141,7 @@ func TestMainFunc(t *testing.T) {
 
 		assertCorrectString(t, env.limit.Format(time.UnixDate), limit)
 
-		assert.Equal(t, env.nondryrun, false)
+		assert.Equal(t, env.dryrun, true)
 		assert.Equal(t, env.sysIP, ips[0])
 	})
 
@@ -546,16 +546,15 @@ func TestGetTimeLimit(t *testing.T) {
 	})
 }
 
-func TestGetNonDryRun(t *testing.T) {
+func TestGetDryRun(t *testing.T) {
 
 	t.Run("default dry run", func(t *testing.T) {
 		testLogger, hook = setupLogs()
 		env = &testEnv
 
-		got := strconv.FormatBool(getNonDryRun(false, testLogger))
-		want := strconv.FormatBool(false)
+		got := getDryRun(true, testLogger)
 
-		assertCorrectString(t, got, want)
+		assert.True(t, got)
 
 		typ := reflect.TypeOf(env.afs)
 		rofs := new(afero.ReadOnlyFs)
@@ -571,10 +570,9 @@ func TestGetNonDryRun(t *testing.T) {
 		testLogger, hook = setupLogs()
 		env = &testEnv
 
-		got := strconv.FormatBool(getNonDryRun(true, testLogger))
-		want := strconv.FormatBool(true)
+		got := getDryRun(false, testLogger)
 
-		assertCorrectString(t, got, want)
+		assert.False(t, got)
 
 		typ := reflect.TypeOf(env.afs)
 		osfs := new(afero.OsFs)
