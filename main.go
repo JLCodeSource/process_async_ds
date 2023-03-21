@@ -135,7 +135,6 @@ func getDryRun(dryrun bool, logger *logrus.Logger) bool {
 		env.afs = afero.NewReadOnlyFs(afero.NewOsFs())
 		logger.Info(dryRunTrueLog)
 	} else {
-
 		env.afs = afero.NewOsFs()
 		logger.Warn(dryRunFalseLog)
 	}
