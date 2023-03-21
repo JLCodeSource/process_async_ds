@@ -77,7 +77,6 @@ func (f *File) verifyIP(ip net.IP, logger *logrus.Logger) bool {
 		logger.Info(fmt.Sprintf(fIPMatchTrueLog, f.smbName, f.id, f.fanIP, ip))
 	} else {
 		logger.Warn(fmt.Sprintf(fIPMatchFalseLog, f.smbName, f.id, f.fanIP, ip))
-
 	}
 
 	return reflect.DeepEqual(f.fanIP, ip)

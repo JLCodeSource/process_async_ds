@@ -39,7 +39,6 @@ func TestNewPath(t *testing.T) {
 			lp := strings.Join(lastParts, string(os.PathSeparator))
 			want := fp + ".processed" + string(os.PathSeparator) + lp + fn
 			assertCorrectString(t, got, want)
-
 		}
 	})
 }
@@ -71,7 +70,6 @@ func TestMoveFile(t *testing.T) {
 				newPath)
 
 			assertCorrectString(t, gotLogMsg, wantLogMsg)
-
 		}
 	})
 
@@ -94,7 +92,6 @@ func TestMoveFile(t *testing.T) {
 			wantLogMsg := fmt.Sprintf(testFsysDoesNotExistErr, dir[:len(dir)-1])
 
 			assertCorrectString(t, gotLogMsg, wantLogMsg)
-
 		}
 	})
 
@@ -118,7 +115,6 @@ func TestMoveFile(t *testing.T) {
 			wantLogMsg := fmt.Sprintf(fMoveDryRunTrueLog, f.smbName, f.id)
 
 			assertCorrectString(t, gotLogMsg, wantLogMsg)
-
 		}
 	})
 
@@ -142,7 +138,6 @@ func TestMoveFile(t *testing.T) {
 			wantLogMsg := fmt.Sprintf(fMoveDryRunFalseLog, f.smbName, f.id)
 
 			assertCorrectString(t, gotLogMsg, wantLogMsg)
-
 		}
 	})
 }
@@ -159,7 +154,6 @@ func TestWrapAferoMkdirAll(t *testing.T) {
 			t.Fatal(err)
 		}
 		assert.True(t, ok)
-
 	})
 
 	t.Run("wrapAferoMkdirAll should panic & log the error on err", func(t *testing.T) {

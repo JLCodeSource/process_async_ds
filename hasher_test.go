@@ -34,12 +34,9 @@ func TestHasher(t *testing.T) {
 			gotLogMsg := hook.LastEntry().Message
 			wantLogMsg := fmt.Sprintf(fHashLog, f.smbName, f.id, f.hash)
 			assertCorrectString(t, gotLogMsg, wantLogMsg)
-
 		}
 	})
-
 	t.Run("should log an error on failure to hash", func(t *testing.T) {
-
 		fakeFsReadFile := func(fsys fs.FS, name string) ([]byte, error) {
 			err := errors.New(testFsReadFileErr)
 			return nil, err
@@ -49,7 +46,6 @@ func TestHasher(t *testing.T) {
 
 		fsys, files = createFSTest(10)
 		for _, f := range files {
-
 			testLogger, hook = setupLogs()
 
 			f.hasher(fsys, testLogger)
@@ -57,7 +53,6 @@ func TestHasher(t *testing.T) {
 			gotLogMsg := hook.Entries[0].Message
 			wantLogMsg := testFsReadFileErr
 			assertCorrectString(t, gotLogMsg, wantLogMsg)
-
 		}
 	})
 }

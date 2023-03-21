@@ -48,9 +48,7 @@ var (
 )
 
 func TestParseFile(t *testing.T) {
-
 	t.Run("test parseFile", func(t *testing.T) {
-
 		parsingTests := []struct {
 			name    string
 			content string
@@ -89,7 +87,6 @@ func TestParseFile(t *testing.T) {
 					gotLogMsg := logs[i].Message
 					wantLogMsg := fmt.Sprintf(parseFileLog, got[i])
 					assertCorrectString(t, gotLogMsg, wantLogMsg)
-
 				}
 			})
 		}
@@ -110,7 +107,6 @@ func TestParseFile(t *testing.T) {
 
 		panic := func() {
 			parseFile(fsys, testDoesNotExistFile, testLogger)
-
 		}
 
 		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
@@ -122,7 +118,6 @@ func TestParseFile(t *testing.T) {
 }
 
 func TestParseLine(t *testing.T) {
-
 	t.Run("verify ParseLine", func(t *testing.T) {
 		testLogger, hook = setupLogs()
 		onelineParsed := oneline
@@ -171,9 +166,7 @@ func TestParseLine(t *testing.T) {
 				log:  fanIPLog,
 			},
 		}
-
 		for i, tt := range parsingTests {
-
 			t.Run(tt.name, func(t *testing.T) {
 				testParseFileLog := fmt.Sprintf(parseFileLog, testID)
 				gotLogMsg := hook.Entries[i].Message
@@ -181,7 +174,6 @@ func TestParseLine(t *testing.T) {
 				assertCorrectString(t, tt.got, tt.want)
 				assertCorrectString(t, gotLogMsg, wantLogMsg)
 			})
-
 		}
 	})
 
@@ -196,7 +188,6 @@ func TestParseLine(t *testing.T) {
 		wantLogMsg := err
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
-
 	})
 
 	t.Run("it should panic if time.LoadLocation fails", func(t *testing.T) {
@@ -223,7 +214,6 @@ func TestParseLine(t *testing.T) {
 		wantLogMsg := err
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
-
 	})
 
 	t.Run("it should panic if time.ParseInLocation fails", func(t *testing.T) {
@@ -250,6 +240,5 @@ func TestParseLine(t *testing.T) {
 		wantLogMsg := err
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
-
 	})
 }

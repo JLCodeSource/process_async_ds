@@ -79,7 +79,6 @@ var (
 )
 
 func TestMainFunc(t *testing.T) {
-
 	t.Run("verify main args work", func(t *testing.T) {
 		_, hook = setupLogs()
 		hostname, _ := os.Hostname()
@@ -201,7 +200,6 @@ func TestOsWrapper(t *testing.T) {
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(wrapOsLog, osExecutableLog, ex)
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
-
 	})
 
 	t.Run("wrapOs.Executable should panic & log an error on err", func(t *testing.T) {
@@ -225,7 +223,6 @@ func TestOsWrapper(t *testing.T) {
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := testOsExecutableErr
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
-
 	})
 
 	t.Run("wrapOs.Hostname should return & log the hostname", func(t *testing.T) {
@@ -239,9 +236,7 @@ func TestOsWrapper(t *testing.T) {
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(wrapOsLog, osHostnameLog, hostname)
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
-
 	})
-
 	t.Run("wrapOs.Hostname should panic & log an error on err", func(t *testing.T) {
 		fakeExit := func(int) {
 			panic(osPanicTrue)
@@ -263,7 +258,6 @@ func TestOsWrapper(t *testing.T) {
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := testHostnameErr
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
-
 	})
 }
 
@@ -281,7 +275,6 @@ func TestWrapLookupIP(t *testing.T) {
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(wrapLookupIPLog, hostname, ip)
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
-
 	})
 
 	t.Run("wrapLookupIP should panic & log the err on err", func(t *testing.T) {
@@ -392,7 +385,6 @@ func TestGetSourceFile(t *testing.T) {
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(sourceLog, testName)
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
-
 	})
 	t.Run("check for empty root", func(t *testing.T) {
 		fakeExit := func(int) {
@@ -413,7 +405,6 @@ func TestGetSourceFile(t *testing.T) {
 		wantLogMsg := fmt.Sprintf(testEmptyRootErr, testDoesNotExistFile)
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
-
 	})
 	t.Run("error if file does not exist", func(t *testing.T) {
 		fakeExit := func(int) {
@@ -458,7 +449,6 @@ func TestGetDatasetID(t *testing.T) {
 		wantLogMsg := fmt.Sprintf(datasetLog, testDatasetID)
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
-
 	})
 
 	t.Run("verify that it exits if the datasetid is not the right format", func(t *testing.T) {
@@ -505,7 +495,6 @@ func TestGetDatasetID(t *testing.T) {
 }
 
 func TestGetTimeLimit(t *testing.T) {
-
 	t.Run("zero days", func(t *testing.T) {
 		testLogger, hook = setupLogs()
 
@@ -540,7 +529,6 @@ func TestGetTimeLimit(t *testing.T) {
 }
 
 func TestGetDryRun(t *testing.T) {
-
 	t.Run("default dry run", func(t *testing.T) {
 		testLogger, hook = setupLogs()
 		env = &testEnv
@@ -575,7 +563,6 @@ func TestGetDryRun(t *testing.T) {
 		wantLogMsg := dryRunFalseLog
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
-
 	})
 }
 
@@ -587,7 +574,6 @@ func TestSetPWD(t *testing.T) {
 		got := setPWD(ex, testLogger)
 		want := "/"
 		assertCorrectString(t, got, want)
-
 	})
 
 	t.Run("setPWD should shift execution to root from any path", func(t *testing.T) {
@@ -597,7 +583,6 @@ func TestSetPWD(t *testing.T) {
 		got := setPWD(ex, testLogger)
 		want := "/"
 		assertCorrectString(t, got, want)
-
 	})
 
 	t.Run("setPWD should log an error & panic if it can't chdir", func(t *testing.T) {
@@ -714,7 +699,6 @@ func TestFileMetadata(t *testing.T) {
 		gotFileInfo := file.fileInfo
 		wantFileInfo := fileInfo
 		assertCorrectString(t, gotFileInfo.Name(), wantFileInfo.Name())
-
 	})
 
 	t.Run("PKT struct test", func(t *testing.T) {

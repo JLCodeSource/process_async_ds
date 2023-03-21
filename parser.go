@@ -25,7 +25,6 @@ const (
 )
 
 func parseFile(fsys fs.FS, f string, logger *logrus.Logger) []string {
-
 	file, err := fsys.Open(f)
 	//defer file.Close()
 

@@ -41,7 +41,6 @@ func TestGetAsyncProcessedDSID(t *testing.T) {
 		gotLogMsg = hook.Entries[1].Message
 		wantLogMsg = fmt.Sprintf(gbrParseAsyncProcessedDSLog, testDatasetID)
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
-
 	})
 }
 
@@ -57,7 +56,6 @@ func TestParseAsyncProcessedDSID(t *testing.T) {
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(gbrParseAsyncProcessedDSLog, testDatasetID)
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
-
 	})
 
 	t.Run("should parse output and fatal out if no asyncdelDS match", func(t *testing.T) {
@@ -75,7 +73,6 @@ func TestParseAsyncProcessedDSID(t *testing.T) {
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := gbrAsyncProcessedDSErrLog
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
-
 	})
 }
 
@@ -99,7 +96,6 @@ func TestAsyncProcessedDSIDErrLog(t *testing.T) {
 
 		wantLogMsg = gbrAsyncProcessedDSErrLog
 		assertCorrectString(t, gotLogMsgs[1].Message, wantLogMsg)
-
 	})
 }
 
@@ -107,7 +103,6 @@ func TestAsyncProcessedDSIDErrLog(t *testing.T) {
 
 func TestCleanGbrOut(t *testing.T) {
 	t.Run("should strip \n and dupe white spaces from gbr out", func(t *testing.T) {
-
 		cleaningTests := []struct {
 			name string
 			got  string
@@ -137,6 +132,5 @@ func TestCleanGbrOut(t *testing.T) {
 				assertCorrectString(t, got, want)
 			})
 		}
-
 	})
 }
