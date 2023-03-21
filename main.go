@@ -83,7 +83,9 @@ type Env struct {
 
 func getSourceFile(filesystem fs.FS, ex string, f string, logger *logrus.Logger) fs.FileInfo {
 	var pth string
+
 	dir, fn := path.Split(f)
+
 	if strings.HasPrefix(f, string(os.PathSeparator)) {
 		pth = f[1:]
 	} else if dir == "./" || dir == "" {
@@ -93,11 +95,15 @@ func getSourceFile(filesystem fs.FS, ex string, f string, logger *logrus.Logger)
 	} else {
 		pth = f
 	}
+
 	file, err := fs.Stat(filesystem, pth)
+
 	if err != nil {
 		logger.Fatal(err.Error())
 	}
+
 	logger.Info(fmt.Sprintf(sourceLog, f))
+
 	return file
 }
 
@@ -106,33 +112,36 @@ func getDatasetID(id string, logger *logrus.Logger) string {
 	if err != nil {
 		logger.Fatal(err.Error())
 	}
+
 	if !match {
 		logger.Fatal(fmt.Sprintf(datasetRegexLog, id, regexDatasetMatch))
 		return ""
 	}
 
 	logger.Info(fmt.Sprintf(datasetLog, id))
+
 	return id
 }
 
 func getTimeLimit(days int64, logger *logrus.Logger) (limit time.Time) {
-
 	limit = time.Time{}
 
 	if days == 0 {
 		logger.Warn(timelimitNoDaysLog)
 		return
 	}
+
 	now := time.Now()
 	limit = now.Add(-24 * time.Duration(days) * time.Hour)
 	logger.Info(fmt.Sprintf(timelimitDaysLog, days, limit))
-	return
 
+	return
 }
 
 func getDryRun(dryrun bool, logger *logrus.Logger) bool {
 	if dryrun {
 		env.afs = afero.NewReadOnlyFs(afero.NewOsFs())
+
 		logger.Info(dryRunTrueLog)
 	} else {
 		env.afs = afero.NewOsFs()
@@ -144,14 +153,15 @@ func getDryRun(dryrun bool, logger *logrus.Logger) bool {
 
 func setPWD(ex string, logger *logrus.Logger) string {
 	// job needs to run in root dir
-
 	exPath := filepath.Dir(ex)
 
 	parts := strings.Split(exPath, string(os.PathSeparator))
 	dots := ""
+
 	for i := 0; i < (len(parts) - 1); i++ {
 		dots = dots + "../"
 	}
+
 	err := os.Chdir(dots)
 	if err != nil {
 		logger.Fatal(err)
@@ -170,7 +180,6 @@ func setPWD(ex string, logger *logrus.Logger) string {
 //}
 
 func init() {
-
 	log.Init()
 	log.GetLogger()
 
@@ -181,7 +190,6 @@ func init() {
 }
 
 func main() {
-
 	logger := log.GetLogger()
 
 	flag.Parse()
@@ -213,7 +221,6 @@ func main() {
 		dryrun:     ndr,
 		sysIP:      ip,
 	}
-
 }
 
 func wrapOs(logger *logrus.Logger, wrapped string, f func() (string, error)) string {
@@ -221,7 +228,9 @@ func wrapOs(logger *logrus.Logger, wrapped string, f func() (string, error)) str
 	if err != nil {
 		logger.Fatal(err)
 	}
+
 	logger.Info(fmt.Sprintf(wrapOsLog, wrapped, out))
+
 	return out
 }
 
@@ -235,6 +244,7 @@ func wrapLookupIP(logger *logrus.Logger, hostname string, f func(string) ([]net.
 
 	ip := ips[0]
 	logger.Info(fmt.Sprintf(wrapLookupIPLog, hostname, ip.String()))
+
 	return ip
 }
 
