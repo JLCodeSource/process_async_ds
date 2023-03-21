@@ -19,7 +19,10 @@ func (f *File) hasher(fsys fs.FS, logger *logrus.Logger) {
 		// NB No need for fatal as if hash does not match, it will fail later
 		logger.Error(err)
 	}
+
 	sha := sha256.Sum256(content)
+
 	logger.Info(fmt.Sprintf(fHashLog, f.smbName, f.id, f.hash))
+
 	f.hash = sha
 }
