@@ -91,15 +91,12 @@ var (
 )
 
 func TestRootFSMap(t *testing.T) {
-
-	// prove that the fsys tooling + dump to root path works
-
 	ex, err := os.Executable()
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	exPath := filepath.Dir(ex)
-	//fmt.Println(exPath)
 	parts := strings.Split(exPath, "/")
 	dots := ""
 
@@ -115,13 +112,10 @@ func TestRootFSMap(t *testing.T) {
 	//fmt.Println(os.Getwd())
 	fsys := os.DirFS("/")
 	_, err = fs.ReadDir(fsys, ".")
+
 	if err != nil {
 		t.Fatal(err)
 	}
-	/* 	for _, f := range ls {
-		fmt.Println(f.Name())
-	} */
-
 }
 
 // TestVerify encompasses all verification
@@ -162,9 +156,7 @@ func TestVerify(t *testing.T) {
 			wantLogMsg := fmt.Sprintf(fVerifiedLog, f.smbName, f.id)
 			assertCorrectString(t, gotLogMsg, wantLogMsg)
 		}
-
 	})
-
 }
 
 // TestVerifyEnvSettings encompasses TestVerifyIP & TestVerifyTimeLimit
@@ -330,9 +322,11 @@ func TestVerifyGBMetadata(t *testing.T) {
 	ex, _ := os.Executable()
 	dir, _ := path.Split(ex)
 	list := fmt.Sprintf(gbrList, dir)
+
 	if err := os.Truncate(list, 0); err != nil {
 		log.Printf("Failed to truncate: %v", err)
 	}
+
 	out, err := os.OpenFile(list, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		log.Fatal(err)
@@ -443,13 +437,10 @@ func TestGetMBFilenameByFileID(t *testing.T) {
 		wantLogMsg := fmt.Sprintf(
 			fGbrNoFileNameByFileIDLog, testSmbName, testBadFileID, testBadFileID)
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
-
 	})
-
 }
 
 func TestGetMBDatasetByFileID(t *testing.T) {
-
 	t.Run("should return the dataset by id if it exists", func(t *testing.T) {
 		file = File{
 			smbName:   testSmbName,
@@ -594,11 +585,9 @@ func TestVerifyInProcessedDataset(t *testing.T) {
 		wantLogMsg := fmt.Sprintf(fDatasetMatchFalseLog, file.smbName, file.id, file.datasetID, testWrongDataset)
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
-
 }
 
 func TestVerifyStat(t *testing.T) {
-
 	t.Run("returns true if file matches", func(t *testing.T) {
 		fsys = fstest.MapFS{
 			testPath: {Data: []byte(testContent)},
@@ -697,7 +686,6 @@ func TestVerifyStat(t *testing.T) {
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
-
 }
 
 func TestVerifyFileSize(t *testing.T) {
@@ -855,7 +843,6 @@ func createFSTest(numFiles int) (fstest.MapFS, []File) {
 		} else {
 			break
 		}
-
 	}
 
 	out, err := os.OpenFile(list, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
@@ -915,6 +902,7 @@ func createFSTest(numFiles int) (fstest.MapFS, []File) {
 		}
 		fi, err := fs.Stat(fsys, f.stagingPath)
 		f.fileInfo = fi
+
 		if err != nil {
 			fmt.Print(err.Error())
 		}
@@ -925,7 +913,6 @@ func createFSTest(numFiles int) (fstest.MapFS, []File) {
 		if err != nil {
 			log.Fatal(err)
 		}
-
 	}
 
 	return fsys, files
@@ -936,6 +923,7 @@ func genRandom(i int64, s string) (random []byte) {
 	for j := range random {
 		random[j] = s[rand.Intn(len(s))] //#nosec - random testing code can be insecure
 	}
+
 	return
 }
 
@@ -949,5 +937,6 @@ func genGUID() (guid string) {
 			guid = guid + string(genRandom(6, guidBytes)) + "-"
 		}
 	}
+
 	return
 }
