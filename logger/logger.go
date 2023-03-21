@@ -13,7 +13,6 @@ func Init() {
 	customFormatter := new(logrus.TextFormatter)
 	customFormatter.FullTimestamp = true
 	logger.SetFormatter(customFormatter)
-
 }
 
 // GetLogger returns the logger instance.
