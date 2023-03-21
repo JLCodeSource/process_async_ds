@@ -25,10 +25,12 @@ func getAsyncProcessedDSID(logger *logrus.Logger) string {
 	if err != nil {
 		asyncProcessedDSIDErrLog(err, logger)
 	}
+
 	out := string(cmdOut)
 	out = cleanGbrOut(out)
 	logger.Info(fmt.Sprintf(gbrGetAsyncProcessedDSLog, out))
 	out = parseAsyncProcessedDSID(out, logger)
+
 	return out
 }
 
@@ -40,11 +42,13 @@ func parseAsyncProcessedDSID(cmdOut string, logger *logrus.Logger) (asyncDelDS s
 		if strings.Contains(line, "ID") {
 			asyncDelDS = line[len(line)-32:]
 			logger.Info(fmt.Sprintf(gbrParseAsyncProcessedDSLog, asyncDelDS))
+
 			return
 		}
 	}
 	// We want it to crash out on not finding the asyncProcessedDS
 	logger.Fatal(gbrAsyncProcessedDSErrLog)
+
 	return
 }
 
@@ -65,5 +69,6 @@ func cleanGbrOut(out string) string {
 	// Remove duplicate spaces from out
 	space := regexp.MustCompile(`\s+`)
 	out = space.ReplaceAllString(out, " ")
+
 	return out
 }
