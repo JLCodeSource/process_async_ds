@@ -51,7 +51,7 @@ func TestMoveFile(t *testing.T) {
 			oldPath := f.stagingPath
 			newPath := newPath(&f) //#nosec - testing code can be insecure
 			env = &Env{
-				nondryrun: true,
+				dryrun: false,
 			}
 			f.Move(appFs, testLogger)
 			assert.NotEqual(t, oldPath, newPath)
@@ -108,7 +108,7 @@ func TestMoveFile(t *testing.T) {
 			testLogger, hook = setupLogs()
 
 			env = &Env{
-				nondryrun: false,
+				dryrun: true,
 			}
 
 			f.Move(fs, testLogger)
@@ -132,7 +132,7 @@ func TestMoveFile(t *testing.T) {
 			testLogger, hook = setupLogs()
 
 			env = &Env{
-				nondryrun: true,
+				dryrun: false,
 			}
 
 			f.Move(fs, testLogger)

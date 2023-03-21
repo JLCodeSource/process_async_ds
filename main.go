@@ -41,15 +41,15 @@ const (
 	datasetIDArgHelp  = "async processed dataset id (default '')"
 	timelimitArgTxt   = "days"
 	timelimitArgHelp  = "number of days ago (default 0)"
-	nondryrunArgTxt   = "non-dryrun"
-	nondryrunArgHelp  = "execute non dry run (default false)"
+	dryrunArgTxt      = "dryrun"
+	dryrunArgHelp     = "execute as dry run (default true)"
 )
 
 var (
 	sourceFile string
 	datasetID  string
 	numDays    int64
-	nondryrun  bool
+	dryrun     bool
 	afs        afero.Fs
 	env        *Env
 )
@@ -74,7 +74,7 @@ type Env struct {
 	sourceFile string
 	datasetID  string
 	limit      time.Time
-	nondryrun  bool
+	dryrun     bool
 	sysIP      net.IP
 	pwd        string
 	//days       int64
@@ -130,16 +130,17 @@ func getTimeLimit(days int64, logger *logrus.Logger) (limit time.Time) {
 
 }
 
-func getNonDryRun(nondryrun bool, logger *logrus.Logger) bool {
-	if nondryrun {
-		env.afs = afero.NewOsFs()
-		logger.Warn(dryRunFalseLog)
-	} else {
+func getDryRun(dryrun bool, logger *logrus.Logger) bool {
+	if dryrun {
 		env.afs = afero.NewReadOnlyFs(afero.NewOsFs())
 		logger.Info(dryRunTrueLog)
+	} else {
+
+		env.afs = afero.NewOsFs()
+		logger.Warn(dryRunFalseLog)
 	}
 
-	return nondryrun
+	return dryrun
 }
 
 func setPWD(ex string, logger *logrus.Logger) string {
@@ -177,7 +178,7 @@ func init() {
 	flag.StringVar(&sourceFile, sourceFileArgTxt, "", sourceFileArgHelp)
 	flag.StringVar(&datasetID, datasetIDArgTxt, "", datasetIDArgHelp)
 	flag.Int64Var(&numDays, timelimitArgTxt, 0, timelimitArgHelp)
-	flag.BoolVar(&nondryrun, nondryrunArgTxt, false, nondryrunArgHelp)
+	flag.BoolVar(&dryrun, dryrunArgTxt, true, dryrunArgHelp)
 }
 
 func main() {
@@ -198,7 +199,7 @@ func main() {
 	getSourceFile(fsys, ex, sourceFile, logger)
 	ds := getDatasetID(datasetID, logger)
 	l := getTimeLimit(numDays, logger)
-	ndr := getNonDryRun(nondryrun, logger)
+	ndr := getDryRun(dryrun, logger)
 
 	hostname := wrapOs(logger, osHostnameLog, os.Hostname)
 
@@ -210,7 +211,7 @@ func main() {
 		sourceFile: sourceFile,
 		datasetID:  ds,
 		limit:      l,
-		nondryrun:  ndr,
+		dryrun:     ndr,
 		sysIP:      ip,
 	}
 
