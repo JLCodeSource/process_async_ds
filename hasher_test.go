@@ -18,6 +18,7 @@ const (
 
 func TestHasher(t *testing.T) {
 	var files []File
+
 	fsys = fstest.MapFS{}
 
 	t.Run("should return the hash of the file & log it", func(t *testing.T) {

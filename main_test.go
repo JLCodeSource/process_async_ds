@@ -179,11 +179,6 @@ func TestMainFunc(t *testing.T) {
 		panic := func() { main() }
 		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
 	})
-
-	//	t.Run("verify lookup IP err", func(t *testing.T) {
-
-	//	}
-
 }
 
 /* type SpyWrapper struct {
@@ -444,11 +439,9 @@ func TestGetSourceFile(t *testing.T) {
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
-
 }
 
 func TestGetDatasetID(t *testing.T) {
-
 	t.Run("verify it returns the right dataset id", func(t *testing.T) {
 		testLogger, _ = setupLogs()
 		got := getDatasetID(testDatasetID, testLogger)
@@ -655,7 +648,6 @@ func TestSetPWD(t *testing.T) {
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
-
 }
 
 func TestFileMetadata(t *testing.T) {
@@ -762,12 +754,12 @@ func TestFileMetadata(t *testing.T) {
 		gotID := file.id
 		wantID := testFileID
 		assertCorrectString(t, gotID, wantID)
-
 	})
 }
 
 func assertCorrectString(t testing.TB, got, want string) {
 	t.Helper()
+
 	if got != want {
 		t.Errorf("got '%s' want '%s'", got, want)
 	}
@@ -776,5 +768,6 @@ func assertCorrectString(t testing.TB, got, want string) {
 func setupLogs() (testLogger *logrus.Logger, hook *test.Hook) {
 	testLogger, hook = test.NewNullLogger()
 	log.SetLogger(testLogger)
+
 	return
 }

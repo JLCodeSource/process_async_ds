@@ -145,11 +145,9 @@ func TestMoveFile(t *testing.T) {
 
 		}
 	})
-
 }
 
 func TestWrapAferoMkdirAll(t *testing.T) {
-
 	t.Run("wrapAferoMkdirAll should return & log the path", func(t *testing.T) {
 		var appFs = afero.NewMemMapFs()
 		path := tempdir1 + tempdir2
@@ -197,7 +195,6 @@ func createAferoTest(t *testing.T, numFiles int) (afero.Fs, []File) {
 		} else {
 			break
 		}
-
 	}
 
 	out, err := os.OpenFile(list, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
@@ -276,7 +273,6 @@ func createAferoTest(t *testing.T, numFiles int) (afero.Fs, []File) {
 		}
 
 		assert.Nil(t, err)
-
 	}
 
 	return fs, files
