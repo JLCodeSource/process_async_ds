@@ -504,11 +504,10 @@ func TestGetDatasetID(t *testing.T) {
 
 		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
 		gotLogMsg := hook.LastEntry().Message
-		wantLogMsg := fmt.Sprintf(compareDatasetIdNotMatchLog, testID, testDatasetID)
+		wantLogMsg := fmt.Sprintf(compareDatasetIDNotMatchLog, testID, testDatasetID)
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
-
 }
 
 func TestCompareDatasetId(t *testing.T) {
@@ -518,7 +517,7 @@ func TestCompareDatasetId(t *testing.T) {
 		assert.True(t, match)
 
 		gotLogMsg := hook.LastEntry().Message
-		wantLogMsg := fmt.Sprintf(compareDatasetIdMatchLog, testDatasetID, dataset)
+		wantLogMsg := fmt.Sprintf(compareDatasetIDMatchLog, testDatasetID, dataset)
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
@@ -534,7 +533,7 @@ func TestCompareDatasetId(t *testing.T) {
 		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
 
 		gotLogMsg := hook.LastEntry().Message
-		wantLogMsg := fmt.Sprintf(compareDatasetIdNotMatchLog, testID, testDatasetID)
+		wantLogMsg := fmt.Sprintf(compareDatasetIDNotMatchLog, testID, testDatasetID)
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})

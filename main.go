@@ -23,8 +23,8 @@ const (
 	sourceLog                   = "sourceFile: %v"
 	datasetLog                  = "datasetID: %v"
 	datasetRegexLog             = "datasetID: %v not of the form %v"
-	compareDatasetIdMatchLog    = "datasetID: %v matches asyncProcessedDataset: %v"
-	compareDatasetIdNotMatchLog = "datasetID: %v does not match asyncProcessedDataset: %v"
+	compareDatasetIDMatchLog    = "datasetID: %v matches asyncProcessedDataset: %v"
+	compareDatasetIDNotMatchLog = "datasetID: %v does not match asyncProcessedDataset: %v"
 	timelimitNoDaysLog          = "timelimit: No days set; processing all processed files"
 	timelimitDaysLog            = "timelimit: Days time limit set to %v days ago which is %v"
 	dryRunTrueLog               = "dryrun: true; skipping exeecute move"
@@ -133,10 +133,12 @@ func getDatasetID(id string, logger *logrus.Logger) string {
 func compareDatasetID(datasetID string, logger *logrus.Logger) (bool, string) {
 	asyncProcessedDS := getAsyncProcessedDSID(logger)
 	if asyncProcessedDS != datasetID {
-		logger.Fatal(fmt.Sprintf(compareDatasetIdNotMatchLog, datasetID, asyncProcessedDS))
+		logger.Fatal(fmt.Sprintf(compareDatasetIDNotMatchLog, datasetID, asyncProcessedDS))
 		return false, ""
 	}
-	logger.Info(fmt.Sprintf(compareDatasetIdMatchLog, datasetID, asyncProcessedDS))
+
+	logger.Info(fmt.Sprintf(compareDatasetIDMatchLog, datasetID, asyncProcessedDS))
+
 	return true, asyncProcessedDS
 }
 
