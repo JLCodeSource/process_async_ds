@@ -492,6 +492,52 @@ func TestGetDatasetID(t *testing.T) {
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
+	t.Run("verify that it exits if the dataset doesn't match asyncprocessed", func(t *testing.T) {
+		fakeExit := func(int) {
+			panic(osPanicTrue)
+		}
+		patch := monkey.Patch(os.Exit, fakeExit)
+		defer patch.Unpatch()
+
+		testLogger, hook = setupLogs()
+		panic := func() { getDatasetID(testID, testLogger) }
+
+		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
+		gotLogMsg := hook.LastEntry().Message
+		wantLogMsg := fmt.Sprintf(compareDatasetIdNotMatchLog, testID, testDatasetID)
+
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
+	})
+
+}
+
+func TestCompareDatasetId(t *testing.T) {
+	t.Run("Should return true if datasetid & asyncdelds check match & log it", func(t *testing.T) {
+		testLogger, hook = setupLogs()
+		match, dataset := compareDatasetID(testDatasetID, testLogger)
+		assert.True(t, match)
+
+		gotLogMsg := hook.LastEntry().Message
+		wantLogMsg := fmt.Sprintf(compareDatasetIdMatchLog, testDatasetID, dataset)
+
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
+	})
+	t.Run("Should return false if datasetid & asyncdel metadata check do not match & log it", func(t *testing.T) {
+		fakeExit := func(int) {
+			panic(osPanicTrue)
+		}
+		patch := monkey.Patch(os.Exit, fakeExit)
+		defer patch.Unpatch()
+
+		testLogger, hook = setupLogs()
+		panic := func() { compareDatasetID(testID, testLogger) }
+		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
+
+		gotLogMsg := hook.LastEntry().Message
+		wantLogMsg := fmt.Sprintf(compareDatasetIdNotMatchLog, testID, testDatasetID)
+
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
+	})
 }
 
 func TestGetTimeLimit(t *testing.T) {

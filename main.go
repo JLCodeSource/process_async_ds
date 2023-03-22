@@ -20,18 +20,20 @@ import (
 )
 
 const (
-	sourceLog          = "sourceFile: %v"
-	datasetLog         = "datasetID: %v"
-	datasetRegexLog    = "datasetID: %v not of the form %v"
-	timelimitNoDaysLog = "timelimit: No days set; processing all processed files"
-	timelimitDaysLog   = "timelimit: Days time limit set to %v days ago which is %v"
-	dryRunTrueLog      = "dryrun: true; skipping exeecute move"
-	dryRunFalseLog     = "dryrun: false; executing move"
-	complexIPLog       = "net.LookupIP: unexpected; more ips than expected"
-	wrapOsLog          = "%v: %v"
-	osHostnameLog      = "os.Hostname"
-	osExecutableLog    = "os.Executable"
-	wrapLookupIPLog    = "net.LookupIP: %v=%v"
+	sourceLog                   = "sourceFile: %v"
+	datasetLog                  = "datasetID: %v"
+	datasetRegexLog             = "datasetID: %v not of the form %v"
+	compareDatasetIdMatchLog    = "datasetID: %v matches asyncProcessedDataset: %v"
+	compareDatasetIdNotMatchLog = "datasetID: %v does not match asyncProcessedDataset: %v"
+	timelimitNoDaysLog          = "timelimit: No days set; processing all processed files"
+	timelimitDaysLog            = "timelimit: Days time limit set to %v days ago which is %v"
+	dryRunTrueLog               = "dryrun: true; skipping exeecute move"
+	dryRunFalseLog              = "dryrun: false; executing move"
+	complexIPLog                = "net.LookupIP: unexpected; more ips than expected"
+	wrapOsLog                   = "%v: %v"
+	osHostnameLog               = "os.Hostname"
+	osExecutableLog             = "os.Executable"
+	wrapLookupIPLog             = "net.LookupIP: %v=%v"
 
 	regexDatasetMatch = "^[A-F0-9]{32}$"
 
@@ -118,9 +120,24 @@ func getDatasetID(id string, logger *logrus.Logger) string {
 		return ""
 	}
 
+	ok, _ := compareDatasetID(id, logger)
+	if !ok {
+		return ""
+	}
+
 	logger.Info(fmt.Sprintf(datasetLog, id))
 
 	return id
+}
+
+func compareDatasetID(datasetID string, logger *logrus.Logger) (bool, string) {
+	asyncProcessedDS := getAsyncProcessedDSID(logger)
+	if asyncProcessedDS != datasetID {
+		logger.Fatal(fmt.Sprintf(compareDatasetIdNotMatchLog, datasetID, asyncProcessedDS))
+		return false, ""
+	}
+	logger.Info(fmt.Sprintf(compareDatasetIdMatchLog, datasetID, asyncProcessedDS))
+	return true, asyncProcessedDS
 }
 
 func getTimeLimit(days int64, logger *logrus.Logger) (limit time.Time) {
