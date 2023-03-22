@@ -109,6 +109,24 @@ func getSourceFile(filesystem fs.FS, ex string, f string, logger *logrus.Logger)
 	return file
 }
 
+func getFileList(fsys afero.Fs, sourcefile string, logger *logrus.Logger) []File {
+	var files = []File{}
+
+	_, err := fsys.Stat(sourcefile)
+	if err != nil {
+		logger.Fatal(err)
+	}
+
+	lines := parseFile(fsys, sourcefile, logger)
+
+	for _, line := range lines {
+		newFile := parseLine(line, logger)
+		files = append(files, newFile)
+	}
+
+	return files
+}
+
 func getDatasetID(id string, logger *logrus.Logger) string {
 	match, err := regexp.MatchString(regexDatasetMatch, id)
 	if err != nil {

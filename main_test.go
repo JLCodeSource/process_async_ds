@@ -32,6 +32,7 @@ const (
 	testBadPath      = "/not/a/path"
 	testMismatchPath = "data1/staging/testMismatch.txt"
 	testNotADataset  = "123"
+	testSourceFile   = "%v/test.out"
 
 	testArgsFile    = "-sourcefile=%v/README.md"
 	testArgsDataset = "-datasetid=%v"
@@ -429,6 +430,28 @@ func TestGetSourceFile(t *testing.T) {
 		wantLogMsg := fmt.Sprintf(testOpenDoesNotExistErr, testDoesNotExistFile)
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
+	})
+}
+
+func TestGetFileList(t *testing.T) {
+	t.Run("getFileList should return a list of files", func(t *testing.T) {
+		testLogger, hook = setupLogs()
+		fsys, want := createAferoTest(t, 1, true)
+
+		dir := getWorkDir()
+
+		testSF := fmt.Sprintf(testSourceFile, dir)
+		time.Sleep(2 * time.Second)
+		got := getFileList(fsys, testSF, testLogger)
+
+		for i, _ := range got {
+			assert.Equal(t, want[i].smbName, got[i].smbName)
+			assert.Equal(t, want[i].stagingPath, got[i].stagingPath)
+			//assert.Equal(t, want[i].createTime, got[i].createTime)
+			assert.Equal(t, want[i].size, got[i].size)
+			assert.Equal(t, want[i].id, got[i].id)
+			assert.Equal(t, want[i].fanIP, got[i].fanIP)
+		}
 	})
 }
 
