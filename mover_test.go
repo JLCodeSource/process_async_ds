@@ -25,7 +25,7 @@ const (
 )
 
 func TestNewPath(t *testing.T) {
-	fsys, files = createFSTest(10)
+	fsys, files = createFSTest(t, 10)
 
 	t.Run("should return path of xxx.processed", func(t *testing.T) {
 		for _, f := range files {
@@ -44,7 +44,7 @@ func TestNewPath(t *testing.T) {
 }
 
 func TestMoveFile(t *testing.T) {
-	appFs, files := createAferoTest(t, 10)
+	appFs, files := createAferoTest(t, 10, false)
 	t.Run("should move file to new path & log it", func(t *testing.T) {
 		for _, f := range files {
 			testLogger, hook = setupLogs()
@@ -178,22 +178,26 @@ func TestWrapAferoMkdirAll(t *testing.T) {
 	})
 }
 
-func createAferoTest(t *testing.T, numFiles int) (afero.Fs, []File) {
+func createAferoTest(t *testing.T, numFiles int, createTestFile bool) (afero.Fs, []File) {
+	// createTestFile
+	var outSourceFile afero.File
+
 	// Create gbrList file
 	var list string
 
-	for _, d := range workDirs {
-		list = fmt.Sprintf(gbrList, d)
-		if err := os.Truncate(list, 0); err != nil {
-			log.Printf("Failed to truncate: %v", err)
-		} else {
-			break
-		}
+	var err error
+
+	dir := getWorkDir()
+
+	list = fmt.Sprintf(gbrList, dir)
+
+	if err := os.Truncate(list, 0); err != nil {
+		t.Errorf("Failed to truncate: %v", err)
 	}
 
 	out, err := os.OpenFile(list, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
-		log.Fatal(err)
+		t.Fatal(err)
 	}
 
 	defer out.Close()
@@ -201,6 +205,15 @@ func createAferoTest(t *testing.T, numFiles int) (afero.Fs, []File) {
 	// Create AferoFs
 	fs := afero.NewMemMapFs()
 	afs := &afero.Afero{Fs: fs}
+
+	if createTestFile {
+		testSF := fmt.Sprintf(testSourceFile, dir)
+
+		outSourceFile, err = fs.OpenFile(testSF, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
 
 	var files []File
 
@@ -267,7 +280,27 @@ func createAferoTest(t *testing.T, numFiles int) (afero.Fs, []File) {
 		}
 
 		assert.Nil(t, err)
+
+		if createTestFile {
+			_, err = outSourceFile.WriteString(
+				fmt.Sprintf("%v|%v|%v|%v|%v|%v|\n",
+					f.smbName,
+					f.stagingPath,
+					f.createTime.Unix(),
+					f.size,
+					f.id,
+					f.fanIP))
+		}
 	}
 
 	return fs, files
+}
+
+func getWorkDir() (dir string) {
+	for _, dir = range workDirs {
+		if _, err := os.Stat(dir); !os.IsNotExist(err) {
+			break
+		}
+	}
+	return
 }
