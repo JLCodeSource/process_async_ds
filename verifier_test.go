@@ -136,7 +136,7 @@ func TestVerify(t *testing.T) {
 
 	var files []File
 
-	fsys, files = createFSTest(10)
+	fsys, files = createFSTest(t, 10)
 
 	env := Env{
 		fsys:  fsys,
@@ -330,7 +330,7 @@ func TestVerifyGBMetadata(t *testing.T) {
 
 	defer out.Close()
 	t.Run("returns true if file.datasetID matches DatasetID", func(t *testing.T) {
-		_, files := createFSTest(1)
+		_, files := createFSTest(t, 1)
 
 		testLogger, hook = setupLogs()
 		assert.True(t, files[0].verifyGBMetadata(testLogger))
@@ -812,17 +812,18 @@ func TestVerifyFileIDName(t *testing.T) {
 	})
 }
 
-func createFSTest(numFiles int) (fstest.MapFS, []File) {
-	// handle gbr input
+func createFSTest(t *testing.T, numFiles int) (fstest.MapFS, []File) {
+	// Create gbrList file
 	var list string
 
-	for _, d := range workDirs {
-		list = fmt.Sprintf(gbrList, d)
-		if err := os.Truncate(list, 0); err != nil {
-			log.Printf("Failed to truncate: %v", err)
-		} else {
-			break
-		}
+	// Create err
+	var err error
+
+	dir := getWorkDir()
+
+	list = fmt.Sprintf(gbrList, dir)
+	if err := os.Truncate(list, 0); err != nil {
+		log.Printf("Failed to truncate: %v", err)
 	}
 
 	out, err := os.OpenFile(list, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
@@ -891,7 +892,7 @@ func createFSTest(numFiles int) (fstest.MapFS, []File) {
 
 		_, err = out.WriteString(fmt.Sprintf("%v,%v\n", f.id, f.smbName))
 		if err != nil {
-			log.Fatal(err)
+			t.Fatal(err)
 		}
 	}
 
