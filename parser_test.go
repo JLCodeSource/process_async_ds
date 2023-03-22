@@ -4,12 +4,13 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path"
 	"strconv"
 	"testing"
-	"testing/fstest"
 	"time"
 
 	"bou.ke/monkey"
+	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -72,12 +73,13 @@ func TestParseFile(t *testing.T) {
 		for _, tt := range parsingTests {
 			t.Run(tt.name, func(t *testing.T) {
 				testLogger, hook = setupLogs()
-				fsys = fstest.MapFS{
-					testProcessedFilesOut: {
-						Data: []byte(tt.content)},
-				}
+				fs := afero.NewMemMapFs()
+				afs = &afero.Afero{Fs: fs}
+				dir, _ := path.Split(testProcessedFilesOut)
+				fs.MkdirAll(dir, 0755)
+				afero.WriteFile(afs, testProcessedFilesOut, []byte(tt.content), 0755)
 
-				got := parseFile(fsys, testProcessedFilesOut, testLogger)
+				got := parseFile(afs, testProcessedFilesOut, testLogger)
 
 				logs := hook.AllEntries()
 
@@ -100,13 +102,11 @@ func TestParseFile(t *testing.T) {
 		defer patch.Unpatch()
 
 		testLogger, hook = setupLogs()
-		fsys = fstest.MapFS{
-			testProcessedFilesOut: {
-				Data: []byte(multiline)},
-		}
+		fs := afero.NewMemMapFs()
+		afs := &afero.Afero{Fs: fs}
 
 		panic := func() {
-			parseFile(fsys, testDoesNotExistFile, testLogger)
+			parseFile(afs, testDoesNotExistFile, testLogger)
 		}
 
 		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
