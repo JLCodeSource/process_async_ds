@@ -22,7 +22,7 @@ func TestHasher(t *testing.T) {
 	fsys = fstest.MapFS{}
 
 	t.Run("should return the hash of the file & log it", func(t *testing.T) {
-		fsys, files = createFSTest(10)
+		fsys, files = createFSTest(t, 10)
 		for _, f := range files {
 			testLogger, hook = setupLogs()
 
@@ -44,7 +44,7 @@ func TestHasher(t *testing.T) {
 		patch := monkey.Patch(fs.ReadFile, fakeFsReadFile)
 		defer patch.Unpatch()
 
-		fsys, files = createFSTest(10)
+		fsys, files = createFSTest(t, 10)
 		for _, f := range files {
 			testLogger, hook = setupLogs()
 
