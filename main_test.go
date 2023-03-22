@@ -441,13 +441,12 @@ func TestGetFileList(t *testing.T) {
 		dir := getWorkDir()
 
 		testSF := fmt.Sprintf(testSourceFile, dir)
-		time.Sleep(2 * time.Second)
 		got := getFileList(fsys, testSF, testLogger)
 
 		for i, _ := range got {
 			assert.Equal(t, want[i].smbName, got[i].smbName)
 			assert.Equal(t, want[i].stagingPath, got[i].stagingPath)
-			//assert.Equal(t, want[i].createTime, got[i].createTime)
+			assert.Equal(t, want[i].createTime.Unix(), got[i].createTime.Unix())
 			assert.Equal(t, want[i].size, got[i].size)
 			assert.Equal(t, want[i].id, got[i].id)
 			assert.Equal(t, want[i].fanIP, got[i].fanIP)
