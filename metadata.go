@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	gbrAsyncProcessedDSErrLog   = "gbr could not verify AsyncProcessed dataset"
+	gbrAsyncProcessedDSErrLog   = "gbr could not verify AsyncProcessedDataset"
 	gbrGetAsyncProcessedDSLog   = "gbr pool got output:%v"
 	gbrParseAsyncProcessedDSLog = "gbr verified asyncProcessedDataset as %v"
 )
