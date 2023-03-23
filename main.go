@@ -35,6 +35,9 @@ const (
 	osExecutableLog             = "os.Executable"
 	wrapLookupIPLog             = "net.LookupIP: %v=%v"
 
+	eMatchAsyncProcessedDSTrueLog  = "env.datasetID:%v matches asyncProcessedDataset: %v"
+	eMatchAsyncProcessedDSFalseLog = "env.datasetID:%v does not match asyncProcessedDataset: %v"
+
 	fAddedToListLog = "%v (file.id:%v) added to list with file.stagingPath:%v, file.createTime:%v, file.size:%v, file.fanIP:%v, file.fileInfo:%v"
 
 	regexDatasetMatch = "^[A-F0-9]{32}$"
@@ -85,6 +88,17 @@ type Env struct {
 
 }
 
+// verify env
+func (e *Env) verifyDataset(logger *logrus.Logger) bool {
+	ds := getAsyncProcessedDSID(logger)
+	if e.datasetID != ds {
+		logger.Fatal(fmt.Sprintf(eMatchAsyncProcessedDSFalseLog, e.datasetID, ds))
+		return false
+	}
+	logger.Info(fmt.Sprintf(eMatchAsyncProcessedDSTrueLog, e.datasetID, ds))
+	return true
+}
+
 func getSourceFile(filesystem fs.FS, ex string, f string, logger *logrus.Logger) fs.FileInfo {
 	var pth string
 
@@ -119,10 +133,10 @@ func getFileList(fsys afero.Fs, sourcefile string, logger *logrus.Logger) []File
 		logger.Fatal(err)
 	}
 
-	lines := parseFile(fsys, sourcefile, logger)
+	lines := parser.ParseFile(fsys, sourcefile, logger)
 
 	for _, line := range lines {
-		newFile := parseLine(line, logger)
+		newFile := parser.ParseLine(line, logger)
 		newFile.fileInfo, err = fsys.Stat(newFile.stagingPath)
 		if err != nil {
 			// Need to add testing

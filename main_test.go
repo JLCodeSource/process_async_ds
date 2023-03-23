@@ -53,7 +53,7 @@ const (
 	testGetwdErr            = "os.Getwd err occurred"
 	testOsExecutableErr     = "os.Executable err occurred"
 	testLookupIPErr         = "net.LookupIP err occurred"
-	testFileInfoErr         = "fs.FileInfo err occurred"
+	//testFileInfoErr         = "fs.FileInfo err occurred"
 
 	testKarachiTime       = "Asia/Karachi"
 	testKarachiDate       = "Mon Jan 30 17:55:14 PKT 2023"
@@ -740,6 +740,41 @@ func TestSetPWD(t *testing.T) {
 		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := testGetwdErr
+
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
+	})
+}
+
+// TestVerifyEnvDataset
+
+func TestVerifyDataset(t *testing.T) {
+	t.Run("it should return true if env.datasetID matches asyncProcessed & log it", func(t *testing.T) {
+		testLogger, hook = setupLogs()
+		env = new(Env)
+		env.datasetID = testDatasetID
+		assert.True(t, env.verifyDataset(testLogger))
+
+		gotLogMsg := hook.LastEntry().Message
+		wantLogMsg := fmt.Sprintf(eMatchAsyncProcessedDSTrueLog, env.datasetID, testDatasetID)
+
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
+	})
+	t.Run("returns false if env.DsID does not match asyncProcessed & log it", func(t *testing.T) {
+		fakeExit := func(int) {
+			panic(osPanicTrue)
+		}
+		patch := monkey.Patch(os.Exit, fakeExit)
+		defer patch.Unpatch()
+
+		testLogger, hook = setupLogs()
+		env = new(Env)
+		env.datasetID = testWrongDataset
+
+		panic := func() { env.verifyDataset(testLogger) }
+		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
+
+		gotLogMsg := hook.LastEntry().Message
+		wantLogMsg := fmt.Sprintf(eMatchAsyncProcessedDSFalseLog, env.datasetID, testDatasetID)
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})

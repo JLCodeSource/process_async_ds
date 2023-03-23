@@ -118,41 +118,6 @@ func TestRootFSMap(t *testing.T) {
 	}
 }
 
-// TestVerifyEnvDataset
-
-func TestVerifyDataset(t *testing.T) {
-	t.Run("it should return true if env.datasetID matches asyncProcessed & log it", func(t *testing.T) {
-		testLogger, hook = setupLogs()
-		env = new(Env)
-		env.datasetID = testDatasetID
-		assert.True(t, env.verifyDataset(testLogger))
-
-		gotLogMsg := hook.LastEntry().Message
-		wantLogMsg := fmt.Sprintf(eMatchAsyncProcessedDSTrueLog, env.datasetID, testDatasetID)
-
-		assertCorrectString(t, gotLogMsg, wantLogMsg)
-	})
-	t.Run("returns false if env.DsID does not match asyncProcessed & log it", func(t *testing.T) {
-		fakeExit := func(int) {
-			panic(osPanicTrue)
-		}
-		patch := monkey.Patch(os.Exit, fakeExit)
-		defer patch.Unpatch()
-
-		testLogger, hook = setupLogs()
-		env = new(Env)
-		env.datasetID = testWrongDataset
-
-		panic := func() { env.verifyDataset(testLogger) }
-		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
-
-		gotLogMsg := hook.LastEntry().Message
-		wantLogMsg := fmt.Sprintf(eMatchAsyncProcessedDSFalseLog, env.datasetID, testDatasetID)
-
-		assertCorrectString(t, gotLogMsg, wantLogMsg)
-	})
-}
-
 // TestVerify encompasses all verification
 func TestVerify(t *testing.T) {
 	// setup server ip

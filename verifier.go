@@ -14,9 +14,6 @@ import (
 )
 
 const (
-	eMatchAsyncProcessedDSTrueLog  = "env.datasetID:%v matches asyncProcessedDataset: %v"
-	eMatchAsyncProcessedDSFalseLog = "env.datasetID:%v does not match asyncProcessedDataset: %v"
-
 	fIPMatchTrueLog                 = "%v (file.id:%v) file.ip:%v matches comparison ip:%v"
 	fIPMatchFalseLog                = "%v (file.id:%v) file.ip:%v does not match comparison ip:%v; skipping file"
 	fCreateTimeAfterTimeLimitLog    = "%v (file.id:%v) file.createTime:%v is after timelimit:%v"
@@ -38,17 +35,6 @@ const (
 	fGbrDatasetByFileIDLog          = "%v (file.id:%v) gbr verified & set file.id:%v to dataset:%v"
 	fVerifiedLog                    = "%v (file.id:%v) verified as ready to be migrated in preparation for removal!"
 )
-
-// verify env
-func (e *Env) verifyDataset(logger *logrus.Logger) bool {
-	ds := getAsyncProcessedDSID(logger)
-	if e.datasetID != ds {
-		logger.Fatal(fmt.Sprintf(eMatchAsyncProcessedDSFalseLog, e.datasetID, ds))
-		return false
-	}
-	logger.Info(fmt.Sprintf(eMatchAsyncProcessedDSTrueLog, e.datasetID, ds))
-	return true
-}
 
 // verify all
 
