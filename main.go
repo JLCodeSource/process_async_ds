@@ -212,9 +212,9 @@ func setPWD(ex string, logger *logrus.Logger) string {
 	return pwd
 }
 
-//func getEnv() *Env {
-//	return env
-//}
+func getEnv() *Env {
+	return env
+}
 
 func init() {
 	log.Init()

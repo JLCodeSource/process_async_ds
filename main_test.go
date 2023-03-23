@@ -434,7 +434,7 @@ func TestGetSourceFile(t *testing.T) {
 }
 
 func TestGetFileList(t *testing.T) {
-	t.Run("getFileList should return a list of files", func(t *testing.T) {
+	t.Run("getFileList should return a list of files & log the list", func(t *testing.T) {
 		testLogger, hook = setupLogs()
 		fsys, want := createAferoTest(t, 1, true)
 
@@ -450,6 +450,13 @@ func TestGetFileList(t *testing.T) {
 			assert.Equal(t, want[i].size, got[i].size)
 			assert.Equal(t, want[i].id, got[i].id)
 			assert.Equal(t, want[i].fanIP, got[i].fanIP)
+			//assert.Equal(t, want[i].datasetID, got[i].datasetID)
+			//assert.Equal(t, want[i].fileInfo, got[i].fileInfo)
+
+			/* 			gotLogMsg := hook.LastEntry().Message
+			   			wantLogMsg := fmt.Sprintf(datasetLog, testDatasetID)
+
+			   			assertCorrectString(t, gotLogMsg, wantLogMsg) */
 		}
 	})
 }
