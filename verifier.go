@@ -14,6 +14,9 @@ import (
 )
 
 const (
+	eMatchAsyncProcessedDSTrueLog  = "env.datasetID:%v matches asyncProcessedDataset: %v"
+	eMatchAsyncProcessedDSFalseLog = "env.datasetID:%v does not match asyncProcessedDataset: %v"
+
 	fIPMatchTrueLog                 = "%v (file.id:%v) file.ip:%v matches comparison ip:%v"
 	fIPMatchFalseLog                = "%v (file.id:%v) file.ip:%v does not match comparison ip:%v; skipping file"
 	fCreateTimeAfterTimeLimitLog    = "%v (file.id:%v) file.createTime:%v is after timelimit:%v"
@@ -32,14 +35,25 @@ const (
 	fEnvMatchLog                    = "%v (file.id:%v) file.verfiyEnv passes all settings checks for file.stagingPath:%v"
 	fGbrFileNameByFileIDLog         = "%v (file.id:%v) gbr verified file.id:%v as matching MB filename:%v"
 	fGbrNoFileNameByFileIDLog       = "%v (file.id:%v) gbr could not find MB file.id:%v"
-	fGbrDatasetByFileIDLog          = "%v (file.id:%v) gbr verified file.id:%v as matching dataset:%v"
+	fGbrDatasetByFileIDLog          = "%v (file.id:%v) gbr verified & set file.id:%v to dataset:%v"
 	fVerifiedLog                    = "%v (file.id:%v) verified as ready to be migrated in preparation for removal!"
 )
 
+// verify env
+func (e *Env) verifyDataset(logger *logrus.Logger) bool {
+	ds := getAsyncProcessedDSID(logger)
+	if e.datasetID != ds {
+		logger.Fatal(fmt.Sprintf(eMatchAsyncProcessedDSFalseLog, e.datasetID, ds))
+		return false
+	}
+	logger.Info(fmt.Sprintf(eMatchAsyncProcessedDSTrueLog, e.datasetID, ds))
+	return true
+}
+
 // verify all
 
-func (f *File) verify(env Env, logger *logrus.Logger) bool {
-	if !f.verifyEnv(env, logger) {
+func (f *File) verify(logger *logrus.Logger) bool {
+	if !f.verifyEnvMatch(logger) {
 		return false
 	}
 
@@ -57,8 +71,8 @@ func (f *File) verify(env Env, logger *logrus.Logger) bool {
 }
 
 // verify config metadata
-
-func (f *File) verifyEnv(env Env, logger *logrus.Logger) bool {
+func (f *File) verifyEnvMatch(logger *logrus.Logger) bool {
+	env = getEnv()
 	if !f.verifyIP(env.sysIP, logger) {
 		return false
 	}
@@ -140,6 +154,7 @@ func (f *File) verifyMBFileNameByFileID(logger *logrus.Logger) bool {
 }
 
 func (f *File) verifyMBDatasetByFileID(logger *logrus.Logger) bool {
+	env = getEnv()
 	id := f.id
 	cmd := exec.Command("/usr/bin/gbr", "file", "ls", "-i", id, "-d")
 	cmdOut, err := cmd.CombinedOutput()
@@ -156,7 +171,8 @@ func (f *File) verifyMBDatasetByFileID(logger *logrus.Logger) bool {
 		return false
 	}
 
-	datasetID := f.parseMBDatasetByFileID(out, logger)
+	f.setMBDatasetByFileID(out, logger)
+	datasetID := env.datasetID
 
 	return f.verifyInDataset(datasetID, logger)
 }
@@ -169,13 +185,13 @@ func (f *File) parseMBFileNameByFileID(cmdOut string, logger *logrus.Logger) (fi
 	return
 }
 
-func (f *File) parseMBDatasetByFileID(cmdOut string, logger *logrus.Logger) (parentDS string) {
+func (f *File) setMBDatasetByFileID(cmdOut string, logger *logrus.Logger) (parentDS string) {
 	lines := strings.Split(string(cmdOut), ";")
 	for _, line := range lines {
 		if strings.Contains(line, "parent id") {
 			parentDS = line[len(line)-32:]
+			f.datasetID = parentDS
 			logger.Info(fmt.Sprintf(fGbrDatasetByFileIDLog, f.smbName, f.id, f.id, parentDS))
-
 			return
 		}
 	}
@@ -214,7 +230,6 @@ func (f *File) verifyFileIDName(fileName string, logger *logrus.Logger) bool {
 }
 
 // Verify local FS metadata
-
 func (f *File) verifyStat(fsys fs.FS, logger *logrus.Logger) bool {
 	fileInfo, err := fs.Stat(fsys, f.stagingPath)
 	if err != nil {

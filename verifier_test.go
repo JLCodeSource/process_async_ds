@@ -118,6 +118,41 @@ func TestRootFSMap(t *testing.T) {
 	}
 }
 
+// TestVerifyEnvDataset
+
+func TestVerifyDataset(t *testing.T) {
+	t.Run("it should return true if env.datasetID matches asyncProcessed & log it", func(t *testing.T) {
+		testLogger, hook = setupLogs()
+		env = new(Env)
+		env.datasetID = testDatasetID
+		assert.True(t, env.verifyDataset(testLogger))
+
+		gotLogMsg := hook.LastEntry().Message
+		wantLogMsg := fmt.Sprintf(eMatchAsyncProcessedDSTrueLog, env.datasetID, testDatasetID)
+
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
+	})
+	t.Run("returns false if env.DsID does not match asyncProcessed & log it", func(t *testing.T) {
+		fakeExit := func(int) {
+			panic(osPanicTrue)
+		}
+		patch := monkey.Patch(os.Exit, fakeExit)
+		defer patch.Unpatch()
+
+		testLogger, hook = setupLogs()
+		env = new(Env)
+		env.datasetID = testWrongDataset
+
+		panic := func() { env.verifyDataset(testLogger) }
+		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
+
+		gotLogMsg := hook.LastEntry().Message
+		wantLogMsg := fmt.Sprintf(eMatchAsyncProcessedDSFalseLog, env.datasetID, testDatasetID)
+
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
+	})
+}
+
 // TestVerify encompasses all verification
 func TestVerify(t *testing.T) {
 	// setup server ip
@@ -138,18 +173,20 @@ func TestVerify(t *testing.T) {
 
 	fsys, files = createFSTest(t, 10)
 
-	env := Env{
-		fsys:  fsys,
-		limit: afterNow,
-		sysIP: ips[0],
-		pwd:   testEnv.pwd,
+	env = new(Env)
+	env = &Env{
+		fsys:      fsys,
+		limit:     afterNow,
+		sysIP:     ips[0],
+		pwd:       testEnv.pwd,
+		datasetID: testDatasetID,
 	}
 
 	testLogger, hook = setupLogs()
 
 	t.Run("Gen verify", func(t *testing.T) {
 		for _, f := range files {
-			ok := f.verify(env, testLogger)
+			ok := f.verify(testLogger)
 			assert.True(t, ok)
 
 			gotLogMsg := hook.LastEntry().Message
@@ -160,7 +197,7 @@ func TestVerify(t *testing.T) {
 }
 
 // TestVerifyEnvSettings encompasses TestVerifyIP & TestVerifyTimeLimit
-func TestVerifyEnvSettings(t *testing.T) {
+func TestVerifyEnvMatch(t *testing.T) {
 	// setup server ip
 	hostname, _ := os.Hostname()
 	ips, _ := net.LookupIP(hostname)
@@ -171,7 +208,8 @@ func TestVerifyEnvSettings(t *testing.T) {
 
 	t.Run("returns true if config metadata matches", func(t *testing.T) {
 		limit = now.Add(-24 * time.Hour)
-		testEnv = Env{
+		env = getEnv()
+		env = &Env{
 			sysIP: ips[0],
 			limit: limit,
 		}
@@ -183,13 +221,14 @@ func TestVerifyEnvSettings(t *testing.T) {
 			fanIP:       ips[0],
 		}
 		testLogger, hook = setupLogs()
-		assert.True(t, file.verifyEnv(testEnv, testLogger))
+		assert.True(t, file.verifyEnvMatch(testLogger))
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(fEnvMatchLog, file.smbName, file.id, file.stagingPath)
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
 	t.Run("returns false if ip is not the same as the current machine", func(t *testing.T) {
-		testEnv = Env{
+		env = getEnv()
+		env = &Env{
 			sysIP: ip,
 		}
 		file = File{
@@ -198,7 +237,7 @@ func TestVerifyEnvSettings(t *testing.T) {
 			fanIP:   ips[0],
 		}
 		testLogger, hook = setupLogs()
-		assert.False(t, file.verifyEnv(testEnv, testLogger))
+		assert.False(t, file.verifyEnvMatch(testLogger))
 
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(fIPMatchFalseLog, file.smbName, file.id, file.fanIP, ip)
@@ -214,12 +253,13 @@ func TestVerifyEnvSettings(t *testing.T) {
 			fanIP:      ips[0],
 		}
 		limit = now.Add(24 * time.Hour)
-		testEnv = Env{
+		env = getEnv()
+		env = &Env{
 			limit: limit,
 			sysIP: ips[0],
 		}
 		testLogger, hook = setupLogs()
-		assert.False(t, file.verifyEnv(testEnv, testLogger))
+		assert.False(t, file.verifyEnvMatch(testLogger))
 
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(fCreateTimeBeforeTimeLimitLog,
@@ -331,6 +371,8 @@ func TestVerifyGBMetadata(t *testing.T) {
 	defer out.Close()
 	t.Run("returns true if file.datasetID matches DatasetID", func(t *testing.T) {
 		_, files := createFSTest(t, 1)
+		env = new(Env)
+		env.datasetID = testDatasetID
 
 		testLogger, hook = setupLogs()
 		assert.True(t, files[0].verifyGBMetadata(testLogger))
@@ -372,14 +414,16 @@ func TestVerifyGBMetadata(t *testing.T) {
 		file = File{
 			smbName:   testSmbName,
 			id:        testFileIDInWrongDataset,
-			datasetID: testDatasetID,
+			datasetID: testWrongDataset,
 		}
+		env = new(Env)
+		env.datasetID = testWrongDataset
 		testLogger, hook = setupLogs()
 		assert.False(t, file.verifyGBMetadata(testLogger))
 
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(
-			fDatasetMatchFalseLog, testSmbName, testFileIDInWrongDataset, testDatasetID, testWrongDataset)
+			fDatasetMatchFalseLog, testSmbName, testFileIDInWrongDataset, testWrongDataset, testDatasetID)
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
 }
@@ -438,6 +482,8 @@ func TestGetMBDatasetByFileID(t *testing.T) {
 			id:        testFileID,
 			datasetID: testDatasetID,
 		}
+		env = new(Env)
+		env.datasetID = testDatasetID
 		testLogger, hook = setupLogs()
 		ok := file.verifyMBDatasetByFileID(testLogger)
 		assert.True(t, ok)
@@ -482,15 +528,16 @@ func TestParseFileNameByID(t *testing.T) {
 	})
 }
 
-func TestParseFileDatasetByID(t *testing.T) {
-	t.Run("should return the dataset by id if it exists", func(t *testing.T) {
+func TestSetFileDatasetByID(t *testing.T) {
+	t.Run("should set f.datasetID if it exists", func(t *testing.T) {
 		testLogger, hook = setupLogs()
 		file = File{
 			smbName: testSmbName,
 			id:      testFileID,
 		}
 		testLogger, hook = setupLogs()
-		got := file.parseMBDatasetByFileID(testGbrFileIDDetailOutLog, testLogger)
+		file.setMBDatasetByFileID(testGbrFileIDDetailOutLog, testLogger)
+		got := file.datasetID
 		want := testDatasetID
 		assertCorrectString(t, got, want)
 
@@ -506,7 +553,7 @@ func TestParseFileDatasetByID(t *testing.T) {
 			smbName: testSmbName,
 			id:      testBadFileID,
 		}
-		got := file.parseMBDatasetByFileID("", testLogger)
+		got := file.setMBDatasetByFileID("", testLogger)
 		want := ""
 		assertCorrectString(t, got, want)
 
