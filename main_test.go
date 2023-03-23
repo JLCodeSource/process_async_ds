@@ -105,7 +105,7 @@ func TestMainFunc(t *testing.T) {
 		// Set for other tests
 		//testEnv.pwd = pwd
 		gotLogMsg := hook.LastEntry().Message
-		wantLogMsg := fmt.Sprintf(wrapLookupIPLog, hostname, ips[0].String())
+		wantLogMsg := fmt.Sprintf(eMatchAsyncProcessedDSTrueLog, env.datasetID, testDatasetID)
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 

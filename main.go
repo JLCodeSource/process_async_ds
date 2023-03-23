@@ -273,6 +273,9 @@ func main() {
 		dryrun:     ndr,
 		sysIP:      ip,
 	}
+
+	env.verifyDataset(logger)
+
 }
 
 func wrapOs(logger *logrus.Logger, wrapped string, f func() (string, error)) string {
