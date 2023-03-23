@@ -35,6 +35,8 @@ const (
 	osExecutableLog             = "os.Executable"
 	wrapLookupIPLog             = "net.LookupIP: %v=%v"
 
+	fAddedToListLog = "%v (file.id:%v) added to list with file.stagingPath:%v, file.createTime:%v, file.size:%v, file.fanIP:%v, file.fileInfo:%v"
+
 	regexDatasetMatch = "^[A-F0-9]{32}$"
 
 	sourceFileArgTxt  = "sourcefile"
@@ -121,7 +123,20 @@ func getFileList(fsys afero.Fs, sourcefile string, logger *logrus.Logger) []File
 
 	for _, line := range lines {
 		newFile := parseLine(line, logger)
+		newFile.fileInfo, err = fsys.Stat(newFile.stagingPath)
+		if err != nil {
+			// Need to add testing
+			logger.Error(err)
+		}
 		files = append(files, newFile)
+		logger.Info(fmt.Sprintf(fAddedToListLog,
+			newFile.smbName,
+			newFile.id,
+			newFile.stagingPath,
+			newFile.createTime.Unix(),
+			newFile.size,
+			newFile.fanIP,
+			newFile.fileInfo.Name()))
 	}
 
 	return files

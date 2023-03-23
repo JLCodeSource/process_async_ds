@@ -53,6 +53,7 @@ const (
 	testGetwdErr            = "os.Getwd err occurred"
 	testOsExecutableErr     = "os.Executable err occurred"
 	testLookupIPErr         = "net.LookupIP err occurred"
+	testFileInfoErr         = "fs.FileInfo err occurred"
 
 	testKarachiTime       = "Asia/Karachi"
 	testKarachiDate       = "Mon Jan 30 17:55:14 PKT 2023"
@@ -434,9 +435,9 @@ func TestGetSourceFile(t *testing.T) {
 }
 
 func TestGetFileList(t *testing.T) {
-	t.Run("getFileList should return a list of files & log the list", func(t *testing.T) {
+	t.Run("getFileList should return a list of files", func(t *testing.T) {
 		testLogger, hook = setupLogs()
-		fsys, want := createAferoTest(t, 1, true)
+		fsys, want := createAferoTest(t, 10, true)
 
 		dir := getWorkDir()
 
@@ -450,14 +451,49 @@ func TestGetFileList(t *testing.T) {
 			assert.Equal(t, want[i].size, got[i].size)
 			assert.Equal(t, want[i].id, got[i].id)
 			assert.Equal(t, want[i].fanIP, got[i].fanIP)
-			//assert.Equal(t, want[i].datasetID, got[i].datasetID)
-			//assert.Equal(t, want[i].fileInfo, got[i].fileInfo)
-
-			/* 			gotLogMsg := hook.LastEntry().Message
-			   			wantLogMsg := fmt.Sprintf(datasetLog, testDatasetID)
-
-			   			assertCorrectString(t, gotLogMsg, wantLogMsg) */
+			assert.Equal(t, want[i].fileInfo, got[i].fileInfo)
 		}
+	})
+	t.Run("getFileList should log properly", func(t *testing.T) {
+		testLogger, hook = setupLogs()
+		fsys, want := createAferoTest(t, 1, true)
+
+		dir := getWorkDir()
+
+		testSF := fmt.Sprintf(testSourceFile, dir)
+		getFileList(fsys, testSF, testLogger)
+
+		gotLogMsg := hook.LastEntry().Message
+		wantLogMsg := fmt.Sprintf(fAddedToListLog,
+			want[0].smbName,
+			want[0].id,
+			want[0].stagingPath,
+			want[0].createTime.Unix(),
+			want[0].size,
+			want[0].fanIP,
+			want[0].fileInfo.Name())
+
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
+	})
+	t.Run("getFileList should fatal if sourcefile does not exist", func(t *testing.T) {
+		fakeExit := func(int) {
+			panic(osPanicTrue)
+		}
+		patch := monkey.Patch(os.Exit, fakeExit)
+		defer patch.Unpatch()
+
+		testLogger, hook = setupLogs()
+		fsys, _ := createAferoTest(t, 1, true)
+
+		testSF := fmt.Sprintf(testDoesNotExistFile)
+		panic := func() { getFileList(fsys, testSF, testLogger) }
+
+		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
+
+		gotLogMsg := hook.LastEntry().Message
+		wantLogMsg := fmt.Sprintf(testOpenDoesNotExistErr, testDoesNotExistFile)
+
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
 }
 
