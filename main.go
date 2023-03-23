@@ -80,7 +80,7 @@ type Env struct {
 	limit      time.Time
 	dryrun     bool
 	sysIP      net.IP
-	pwd        string
+	//pwd        string
 	//days       int64
 
 }

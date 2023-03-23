@@ -103,7 +103,7 @@ func TestMainFunc(t *testing.T) {
 		main()
 
 		// Set for other tests
-		testEnv.pwd = pwd
+		//testEnv.pwd = pwd
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(wrapLookupIPLog, hostname, ips[0].String())
 

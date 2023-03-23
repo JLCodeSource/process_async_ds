@@ -175,10 +175,10 @@ func TestVerify(t *testing.T) {
 
 	env = new(Env)
 	env = &Env{
-		fsys:      fsys,
-		limit:     afterNow,
-		sysIP:     ips[0],
-		pwd:       testEnv.pwd,
+		fsys:  fsys,
+		limit: afterNow,
+		sysIP: ips[0],
+		//pwd:       testEnv.pwd,
 		datasetID: testDatasetID,
 	}
 
