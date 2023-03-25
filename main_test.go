@@ -34,12 +34,12 @@ const (
 	testNotADataset  = "123"
 	testSourceFile   = "%v/test.out"
 
-	testArgsFile    = "-sourcefile=%v/README.md"
+	testArgsFile    = "-sourcefile=%v/test.out"
 	testArgsDataset = "-datasetid=%v"
 	testArgsDays    = "-days=123"
 	testArgsHelp    = "-help"
 
-	testPostArgsFile = "%v/README.md"
+	testPostArgsFile = "%v/test.out"
 	testPostArgsDays = int64(123)
 
 	osPanicTrue  = "os.Exit called"
@@ -72,9 +72,8 @@ var (
 	ip      net.IP
 
 	// setup file
-	file  File
-	files []File
-	now   time.Time
+	file File
+	now  time.Time
 
 	// setup fsys
 	fsys fstest.MapFS
@@ -82,15 +81,16 @@ var (
 
 func TestMainFunc(t *testing.T) {
 	t.Run("verify main args work", func(t *testing.T) {
-		_, hook = setupLogs()
+		afs, _ := createAferoTest(t, 5, true)
+		testLogger, hook = setupLogs()
 		hostname, _ := os.Hostname()
 		ips, _ := net.LookupIP(hostname)
 		pwd, err := os.Getwd()
 		if err != nil {
 			t.Fatal(err)
 		}
-		env = &testEnv
-		env.afs = afero.NewOsFs()
+		env = new(Env)
+		env.afs = afs
 		os.Args = append(os.Args, fmt.Sprintf(testArgsFile, pwd[1:]))
 		os.Args = append(os.Args, fmt.Sprintf(testArgsDataset, testDatasetID))
 		os.Args = append(os.Args, testArgsDays)

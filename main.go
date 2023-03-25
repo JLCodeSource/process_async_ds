@@ -59,6 +59,7 @@ var (
 	dryrun     bool
 	afs        afero.Fs
 	env        *Env
+	files      []File
 )
 
 // File type is a struct which holds its relevant metadata
@@ -133,14 +134,15 @@ func getFileList(fsys afero.Fs, sourcefile string, logger *logrus.Logger) []File
 		logger.Fatal(err)
 	}
 
-	lines := parser.ParseFile(fsys, sourcefile, logger)
+	lines := parseFile(fsys, sourcefile, logger)
 
 	for _, line := range lines {
-		newFile := parser.ParseLine(line, logger)
+		newFile := parseLine(line, logger)
 		newFile.fileInfo, err = fsys.Stat(newFile.stagingPath)
 		if err != nil {
 			// Need to add testing
 			logger.Error(err)
+			continue
 		}
 		files = append(files, newFile)
 		logger.Info(fmt.Sprintf(fAddedToListLog,
@@ -289,6 +291,8 @@ func main() {
 	}
 
 	env.verifyDataset(logger)
+
+	files = getFileList(env.afs, sourceFile, logger)
 
 }
 
