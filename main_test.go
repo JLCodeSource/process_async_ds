@@ -182,14 +182,6 @@ func TestMainFunc(t *testing.T) {
 	})
 }
 
-/* type SpyWrapper struct {
-	Calls int
-}
-
-func (s *SpyWrapper) wrapOS(*logrus.Logger) {
-	s.Calls++
-} */
-
 func TestOsWrapper(t *testing.T) {
 	t.Run("wrapOsExecutable should return & log the path", func(t *testing.T) {
 		testLogger, hook = setupLogs()
@@ -431,6 +423,32 @@ func TestGetSourceFile(t *testing.T) {
 		wantLogMsg := fmt.Sprintf(testOpenDoesNotExistErr, testDoesNotExistFile)
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
+	})
+}
+
+/* type MockGetAfs struct {
+	mockAfs afero.Fs
+}
+
+func (m *MockGetAfs) getAfs() {
+	mockAfs, _ := createAferoTest(t, 1, true)
+	m.mockAfs = mockAfs
+} */
+
+func TestGetAfs(t *testing.T) {
+	t.Run("getAfs returns the afs & logs it", func(t *testing.T) {
+		testLogger, hook = setupLogs()
+		want, _ := createAferoTest(t, 1, true)
+
+		got := getAfs(want)
+
+		assert.Equal(t, want, got)
+
+		gotLogMsg := hook.LastEntry().Message
+		wantLogMsg := fmt.Sprintf()
+
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
+
 	})
 }
 

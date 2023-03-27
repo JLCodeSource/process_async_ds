@@ -247,6 +247,19 @@ func getEnv() *Env {
 	return env
 }
 
+/* type GetAfs interface {
+	getAfs()
+}
+*/
+
+func getAfs(afs afero.Fs) afero.Fs {
+	if afs != nil {
+		return afs
+	} else {
+		return afero.NewOsFs()
+	}
+}
+
 func init() {
 	log.Init()
 	log.GetLogger()
@@ -269,7 +282,6 @@ func main() {
 	root := setPWD(ex, logger)
 
 	fsys := os.DirFS(root)
-	afs = afero.NewOsFs()
 
 	getSourceFile(fsys, ex, sourceFile, logger)
 	ds := getDatasetID(datasetID, logger)
