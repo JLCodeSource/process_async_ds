@@ -23,6 +23,12 @@ async_processed_files_dataset=$($cqlsh $(hostname -I) 21205 -e "$select" | grep 
 now=$(date +"%s")
 ip=$(hostname -I | xargs)
 
+# timestamp
+function timestamp () {
+   echo $(date -u '+%Y-%m-%dT%H:%M:%S UTC')
+}
+
+
 # Arguments
 ## Setting the input file
 if [ ! -z "$1" ]
@@ -53,22 +59,21 @@ then
    else
       time_limit=$(("$now"-("$days"*86400)))
    fi
-   echo "INFO: Time limit set to $days days ago which is $time_limit in epoch time" 
+   echo "INFO [$(timestamp)]: Time limit set to $days days ago which is $time_limit in epoch time" 
 else
    # Default argument
-   echo "WARN: No time limit set; processing all processed files"
+   echo "WARN [$(timestamp)]: No time limit set; processing all processed files"
 fi
 
 ## Switching off dry run
 if [ "$3" = "Execute_Move" ]
 then
-   echo "WARN: Argument Execute_Move; setting dryrun to false" 
+   echo "WARN [$(timestamp)]: Argument Execute_Move; setting dryrun to false" 
    dryrun=
 else
-   echo "INFO: No Execute_Move argument; setting dryrun to true"
+   echo "INFO [$(timestamp)]: No Execute_Move argument; setting dryrun to true"
    dryrun=true
 fi
-
 
 # Function to process each line in the list
 # Input: file of list of processed files (ordered by size first) 
@@ -82,7 +87,7 @@ processed_file_list=$1
 while read line;
 do
    # Output current line from processed_file_list
-   echo INFO: Processing $line
+   echo INFO [$(timestamp)]: Processing $line
    
    # Set working variables
 
@@ -115,9 +120,9 @@ do
    ## Filter out files on other servers
    if [[ "$fan_ip" == "$ip" ]]
    then
-      echo "INFO: Fan IP $fan_ip matches local IP $ip"
+      echo "INFO [$(timestamp)]: Fan IP $fan_ip matches local IP $ip"
    else
-      echo "WARN: Fan IP $fan_ip does not match local IP $ip; skipping file $target_file"
+      echo "WARN [$(timestamp)]: Fan IP $fan_ip does not match local IP $ip; skipping file $target_file"
       continue
    fi
 
@@ -125,10 +130,10 @@ do
    ## Filter out files from before time_limit
    if [[ $create_time -lt $time_limit ]]
    then
-      echo "WARN: Create time (epoch) $create_time is before time limit (epoch) $time_limit; skipping file $target_file"
+      echo "WARN [$(timestamp)]: Create time (epoch) $create_time is before time limit (epoch) $time_limit; skipping file $target_file"
       continue
    else
-      echo "INFO: Create time (epoch) $create_time is after time limit (epoch) $time_limit for $target_file"
+      echo "INFO [$(timestamp)]: Create time (epoch) $create_time is after time limit (epoch) $time_limit for $target_file"
    fi
 
    ## Verify file is in async processed dataset
@@ -137,9 +142,9 @@ do
    ### Filter out any files not in async_processed_files_dataset
    if [ "$dataset" = "$async_processed_files_dataset" ]
    then
-      echo "INFO: file id $file_id is in async processed files dataset $async_processed_files_dataset for $target_file"
+      echo "INFO [$(timestamp)]: file id $file_id is in async processed files dataset $async_processed_files_dataset for $target_file"
    else
-      echo "WARN: file id $file_id is in dataset $dataset, rather than the async processed files dataset $async_processed_files_dataset; skipping file $target_file"
+      echo "WARN [$(timestamp)]: file id $file_id is in dataset $dataset, rather than the async processed files dataset $async_processed_files_dataset; skipping file $target_file"
       continue
    fi
 
@@ -147,9 +152,9 @@ do
    ## Verify file exists
    if [ -f "$target_file" ]
    then
-      echo "INFO: file $target_file exists"
+      echo "INFO [$(timestamp)]: file $target_file exists"
    else
-      echo "WARN: file does not exist; skipping file $target_file"
+      echo "WARN [$(timestamp)]: file does not exist; skipping file $target_file"
       continue
    fi
 
@@ -159,9 +164,9 @@ do
    ### Filter out any files where size does not match
    if [ "$file_size" -eq "$staging_file_size" ]
    then
-      echo "INFO: file size $file_size matches staging file size $staging_file_size for $orig_basename"
+      echo "INFO [$(timestamp)]: file size $file_size matches staging file size $staging_file_size for $orig_basename"
    else
-      echo "WARN: file size $file_size does not match staging file size $staging_file_size; skipping file $orig_basename"
+      echo "WARN [$(timestamp)]: file size $file_size does not match staging file size $staging_file_size; skipping file $orig_basename"
       continue
    fi
 
@@ -171,9 +176,9 @@ do
    ### Filter out any files where create time does not match
    if [ "$create_time" = "$staging_create_time" ]
    then
-      echo "INFO: create time $create_time matches staging create time $staging_create_time for $orig_basename"
+      echo "INFO [$(timestamp)]: create time $create_time matches staging create time $staging_create_time for $orig_basename"
    else
-      echo "WARN: create time $create_time does not match staging create time $staging_create_time; skipping file $orig_basename"
+      echo "WARN [$(timestamp)]: create time $create_time does not match staging create time $staging_create_time; skipping file $orig_basename"
       continue
    fi
 
@@ -183,20 +188,22 @@ do
    ### Filter out any file whose original SMB name does not match the name by file_id
    if [ "$file_id_checked_name" = "$orig_basename" ]
    then
-      echo "INFO: basename $orig_basename matches file id checked name $file_id_checked_name"
+      echo "INFO [$(timestamp)]: basename $orig_basename matches file id checked name $file_id_checked_name"
    else
-      echo "WARN: basename $orig_basename does not match file id checked name $file_id_checked_name; skipping file"
+      echo "WARN [$(timestamp)]: basename $orig_basename does not match file id checked name $file_id_checked_name; skipping file"
       continue
    fi
 
    # File has been verified and is ready for migration
-   echo "INFO: $target_file verified as ready to be migrated in preparation for removal"
+   echo "INFO [$(timestamp)]: $target_file verified as ready to be migrated in preparation for removal"
 
 
    # Process files for migration
    
    ## Hash file
+   echo "INFO [$(timestamp)]: starting initial sha256 for $target_file"
    staging_file_hash=$(sha256sum $target_file | cut -d" " -f1)
+   echo "INFO [$(timestamp)]: sha256 $staging_file_hash for $target_file completed"
 
    ## Move file
    ### Check if mb or datavX staging folder
@@ -211,44 +218,47 @@ do
 
    ### sed pathname to swap old_path for new_path
    new_path_name=$(echo $dirname | sed "s/$old_path/$new_path/g")
-   echo "INFO: Staging path $dirname; new path $new_path_name"
+   echo "INFO [$(timestamp)]: Staging path $dirname; new path $new_path_name"
 
    ### Create target folder
    if [ ! -d $new_path_name ]
    then
        mkdir -p $new_path_name
-       echo "INFO: Created $new_path_name"
+       echo "INFO [$(timestamp)]: Created $new_path_name"
    fi
 
    ### Create move command for target_file
    cmd="mv $dirname/$basename $new_path_name/$basename"
-   echo "INFO: Command $cmd"
+   echo "INFO [$(timestamp)]: Command $cmd"
 
    ### Check for dry run
    if [ ! -z $dryrun ]
    then
       ### If dry run skip
-      echo "INFO: Dryrun skipping execute"
+      echo "INFO [$(timestamp)]: Dryrun skipping execute"
       continue
    else
       ### If not dry run execute move
-      echo "WARN: Executing command $cmd"
+      echo "WARN [$(timestamp)]: Executing command $cmd"
       eval $cmd
    fi
 
    ### Recheck hash
+   echo "INFO [$(timestamp)]: starting check sha256 for $new_path_name/$basename"
    moved_file_hash=$(sha256sum $new_path_name/$basename | cut -d" " -f1)
+   echo "INFO [$(timestamp)]: sha256 $moved_file_hash for $new_path_name/$basename completed"
    
+
    ### Compare moved file hash and original hash
    if [ "$staging_file_hash" = "$moved_file_hash" ]
    then
       ### If hashes match
-      echo "INFO: $orig_basename hash after move $moved_file_hash matches original hash $staging_file_hash"
+      echo "INFO [$(timestamp)]: $orig_basename hash after move $moved_file_hash matches original hash $staging_file_hash"
       ### Confirm ready for process
-      echo "INFO: $new_path_name/$basename is ready for processing"
+      echo "INFO [$(timestamp)]: $new_path_name/$basename is ready for processing"
    else
       ### If no match, error out and exit, as this shouldn't be possible
-      echo "ERROR: $orig_basename hash after move $moved_file_hash does not match original hash $staging_file_hash"
+      echo "ERROR [$(timestamp)]: $orig_basename hash after move $moved_file_hash does not match original hash $staging_file_hash"
       exit
    fi
 
