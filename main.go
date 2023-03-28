@@ -193,8 +193,8 @@ func (ap *AsyncProcessor) getFileList(sourcefile string) {
 	}
 }
 
-func (ap *AsyncProcessor) setDatasetID(id string) {
-	logger := ap.Env.logger
+func (e *env) setDatasetID(id string) {
+	logger := e.logger
 	match, err := regexp.MatchString(regexDatasetMatch, id)
 	if err != nil {
 		logger.Fatal(err.Error())
@@ -205,18 +205,18 @@ func (ap *AsyncProcessor) setDatasetID(id string) {
 	}
 
 	// if no fatal datsets match
-	ok := ap.compareDatasetID(id)
+	ok := e.compareDatasetID(id)
 	if !ok {
 		return
 	}
 
-	ap.Env.datasetID = id
+	e.datasetID = id
 
 	logger.Info(fmt.Sprintf(datasetLog, id))
 }
 
-func (ap *AsyncProcessor) compareDatasetID(datasetID string) bool {
-	logger := ap.Env.logger
+func (e *env) compareDatasetID(datasetID string) bool {
+	logger := e.logger
 	asyncProcessedDS := getAsyncProcessedDSID(logger)
 	if asyncProcessedDS != datasetID {
 		logger.Fatal(fmt.Sprintf(compareDatasetIDNotMatchLog, datasetID, asyncProcessedDS))
@@ -334,7 +334,7 @@ func main() {
 	ap := NewAsyncProcessor(e, &files)
 
 	e.setSourceFile(ex, sourceFile)
-	ap.setDatasetID(datasetID)
+	e.setDatasetID(datasetID)
 	ap.setTimeLimit(numDays)
 	ap.setDryRun(dryrun)
 

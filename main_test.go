@@ -541,7 +541,7 @@ func TestSetDatasetID(t *testing.T) {
 
 	t.Run("verify it returns the right dataset id", func(t *testing.T) {
 		e.logger, _ = setupLogs()
-		ap.setDatasetID(testDatasetID)
+		e.setDatasetID(testDatasetID)
 		got := ap.Env.datasetID
 		want := testDatasetID
 
@@ -551,7 +551,7 @@ func TestSetDatasetID(t *testing.T) {
 	t.Run("verify it logs the right dataset id", func(t *testing.T) {
 		e.logger, hook = setupLogs()
 
-		ap.setDatasetID(testDatasetID)
+		e.setDatasetID(testDatasetID)
 
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(datasetLog, testDatasetID)
@@ -568,7 +568,7 @@ func TestSetDatasetID(t *testing.T) {
 
 		e.logger, hook = setupLogs()
 
-		panicFunc := func() { ap.setDatasetID(testNotADataset) }
+		panicFunc := func() { e.setDatasetID(testNotADataset) }
 
 		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
 		gotLogMsg := hook.LastEntry().Message
@@ -592,7 +592,7 @@ func TestSetDatasetID(t *testing.T) {
 		defer patch2.Unpatch()
 
 		e.logger, hook = setupLogs()
-		panicFunc := func() { ap.setDatasetID(testNotADataset) }
+		panicFunc := func() { e.setDatasetID(testNotADataset) }
 
 		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
 		gotLogMsg := hook.LastEntry().Message
@@ -609,7 +609,7 @@ func TestSetDatasetID(t *testing.T) {
 		defer patch.Unpatch()
 
 		e.logger, hook = setupLogs()
-		panicFunc := func() { ap.setDatasetID(testID) }
+		panicFunc := func() { e.setDatasetID(testID) }
 
 		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
 		gotLogMsg := hook.LastEntry().Message
@@ -622,11 +622,10 @@ func TestSetDatasetID(t *testing.T) {
 func TestCompareDatasetId(t *testing.T) {
 	files := &[]File{}
 	e = new(env)
-	ap := NewAsyncProcessor(e, files)
+	NewAsyncProcessor(e, files)
 	t.Run("Should return true if datasetid & asyncdelds check match & log it", func(t *testing.T) {
 		e.logger, hook = setupLogs()
-
-		ap.compareDatasetID(testDatasetID)
+		e.compareDatasetID(testDatasetID)
 
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(compareDatasetIDMatchLog, testDatasetID, testDatasetID)
@@ -641,7 +640,7 @@ func TestCompareDatasetId(t *testing.T) {
 		defer patch.Unpatch()
 
 		e.logger, hook = setupLogs()
-		panicFunc := func() { ap.compareDatasetID(testID) }
+		panicFunc := func() { e.compareDatasetID(testID) }
 		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
 
 		gotLogMsg := hook.LastEntry().Message
