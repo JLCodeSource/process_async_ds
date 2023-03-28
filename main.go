@@ -96,12 +96,14 @@ type Env struct {
 type AsyncProcessor struct {
 	Logger *logrus.Logger
 	Env    *Env
+	Files  *[]File
 }
 
-func NewAsyncProcessor(Logger *logrus.Logger, Env *Env) *AsyncProcessor {
+func NewAsyncProcessor(Logger *logrus.Logger, Env *Env, Files *[]File) *AsyncProcessor {
 	return &AsyncProcessor{
 		Logger: Logger,
 		Env:    Env,
+		Files:  Files,
 	}
 }
 
