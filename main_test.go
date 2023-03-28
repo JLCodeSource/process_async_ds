@@ -112,7 +112,7 @@ func TestMainFunc(t *testing.T) {
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 
-		f, err := e.fsys.Open(e.sourceFile)
+		f, err := e.afs.Open(e.sourceFile)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -467,8 +467,8 @@ func TestGetFileList(t *testing.T) {
 		ap := NewAsyncProcessor(e, files)
 		dir := getWorkDir()
 
-		testSF := fmt.Sprintf(testSourceFile, dir)
-		ap.getFileList(testSF)
+		e.sourceFile = fmt.Sprintf(testSourceFile, dir)
+		ap.getFileList()
 		got := *ap.Files
 
 		for i := range got {
@@ -492,8 +492,8 @@ func TestGetFileList(t *testing.T) {
 
 		dir := getWorkDir()
 
-		testSF := fmt.Sprintf(testSourceFile, dir)
-		ap.getFileList(testSF)
+		e.sourceFile = fmt.Sprintf(testSourceFile, dir)
+		ap.getFileList()
 
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(fAddedToListLog,
@@ -521,8 +521,8 @@ func TestGetFileList(t *testing.T) {
 
 		e.afs = afs
 
-		testSF := testDoesNotExistFile
-		panicFunc := func() { ap.getFileList(testSF) }
+		e.sourceFile = testDoesNotExistFile
+		panicFunc := func() { ap.getFileList() }
 
 		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
 
@@ -728,6 +728,39 @@ func TestSetDryRun(t *testing.T) {
 		wantLogMsg := dryRunFalseLog
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
+	})
+}
+
+func TestSetTestRun(t *testing.T) {
+	files := &[]File{}
+	e = new(env)
+	NewAsyncProcessor(e, files)
+	t.Run("test run", func(t *testing.T) {
+		e.logger, hook = setupLogs()
+
+		e.setTestRun(true)
+		got := e.testrun
+		assert.True(t, got)
+
+		gotLogMsg := hook.LastEntry().Message
+		wantLogMsg := testRunTrueLog
+
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
+	})
+
+	t.Run("nontest run", func(t *testing.T) {
+		e.logger, hook = setupLogs()
+
+		e.setTestRun(false)
+		got := e.testrun
+
+		assert.False(t, got)
+
+		gotLogMsg := hook.LastEntry().Message
+		wantLogMsg := testRunFalseLog
+
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
+
 	})
 }
 

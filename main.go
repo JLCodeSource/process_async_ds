@@ -29,6 +29,8 @@ const (
 	timelimitDaysLog            = "timelimit: Days time limit set to %v days ago which is %v"
 	dryRunTrueLog               = "dryrun: true; skipping exeecute move"
 	dryRunFalseLog              = "dryrun: false; executing move"
+	testRunTrueLog              = "testrun: setting to true"
+	testRunFalseLog             = "testrun: setting to false"
 	complexIPLog                = "net.LookupIP: unexpected; more ips than expected"
 	wrapOsLog                   = "%v: %v"
 	osHostnameLog               = "os.Hostname"
@@ -99,6 +101,7 @@ type env struct {
 	datasetID  string
 	limit      time.Time
 	dryrun     bool
+	testrun    bool
 	sysIP      net.IP
 	//pwd        string
 	//days       int64
@@ -160,21 +163,21 @@ func (e *env) setSourceFile(ex string, f string) {
 
 }
 
-func (ap *AsyncProcessor) getFileList(sourcefile string) {
+func (ap *AsyncProcessor) getFileList() {
 	e = ap.Env
-	fsys := e.afs
+	afs := e.afs
 	logger := e.logger
 
-	_, err := fsys.Stat(sourcefile)
+	_, err := afs.Stat(e.sourceFile)
 	if err != nil {
 		logger.Fatal(err)
 	}
 
-	lines := parseFile(fsys, sourcefile, logger)
+	lines := parseFile(afs, e.sourceFile, logger)
 
 	for _, line := range lines {
 		newFile := parseLine(line, logger)
-		newFile.fileInfo, err = fsys.Stat(newFile.stagingPath)
+		newFile.fileInfo, err = afs.Stat(newFile.stagingPath)
 
 		if err != nil {
 			// Need to add testing
@@ -261,6 +264,18 @@ func (e *env) setDryRun(dryrun bool) {
 	}
 }
 
+func (e *env) setTestRun(testrun bool) {
+	logger := e.logger
+
+	e.testrun = testrun
+
+	if testrun {
+		logger.Info(testRunTrueLog)
+	} else {
+		logger.Warn(testRunFalseLog)
+	}
+}
+
 func (e *env) setPWD(ex string) string {
 	// job needs to run in root dir
 	exPath := filepath.Dir(ex)
@@ -339,6 +354,7 @@ func main() {
 	e.setDatasetID(datasetID)
 	e.setTimeLimit(numDays)
 	e.setDryRun(dryrun)
+	e.setTestRun(testrun)
 
 	hostname := wrapOs(e.logger, osHostnameLog, os.Hostname)
 
@@ -347,6 +363,8 @@ func main() {
 	e.sysIP = ip
 
 	e.verifyDataset(e.logger)
+
+	//ap.getFileList()
 
 }
 
