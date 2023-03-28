@@ -62,7 +62,7 @@ var (
 	testrun    bool
 	afs        afero.Fs
 	e          *env
-	files      []File
+	fileList   *[]File
 )
 
 // File type is a struct which holds its relevant metadata
@@ -84,6 +84,12 @@ type E interface {
 }
 */
 
+/*
+// files type is a slice of Files
+type files struct {
+	files []File
+}*/
+
 // env type holds config and environment settings
 type env struct {
 	fsys       fs.FS
@@ -98,30 +104,21 @@ type env struct {
 
 }
 
-/*
-// File type holds a pointer to a list of files
-type Files struct {
-	files []File
-}
-
-
 // AsyncProcessor is the async processing instance
 type AsyncProcessor struct {
 	Logger *logrus.Logger
-	Env    *Env
-	Files  *Files
+	Env    *env
+	Files  *[]File
 }
 
-
 // NewAsyncProcessor returns a pointer to an AsyncProcessor
-func NewAsyncProcessor(Logger *logrus.Logger, Env *Env, Files *Files) *AsyncProcessor {
+func NewAsyncProcessor(Logger *logrus.Logger, Env *env, Files *[]File) *AsyncProcessor {
 	return &AsyncProcessor{
 		Logger: Logger,
 		Env:    Env,
 		Files:  Files,
 	}
 }
-*/
 
 // verify env
 func (e *env) verifyDataset(logger *logrus.Logger) bool {

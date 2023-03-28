@@ -134,7 +134,7 @@ func TestVerify(t *testing.T) {
 			ModTime: now},
 	}
 
-	var files []File
+	var files *[]File
 
 	fsys, files = createFSTest(t, 10)
 
@@ -150,7 +150,7 @@ func TestVerify(t *testing.T) {
 	testLogger, hook = setupLogs()
 
 	t.Run("Gen verify", func(t *testing.T) {
-		for _, f := range files {
+		for _, f := range *files {
 			ok := f.verify(testLogger)
 			assert.True(t, ok)
 
@@ -340,9 +340,9 @@ func TestVerifyGBMetadata(t *testing.T) {
 		e.datasetID = testDatasetID
 
 		testLogger, hook = setupLogs()
-		assert.True(t, files[0].verifyGBMetadata(testLogger))
+		assert.True(t, (*files)[0].verifyGBMetadata(testLogger))
 		gotLogMsg := hook.LastEntry().Message
-		wantLogMsg := fmt.Sprintf(fDatasetMatchTrueLog, files[0].smbName, files[0].id, files[0].datasetID, testDatasetID)
+		wantLogMsg := fmt.Sprintf(fDatasetMatchTrueLog, (*files)[0].smbName, (*files)[0].id, (*files)[0].datasetID, testDatasetID)
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
 	t.Run("returns false if file.datasetID does not match DatasetID", func(t *testing.T) {
@@ -824,7 +824,7 @@ func TestVerifyFileIDName(t *testing.T) {
 	})
 }
 
-func createFSTest(t *testing.T, numFiles int) (fstest.MapFS, []File) {
+func createFSTest(t *testing.T, numFiles int) (fstest.MapFS, *[]File) {
 	// Create gbrList file
 	var list string
 
@@ -908,7 +908,7 @@ func createFSTest(t *testing.T, numFiles int) (fstest.MapFS, []File) {
 		}
 	}
 
-	return fsys, files
+	return fsys, &files
 }
 
 func genRandom(i int64, s string) (random []byte) {

@@ -182,6 +182,18 @@ func TestMainFunc(t *testing.T) {
 	})
 }
 
+func TestNewAsyncProcessor(t *testing.T) {
+	t.Run("should return the ap", func(t *testing.T) {
+		testLogger, _ = setupLogs()
+		e = new(env)
+		fileList = &[]File{}
+		ap := NewAsyncProcessor(testLogger, e, fileList)
+		assert.Equal(t, testLogger, ap.Logger)
+		assert.Equal(t, e, ap.Env)
+		assert.Equal(t, fileList, ap.Files)
+	})
+}
+
 func TestOsWrapper(t *testing.T) {
 	t.Run("wrapOsExecutable should return & log the path", func(t *testing.T) {
 		testLogger, hook = setupLogs()

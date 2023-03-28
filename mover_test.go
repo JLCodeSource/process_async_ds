@@ -25,10 +25,10 @@ const (
 )
 
 func TestNewPath(t *testing.T) {
-	fsys, files = createFSTest(t, 10)
+	fsys, fileList = createFSTest(t, 10)
 
 	t.Run("should return path of xxx.processed", func(t *testing.T) {
-		for _, f := range files {
+		for _, f := range *fileList {
 			oldDir, fn := path.Split(f.stagingPath)
 			parts := strings.Split(oldDir, string(os.PathSeparator))
 			lastParts := parts[2:]
