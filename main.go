@@ -260,7 +260,7 @@ func (e *env) setDryRun(dryrun bool) {
 	}
 }
 
-func setPWD(ex string, logger *logrus.Logger) string {
+func (e *env) setPWD(ex string) string {
 	// job needs to run in root dir
 	exPath := filepath.Dir(ex)
 
@@ -273,12 +273,12 @@ func setPWD(ex string, logger *logrus.Logger) string {
 
 	err := os.Chdir(dots)
 	if err != nil {
-		logger.Fatal(err)
+		e.logger.Fatal(err)
 	}
 
 	pwd, err := os.Getwd()
 	if err != nil {
-		logger.Fatal(err)
+		e.logger.Fatal(err)
 	}
 
 	return pwd
@@ -319,13 +319,14 @@ func main() {
 	// Set logger
 	logger := log.GetLogger()
 
+	e.logger = logger
+
 	// Get executable path
 	ex := wrapOs(logger, osExecutableLog, os.Executable)
 
 	// Set PWD to root
-	root := setPWD(ex, logger)
+	root := e.setPWD(ex)
 
-	e.logger = logger
 	e.fsys = os.DirFS(root)
 	e.afs = afero.NewOsFs()
 

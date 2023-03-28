@@ -732,20 +732,23 @@ func TestSetDryRun(t *testing.T) {
 }
 
 func TestSetPWD(t *testing.T) {
+	files := &[]File{}
+	e = new(env)
+	NewAsyncProcessor(e, files)
 	t.Run("setPWD should shift execution to root from current path", func(t *testing.T) {
-		testLogger, _ = setupLogs()
+		e.logger, _ = setupLogs()
 		ex, _ := os.Executable()
 
-		got := setPWD(ex, testLogger)
+		got := e.setPWD(ex)
 		want := "/"
 		assertCorrectString(t, got, want)
 	})
 
 	t.Run("setPWD should shift execution to root from any path", func(t *testing.T) {
-		testLogger, _ = setupLogs()
+		e.logger, _ = setupLogs()
 		ex := "/workflows/process_async_processed/logger/logger.go"
 
-		got := setPWD(ex, testLogger)
+		got := e.setPWD(ex)
 		want := "/"
 		assertCorrectString(t, got, want)
 	})
@@ -763,9 +766,9 @@ func TestSetPWD(t *testing.T) {
 
 		patch2 := monkey.Patch(os.Chdir, fakeChdir)
 		defer patch2.Unpatch()
-		testLogger, hook = setupLogs()
+		e.logger, hook = setupLogs()
 
-		panicFunc := func() { setPWD(testBadPath, testLogger) }
+		panicFunc := func() { e.setPWD(testBadPath) }
 
 		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
 		gotLogMsg := hook.LastEntry().Message
@@ -788,9 +791,9 @@ func TestSetPWD(t *testing.T) {
 
 		patch2 := monkey.Patch(os.Getwd, fakeGetwd)
 		defer patch2.Unpatch()
-		testLogger, hook = setupLogs()
+		e.logger, hook = setupLogs()
 
-		panicFunc := func() { setPWD(testBadPath, testLogger) }
+		panicFunc := func() { e.setPWD(testBadPath) }
 
 		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
 		gotLogMsg := hook.LastEntry().Message
