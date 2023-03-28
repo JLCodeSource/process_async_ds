@@ -132,9 +132,9 @@ func (e *env) verifyDataset(logger *logrus.Logger) bool {
 	return true
 }
 
-func (ap *AsyncProcessor) setSourceFile(ex string, f string) {
+func (e *env) setSourceFile(ex string, f string) {
 	var pth string
-	filesystem := ap.Env.fsys
+	filesystem := e.fsys
 
 	dir, fn := path.Split(f)
 
@@ -151,12 +151,12 @@ func (ap *AsyncProcessor) setSourceFile(ex string, f string) {
 	_, err := fs.Stat(filesystem, pth)
 
 	if err != nil {
-		ap.Env.logger.Fatal(err.Error())
+		e.logger.Fatal(err.Error())
 	}
 
-	ap.Env.sourceFile = f
+	e.sourceFile = f
 
-	ap.Env.logger.Info(fmt.Sprintf(sourceLog, f))
+	e.logger.Info(fmt.Sprintf(sourceLog, f))
 
 }
 
@@ -333,7 +333,7 @@ func main() {
 
 	ap := NewAsyncProcessor(e, &files)
 
-	ap.setSourceFile(ex, sourceFile)
+	e.setSourceFile(ex, sourceFile)
 	ap.setDatasetID(datasetID)
 	ap.setTimeLimit(numDays)
 	ap.setDryRun(dryrun)

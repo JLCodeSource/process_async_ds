@@ -334,8 +334,8 @@ func TestSetSourceFile(t *testing.T) {
 			testPath: {Data: []byte(testContent)},
 		}
 		files := &[]File{}
-		ap := NewAsyncProcessor(e, files)
-		ap.setSourceFile("", testPath)
+		NewAsyncProcessor(e, files)
+		e.setSourceFile("", testPath)
 
 		got := e.sourceFile
 		want := testPath
@@ -353,8 +353,8 @@ func TestSetSourceFile(t *testing.T) {
 		}
 		fullpath := string(os.PathSeparator) + testPath
 		files := &[]File{}
-		ap := NewAsyncProcessor(e, files)
-		ap.setSourceFile("", string(os.PathSeparator)+testPath)
+		NewAsyncProcessor(e, files)
+		e.setSourceFile("", string(os.PathSeparator)+testPath)
 
 		got := e.sourceFile
 		want := string(os.PathSeparator) + testPath
@@ -375,8 +375,8 @@ func TestSetSourceFile(t *testing.T) {
 			path: {Data: []byte(testContent)},
 		}
 		files := &[]File{}
-		ap := NewAsyncProcessor(e, files)
-		ap.setSourceFile(ex, testName)
+		NewAsyncProcessor(e, files)
+		e.setSourceFile(ex, testName)
 
 		got := e.sourceFile
 		want := testName
@@ -396,10 +396,10 @@ func TestSetSourceFile(t *testing.T) {
 		e.logger, hook = setupLogs()
 		e.fsys = os.DirFS("")
 		files := &[]File{}
-		ap := NewAsyncProcessor(e, files)
+		NewAsyncProcessor(e, files)
 
 		panicFunc := func() {
-			ap.setSourceFile("/", testDoesNotExistFile)
+			e.setSourceFile("/", testDoesNotExistFile)
 		}
 
 		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
@@ -420,10 +420,10 @@ func TestSetSourceFile(t *testing.T) {
 			testMismatchPath: {Data: []byte(testContent)},
 		}
 		files := &[]File{}
-		ap := NewAsyncProcessor(e, files)
+		NewAsyncProcessor(e, files)
 
 		panicFunc := func() {
-			ap.setSourceFile("/", testDoesNotExistFile)
+			e.setSourceFile("/", testDoesNotExistFile)
 		}
 
 		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
