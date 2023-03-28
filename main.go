@@ -92,7 +92,7 @@ type files struct {
 
 // env type holds config and environment settings
 type env struct {
-	Logger     *logrus.Logger
+	logger     *logrus.Logger
 	fsys       fs.FS
 	afs        afero.Fs
 	sourceFile string
@@ -151,18 +151,18 @@ func (ap *AsyncProcessor) setSourceFile(ex string, f string) {
 	_, err := fs.Stat(filesystem, pth)
 
 	if err != nil {
-		ap.Env.Logger.Fatal(err.Error())
+		ap.Env.logger.Fatal(err.Error())
 	}
 
 	ap.Env.sourceFile = f
 
-	ap.Env.Logger.Info(fmt.Sprintf(sourceLog, f))
+	ap.Env.logger.Info(fmt.Sprintf(sourceLog, f))
 
 }
 
 func (ap *AsyncProcessor) getFileList(sourcefile string) {
 	fsys := ap.Env.afs
-	logger := ap.Env.Logger
+	logger := ap.Env.logger
 
 	_, err := fsys.Stat(sourcefile)
 	if err != nil {
@@ -194,7 +194,7 @@ func (ap *AsyncProcessor) getFileList(sourcefile string) {
 }
 
 func (ap *AsyncProcessor) setDatasetID(id string) {
-	logger := ap.Env.Logger
+	logger := ap.Env.logger
 	match, err := regexp.MatchString(regexDatasetMatch, id)
 	if err != nil {
 		logger.Fatal(err.Error())
@@ -216,7 +216,7 @@ func (ap *AsyncProcessor) setDatasetID(id string) {
 }
 
 func (ap *AsyncProcessor) compareDatasetID(datasetID string) bool {
-	logger := ap.Env.Logger
+	logger := ap.Env.logger
 	asyncProcessedDS := getAsyncProcessedDSID(logger)
 	if asyncProcessedDS != datasetID {
 		logger.Fatal(fmt.Sprintf(compareDatasetIDNotMatchLog, datasetID, asyncProcessedDS))
@@ -230,7 +230,7 @@ func (ap *AsyncProcessor) compareDatasetID(datasetID string) bool {
 
 func (ap *AsyncProcessor) setTimeLimit(days int64) {
 	limit := time.Time{}
-	logger := ap.Env.Logger
+	logger := ap.Env.logger
 
 	if days == 0 {
 		logger.Warn(timelimitNoDaysLog)
@@ -246,7 +246,7 @@ func (ap *AsyncProcessor) setTimeLimit(days int64) {
 }
 
 func (ap *AsyncProcessor) setDryRun(dryrun bool) {
-	logger := ap.Env.Logger
+	logger := ap.Env.logger
 	if dryrun {
 		e.afs = afero.NewReadOnlyFs(afero.NewOsFs())
 		e.dryrun = true
@@ -325,7 +325,7 @@ func main() {
 	// Set PWD to root
 	root := setPWD(ex, logger)
 
-	e.Logger = logger
+	e.logger = logger
 	e.fsys = os.DirFS(root)
 	e.afs = afero.NewOsFs()
 
