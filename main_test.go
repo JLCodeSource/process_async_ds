@@ -155,8 +155,8 @@ func TestMainFunc(t *testing.T) {
 
 		os.Args = append(os.Args, testArgsHelp)
 
-		panic := func() { main() }
-		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
+		panicFunc := func() { main() }
+		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
 	})
 
 	t.Run("verify hostname failure", func(t *testing.T) {
@@ -177,8 +177,8 @@ func TestMainFunc(t *testing.T) {
 		os.Args = append(os.Args, fmt.Sprintf(testArgsDataset, testDatasetID))
 		os.Args = append(os.Args, testArgsDays)
 
-		panic := func() { main() }
-		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
+		panicFunc := func() { main() }
+		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
 	})
 }
 
@@ -211,8 +211,8 @@ func TestOsWrapper(t *testing.T) {
 		defer patch2.Unpatch()
 
 		testLogger, hook = setupLogs()
-		panic := func() { wrapOs(testLogger, osExecutableLog, os.Executable) }
-		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
+		panicFunc := func() { wrapOs(testLogger, osExecutableLog, os.Executable) }
+		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
 
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := testOsExecutableErr
@@ -246,8 +246,8 @@ func TestOsWrapper(t *testing.T) {
 		defer patch2.Unpatch()
 
 		testLogger, hook = setupLogs()
-		panic := func() { wrapOs(testLogger, osHostnameLog, os.Hostname) }
-		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
+		panicFunc := func() { wrapOs(testLogger, osHostnameLog, os.Hostname) }
+		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
 
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := testHostnameErr
@@ -288,8 +288,8 @@ func TestWrapLookupIP(t *testing.T) {
 		hostname, _ := os.Hostname()
 
 		testLogger, hook = setupLogs()
-		panic := func() { wrapLookupIP(testLogger, hostname, net.LookupIP) }
-		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
+		panicFunc := func() { wrapLookupIP(testLogger, hostname, net.LookupIP) }
+		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
 
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := testLookupIPErr
@@ -317,8 +317,8 @@ func TestWrapLookupIP(t *testing.T) {
 		hostname, _ := os.Hostname()
 
 		testLogger, hook = setupLogs()
-		panic := func() { wrapLookupIP(testLogger, hostname, net.LookupIP) }
-		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
+		panicFunc := func() { wrapLookupIP(testLogger, hostname, net.LookupIP) }
+		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
 
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := complexIPLog
@@ -390,11 +390,11 @@ func TestGetSourceFile(t *testing.T) {
 		testLogger, hook = setupLogs()
 		fs := os.DirFS("")
 
-		panic := func() {
+		panicFunc := func() {
 			getSourceFile(fs, "/", testDoesNotExistFile, testLogger)
 		}
 
-		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
+		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(testEmptyRootErr, testDoesNotExistFile)
 
@@ -413,12 +413,12 @@ func TestGetSourceFile(t *testing.T) {
 			testMismatchPath: {Data: []byte(testContent)},
 		}
 
-		panic := func() {
+		panicFunc := func() {
 			file := getSourceFile(fsys, "/", testDoesNotExistFile, testLogger)
 			println(file)
 		}
 
-		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
+		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(testOpenDoesNotExistErr, testDoesNotExistFile)
 
@@ -443,12 +443,6 @@ func TestGetAfs(t *testing.T) {
 		got := getAfs(want)
 
 		assert.Equal(t, want, got)
-
-		gotLogMsg := hook.LastEntry().Message
-		wantLogMsg := fmt.Sprintf("")
-
-		assertCorrectString(t, gotLogMsg, wantLogMsg)
-
 	})
 }
 
@@ -462,7 +456,7 @@ func TestGetFileList(t *testing.T) {
 		testSF := fmt.Sprintf(testSourceFile, dir)
 		got := getFileList(fsys, testSF, testLogger)
 
-		for i, _ := range got {
+		for i := range got {
 			assert.Equal(t, want[i].smbName, got[i].smbName)
 			assert.Equal(t, want[i].stagingPath, got[i].stagingPath)
 			assert.Equal(t, want[i].createTime.Unix(), got[i].createTime.Unix())
@@ -503,10 +497,10 @@ func TestGetFileList(t *testing.T) {
 		testLogger, hook = setupLogs()
 		fsys, _ := createAferoTest(t, 1, true)
 
-		testSF := fmt.Sprintf(testDoesNotExistFile)
-		panic := func() { getFileList(fsys, testSF, testLogger) }
+		testSF := testDoesNotExistFile
+		panicFunc := func() { getFileList(fsys, testSF, testLogger) }
 
-		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
+		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
 
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(testOpenDoesNotExistErr, testDoesNotExistFile)
@@ -542,9 +536,9 @@ func TestGetDatasetID(t *testing.T) {
 		defer patch.Unpatch()
 
 		testLogger, hook = setupLogs()
-		panic := func() { getDatasetID(testNotADataset, testLogger) }
+		panicFunc := func() { getDatasetID(testNotADataset, testLogger) }
 
-		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
+		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
 		gotLogMsg := hook.LastEntry().Message
 		err := fmt.Sprintf(datasetRegexLog, testNotADataset, regexDatasetMatch)
 		wantLogMsg := err
@@ -566,9 +560,9 @@ func TestGetDatasetID(t *testing.T) {
 		defer patch2.Unpatch()
 
 		testLogger, hook = setupLogs()
-		panic := func() { getDatasetID(testNotADataset, testLogger) }
+		panicFunc := func() { getDatasetID(testNotADataset, testLogger) }
 
-		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
+		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
 		gotLogMsg := hook.LastEntry().Message
 		err := testRegexMatchErr
 		wantLogMsg := err
@@ -583,9 +577,9 @@ func TestGetDatasetID(t *testing.T) {
 		defer patch.Unpatch()
 
 		testLogger, hook = setupLogs()
-		panic := func() { getDatasetID(testID, testLogger) }
+		panicFunc := func() { getDatasetID(testID, testLogger) }
 
-		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
+		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(compareDatasetIDNotMatchLog, testID, testDatasetID)
 
@@ -612,8 +606,8 @@ func TestCompareDatasetId(t *testing.T) {
 		defer patch.Unpatch()
 
 		testLogger, hook = setupLogs()
-		panic := func() { compareDatasetID(testID, testLogger) }
-		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
+		panicFunc := func() { compareDatasetID(testID, testLogger) }
+		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
 
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(compareDatasetIDNotMatchLog, testID, testDatasetID)
@@ -728,9 +722,9 @@ func TestSetPWD(t *testing.T) {
 		defer patch2.Unpatch()
 		testLogger, hook = setupLogs()
 
-		panic := func() { setPWD(testBadPath, testLogger) }
+		panicFunc := func() { setPWD(testBadPath, testLogger) }
 
-		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
+		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := testChdirErr
 
@@ -753,9 +747,9 @@ func TestSetPWD(t *testing.T) {
 		defer patch2.Unpatch()
 		testLogger, hook = setupLogs()
 
-		panic := func() { setPWD(testBadPath, testLogger) }
+		panicFunc := func() { setPWD(testBadPath, testLogger) }
 
-		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
+		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := testGetwdErr
 
@@ -788,8 +782,8 @@ func TestVerifyDataset(t *testing.T) {
 		env = new(Env)
 		env.datasetID = testWrongDataset
 
-		panic := func() { env.verifyDataset(testLogger) }
-		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
+		panicFunc := func() { env.verifyDataset(testLogger) }
+		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
 
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(eMatchAsyncProcessedDSFalseLog, env.datasetID, testDatasetID)

@@ -168,8 +168,8 @@ func TestWrapAferoMkdirAll(t *testing.T) {
 		var appFs = afero.NewReadOnlyFs(afero.NewMemMapFs())
 		testLogger, hook = setupLogs()
 
-		panic := func() { wrapAferoMkdirAll(appFs, path, testLogger) }
-		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
+		panicFunc := func() { wrapAferoMkdirAll(appFs, path, testLogger) }
+		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
 
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := testAppFsMkdirAllErr
@@ -291,6 +291,10 @@ func createAferoTest(t *testing.T, numFiles int, createTestFile bool) (afero.Fs,
 					f.id,
 					f.fanIP))
 		}
+
+		if err != nil {
+			t.Fatal(err)
+		}
 	}
 
 	return fs, files
@@ -302,5 +306,6 @@ func getWorkDir() (dir string) {
 			break
 		}
 	}
+
 	return
 }

@@ -31,6 +31,10 @@ func parseFile(fsys afero.Fs, f string, logger *logrus.Logger) []string {
 	}
 
 	file, err := fsys.Open(f)
+	if err != nil {
+		logger.Fatal(err)
+	}
+
 	//defer file.Close()
 
 	lines := []string{}

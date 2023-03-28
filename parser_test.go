@@ -76,8 +76,14 @@ func TestParseFile(t *testing.T) {
 				fs := afero.NewMemMapFs()
 				afs = &afero.Afero{Fs: fs}
 				dir, _ := path.Split(testProcessedFilesOut)
-				fs.MkdirAll(dir, 0755)
-				afero.WriteFile(afs, testProcessedFilesOut, []byte(tt.content), 0755)
+				err := fs.MkdirAll(dir, 0755)
+				if err != nil {
+					t.Fatal(err)
+				}
+				err = afero.WriteFile(afs, testProcessedFilesOut, []byte(tt.content), 0755)
+				if err != nil {
+					t.Fatal(err)
+				}
 
 				got := parseFile(afs, testProcessedFilesOut, testLogger)
 
@@ -105,11 +111,11 @@ func TestParseFile(t *testing.T) {
 		fs := afero.NewMemMapFs()
 		afs := &afero.Afero{Fs: fs}
 
-		panic := func() {
+		panicFunc := func() {
 			parseFile(afs, testDoesNotExistFile, testLogger)
 		}
 
-		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
+		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(testFsysDoesNotExistErr, testDoesNotExistFile)
 
@@ -205,9 +211,9 @@ func TestParseLine(t *testing.T) {
 		defer patch2.Unpatch()
 
 		testLogger, hook = setupLogs()
-		panic := func() { parseLine(onelineOldDate, testLogger) }
+		panicFunc := func() { parseLine(onelineOldDate, testLogger) }
 
-		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
+		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
 
 		gotLogMsg := hook.LastEntry().Message
 		err := testTimeLoadLocError
@@ -231,9 +237,9 @@ func TestParseLine(t *testing.T) {
 		defer patch2.Unpatch()
 
 		testLogger, hook = setupLogs()
-		panic := func() { parseLine(onelineOldDate, testLogger) }
+		panicFunc := func() { parseLine(onelineOldDate, testLogger) }
 
-		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
+		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
 
 		gotLogMsg := hook.LastEntry().Message
 		err := testTimeParseInLocErr

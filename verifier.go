@@ -158,6 +158,7 @@ func (f *File) verifyMBDatasetByFileID(logger *logrus.Logger) bool {
 	}
 
 	f.setMBDatasetByFileID(out, logger)
+
 	datasetID := env.datasetID
 
 	return f.verifyInDataset(datasetID, logger)
@@ -178,6 +179,7 @@ func (f *File) setMBDatasetByFileID(cmdOut string, logger *logrus.Logger) (paren
 			parentDS = line[len(line)-32:]
 			f.datasetID = parentDS
 			logger.Info(fmt.Sprintf(fGbrDatasetByFileIDLog, f.smbName, f.id, f.id, parentDS))
+
 			return
 		}
 	}

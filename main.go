@@ -78,6 +78,12 @@ type File struct {
 	hash        [32]byte
 }
 
+/*
+type E interface {
+	GetEnv() *Env
+}
+*/
+
 // Env type holds config and environment settings
 type Env struct {
 	fsys       fs.FS
@@ -92,10 +98,12 @@ type Env struct {
 
 }
 
+/*
 // File type holds a pointer to a list of files
 type Files struct {
 	files []File
 }
+
 
 // AsyncProcessor is the async processing instance
 type AsyncProcessor struct {
@@ -104,6 +112,8 @@ type AsyncProcessor struct {
 	Files  *Files
 }
 
+
+// NewAsyncProcessor returns a pointer to an AsyncProcessor
 func NewAsyncProcessor(Logger *logrus.Logger, Env *Env, Files *Files) *AsyncProcessor {
 	return &AsyncProcessor{
 		Logger: Logger,
@@ -111,6 +121,7 @@ func NewAsyncProcessor(Logger *logrus.Logger, Env *Env, Files *Files) *AsyncProc
 		Files:  Files,
 	}
 }
+*/
 
 // verify env
 func (e *Env) verifyDataset(logger *logrus.Logger) bool {
@@ -119,7 +130,9 @@ func (e *Env) verifyDataset(logger *logrus.Logger) bool {
 		logger.Fatal(fmt.Sprintf(eMatchAsyncProcessedDSFalseLog, e.datasetID, ds))
 		return false
 	}
+
 	logger.Info(fmt.Sprintf(eMatchAsyncProcessedDSTrueLog, e.datasetID, ds))
+
 	return true
 }
 
@@ -162,11 +175,13 @@ func getFileList(fsys afero.Fs, sourcefile string, logger *logrus.Logger) []File
 	for _, line := range lines {
 		newFile := parseLine(line, logger)
 		newFile.fileInfo, err = fsys.Stat(newFile.stagingPath)
+
 		if err != nil {
 			// Need to add testing
 			logger.Error(err)
 			continue
 		}
+
 		files = append(files, newFile)
 		logger.Info(fmt.Sprintf(fAddedToListLog,
 			newFile.smbName,
@@ -270,9 +285,11 @@ func getEnv() *Env {
 	return env
 }
 
+/*
 type GetAfs interface {
 	getAfs()
 }
+*/
 
 func getAfs(afs afero.Fs) afero.Fs {
 	return afs
@@ -306,6 +323,7 @@ func main() {
 	root := setPWD(ex, logger)
 
 	fsys := os.DirFS(root)
+	afs := afero.NewOsFs()
 
 	getSourceFile(fsys, ex, sourceFile, logger)
 	ds := getDatasetID(datasetID, logger)
@@ -331,9 +349,6 @@ func main() {
 	}
 
 	env.verifyDataset(logger)
-
-	files = getFileList(env.afs, sourceFile, logger)
-
 }
 
 func wrapOs(logger *logrus.Logger, wrapped string, f func() (string, error)) string {
