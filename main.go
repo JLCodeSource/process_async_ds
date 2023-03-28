@@ -61,7 +61,7 @@ var (
 	dryrun     bool
 	testrun    bool
 	afs        afero.Fs
-	env        *Env
+	e          *Env
 	files      []File
 )
 
@@ -246,11 +246,11 @@ func getTimeLimit(days int64, logger *logrus.Logger) (limit time.Time) {
 
 func getDryRun(dryrun bool, logger *logrus.Logger) bool {
 	if dryrun {
-		env.afs = afero.NewReadOnlyFs(afero.NewOsFs())
+		e.afs = afero.NewReadOnlyFs(afero.NewOsFs())
 
 		logger.Info(dryRunTrueLog)
 	} else {
-		env.afs = afero.NewOsFs()
+		e.afs = afero.NewOsFs()
 		logger.Warn(dryRunFalseLog)
 	}
 
@@ -282,7 +282,7 @@ func setPWD(ex string, logger *logrus.Logger) string {
 }
 
 func getEnv() *Env {
-	return env
+	return e
 }
 
 /*
@@ -314,7 +314,7 @@ func main() {
 	flag.Parse()
 
 	// Get pointer to new Env
-	env = new(Env)
+	e = new(Env)
 
 	// Get executable path
 	ex := wrapOs(logger, osExecutableLog, os.Executable)
@@ -331,14 +331,14 @@ func main() {
 	ndr := getDryRun(dryrun, logger)
 
 	if testrun {
-		env.afs = getAfs(nil)
+		e.afs = getAfs(nil)
 	}
 
 	hostname := wrapOs(logger, osHostnameLog, os.Hostname)
 
 	ip := wrapLookupIP(logger, hostname, net.LookupIP)
 
-	env = &Env{
+	e = &Env{
 		fsys:       fsys,
 		afs:        afs,
 		sourceFile: sourceFile,
@@ -348,7 +348,7 @@ func main() {
 		sysIP:      ip,
 	}
 
-	env.verifyDataset(logger)
+	e.verifyDataset(logger)
 }
 
 func wrapOs(logger *logrus.Logger, wrapped string, f func() (string, error)) string {

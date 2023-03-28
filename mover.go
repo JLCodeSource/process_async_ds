@@ -21,7 +21,7 @@ func (f *File) Move(afsys afero.Fs, logger *logrus.Logger) {
 	newLocation := newPath(f)
 	logger.Info(fmt.Sprintf(fMoveFileLog, f.smbName, f.id, oldLocation, newLocation))
 
-	if env.dryrun {
+	if e.dryrun {
 		logger.Info(fmt.Sprintf(fMoveDryRunTrueLog, f.smbName, f.id))
 	} else {
 		logger.Warn(fmt.Sprintf(fMoveDryRunFalseLog, f.smbName, f.id))

@@ -89,8 +89,8 @@ func TestMainFunc(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		env = new(Env)
-		env.afs = afs
+		e = new(Env)
+		e.afs = afs
 		os.Args = append(os.Args, fmt.Sprintf(testArgsFile, pwd[1:]))
 		os.Args = append(os.Args, fmt.Sprintf(testArgsDataset, testDatasetID))
 		os.Args = append(os.Args, testArgsDays)
@@ -105,11 +105,11 @@ func TestMainFunc(t *testing.T) {
 		// Set for other tests
 		//testEnv.pwd = pwd
 		gotLogMsg := hook.LastEntry().Message
-		wantLogMsg := fmt.Sprintf(eMatchAsyncProcessedDSTrueLog, env.datasetID, testDatasetID)
+		wantLogMsg := fmt.Sprintf(eMatchAsyncProcessedDSTrueLog, e.datasetID, testDatasetID)
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 
-		f, err := env.fsys.Open(env.sourceFile)
+		f, err := e.fsys.Open(e.sourceFile)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -120,7 +120,7 @@ func TestMainFunc(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		f, err = fsys.Open(env.sourceFile)
+		f, err = fsys.Open(e.sourceFile)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -134,16 +134,16 @@ func TestMainFunc(t *testing.T) {
 
 		assert.True(t, ok)
 
-		assertCorrectString(t, env.sourceFile, fmt.Sprintf(testPostArgsFile, pwd[1:]))
+		assertCorrectString(t, e.sourceFile, fmt.Sprintf(testPostArgsFile, pwd[1:]))
 
-		assertCorrectString(t, env.datasetID, testDatasetID)
+		assertCorrectString(t, e.datasetID, testDatasetID)
 
 		limit := now.Add(-24 * time.Duration(testPostArgsDays) * time.Hour).Format(time.UnixDate)
 
-		assertCorrectString(t, env.limit.Format(time.UnixDate), limit)
+		assertCorrectString(t, e.limit.Format(time.UnixDate), limit)
 
-		assert.Equal(t, env.dryrun, true)
-		assert.Equal(t, env.sysIP, ips[0])
+		assert.Equal(t, e.dryrun, true)
+		assert.Equal(t, e.sysIP, ips[0])
 	})
 
 	t.Run("verify main help out", func(t *testing.T) {
@@ -653,13 +653,13 @@ func TestGetTimeLimit(t *testing.T) {
 func TestGetDryRun(t *testing.T) {
 	t.Run("default dry run", func(t *testing.T) {
 		testLogger, hook = setupLogs()
-		env = &testEnv
+		e = &testEnv
 
 		got := getDryRun(true, testLogger)
 
 		assert.True(t, got)
 
-		typ := reflect.TypeOf(env.afs)
+		typ := reflect.TypeOf(e.afs)
 		rofs := new(afero.ReadOnlyFs)
 		assert.Equal(t, typ, reflect.TypeOf(rofs))
 
@@ -671,13 +671,13 @@ func TestGetDryRun(t *testing.T) {
 
 	t.Run("non-dry run execute move", func(t *testing.T) {
 		testLogger, hook = setupLogs()
-		env = &testEnv
+		e = &testEnv
 
 		got := getDryRun(false, testLogger)
 
 		assert.False(t, got)
 
-		typ := reflect.TypeOf(env.afs)
+		typ := reflect.TypeOf(e.afs)
 		osfs := new(afero.OsFs)
 		assert.Equal(t, typ, reflect.TypeOf(osfs))
 
@@ -762,12 +762,12 @@ func TestSetPWD(t *testing.T) {
 func TestVerifyDataset(t *testing.T) {
 	t.Run("it should return true if env.datasetID matches asyncProcessed & log it", func(t *testing.T) {
 		testLogger, hook = setupLogs()
-		env = new(Env)
-		env.datasetID = testDatasetID
-		assert.True(t, env.verifyDataset(testLogger))
+		e = new(Env)
+		e.datasetID = testDatasetID
+		assert.True(t, e.verifyDataset(testLogger))
 
 		gotLogMsg := hook.LastEntry().Message
-		wantLogMsg := fmt.Sprintf(eMatchAsyncProcessedDSTrueLog, env.datasetID, testDatasetID)
+		wantLogMsg := fmt.Sprintf(eMatchAsyncProcessedDSTrueLog, e.datasetID, testDatasetID)
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
@@ -779,14 +779,14 @@ func TestVerifyDataset(t *testing.T) {
 		defer patch.Unpatch()
 
 		testLogger, hook = setupLogs()
-		env = new(Env)
-		env.datasetID = testWrongDataset
+		e = new(Env)
+		e.datasetID = testWrongDataset
 
-		panicFunc := func() { env.verifyDataset(testLogger) }
+		panicFunc := func() { e.verifyDataset(testLogger) }
 		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
 
 		gotLogMsg := hook.LastEntry().Message
-		wantLogMsg := fmt.Sprintf(eMatchAsyncProcessedDSFalseLog, env.datasetID, testDatasetID)
+		wantLogMsg := fmt.Sprintf(eMatchAsyncProcessedDSFalseLog, e.datasetID, testDatasetID)
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})

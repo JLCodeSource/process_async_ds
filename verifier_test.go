@@ -138,8 +138,8 @@ func TestVerify(t *testing.T) {
 
 	fsys, files = createFSTest(t, 10)
 
-	env = new(Env)
-	env = &Env{
+	e = new(Env)
+	e = &Env{
 		fsys:  fsys,
 		limit: afterNow,
 		sysIP: ips[0],
@@ -173,8 +173,8 @@ func TestVerifyEnvMatch(t *testing.T) {
 
 	t.Run("returns true if config metadata matches", func(t *testing.T) {
 		limit = now.Add(-24 * time.Hour)
-		env = getEnv()
-		env = &Env{
+		e = getEnv()
+		e = &Env{
 			sysIP: ips[0],
 			limit: limit,
 		}
@@ -192,8 +192,8 @@ func TestVerifyEnvMatch(t *testing.T) {
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
 	t.Run("returns false if ip is not the same as the current machine", func(t *testing.T) {
-		env = getEnv()
-		env = &Env{
+		e = getEnv()
+		e = &Env{
 			sysIP: ip,
 		}
 		file = File{
@@ -218,8 +218,8 @@ func TestVerifyEnvMatch(t *testing.T) {
 			fanIP:      ips[0],
 		}
 		limit = now.Add(24 * time.Hour)
-		env = getEnv()
-		env = &Env{
+		e = getEnv()
+		e = &Env{
 			limit: limit,
 			sysIP: ips[0],
 		}
@@ -336,8 +336,8 @@ func TestVerifyGBMetadata(t *testing.T) {
 	defer out.Close()
 	t.Run("returns true if file.datasetID matches DatasetID", func(t *testing.T) {
 		_, files := createFSTest(t, 1)
-		env = new(Env)
-		env.datasetID = testDatasetID
+		e = new(Env)
+		e.datasetID = testDatasetID
 
 		testLogger, hook = setupLogs()
 		assert.True(t, files[0].verifyGBMetadata(testLogger))
@@ -381,8 +381,8 @@ func TestVerifyGBMetadata(t *testing.T) {
 			id:        testFileIDInWrongDataset,
 			datasetID: testWrongDataset,
 		}
-		env = new(Env)
-		env.datasetID = testWrongDataset
+		e = new(Env)
+		e.datasetID = testWrongDataset
 		testLogger, hook = setupLogs()
 		assert.False(t, file.verifyGBMetadata(testLogger))
 
@@ -447,8 +447,8 @@ func TestGetMBDatasetByFileID(t *testing.T) {
 			id:        testFileID,
 			datasetID: testDatasetID,
 		}
-		env = new(Env)
-		env.datasetID = testDatasetID
+		e = new(Env)
+		e.datasetID = testDatasetID
 		testLogger, hook = setupLogs()
 		ok := file.verifyMBDatasetByFileID(testLogger)
 		assert.True(t, ok)
