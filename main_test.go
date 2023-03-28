@@ -32,13 +32,14 @@ const (
 	testBadPath      = "/not/a/path"
 	testMismatchPath = "data1/staging/testMismatch.txt"
 	testNotADataset  = "123"
+	testSourceFile   = "%v/test.file"
 
-	testArgsFile    = "-sourcefile=%v/README.md"
+	testArgsFile    = "-sourcefile=%v/test.file"
 	testArgsDataset = "-datasetid=%v"
 	testArgsDays    = "-days=123"
 	testArgsHelp    = "-help"
 
-	testPostArgsFile = "%v/README.md"
+	testPostArgsFile = "%v/test.file"
 	testPostArgsDays = int64(123)
 
 	osPanicTrue  = "os.Exit called"
@@ -52,6 +53,7 @@ const (
 	testGetwdErr            = "os.Getwd err occurred"
 	testOsExecutableErr     = "os.Executable err occurred"
 	testLookupIPErr         = "net.LookupIP err occurred"
+	//testFileInfoErr         = "fs.FileInfo err occurred"
 
 	testKarachiTime       = "Asia/Karachi"
 	testKarachiDate       = "Mon Jan 30 17:55:14 PKT 2023"
@@ -70,9 +72,8 @@ var (
 	ip      net.IP
 
 	// setup file
-	file  File
-	files []File
-	now   time.Time
+	file File
+	now  time.Time
 
 	// setup fsys
 	fsys fstest.MapFS
@@ -80,15 +81,16 @@ var (
 
 func TestMainFunc(t *testing.T) {
 	t.Run("verify main args work", func(t *testing.T) {
-		_, hook = setupLogs()
+		afs, _ := createAferoTest(t, 5, true)
+		testLogger, hook = setupLogs()
 		hostname, _ := os.Hostname()
 		ips, _ := net.LookupIP(hostname)
 		pwd, err := os.Getwd()
 		if err != nil {
 			t.Fatal(err)
 		}
-		env = &testEnv
-		env.afs = afero.NewOsFs()
+		env = new(Env)
+		env.afs = afs
 		os.Args = append(os.Args, fmt.Sprintf(testArgsFile, pwd[1:]))
 		os.Args = append(os.Args, fmt.Sprintf(testArgsDataset, testDatasetID))
 		os.Args = append(os.Args, testArgsDays)
@@ -101,9 +103,9 @@ func TestMainFunc(t *testing.T) {
 		main()
 
 		// Set for other tests
-		testEnv.pwd = pwd
+		//testEnv.pwd = pwd
 		gotLogMsg := hook.LastEntry().Message
-		wantLogMsg := fmt.Sprintf(wrapLookupIPLog, hostname, ips[0].String())
+		wantLogMsg := fmt.Sprintf(eMatchAsyncProcessedDSTrueLog, env.datasetID, testDatasetID)
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 
@@ -153,8 +155,8 @@ func TestMainFunc(t *testing.T) {
 
 		os.Args = append(os.Args, testArgsHelp)
 
-		panic := func() { main() }
-		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
+		panicFunc := func() { main() }
+		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
 	})
 
 	t.Run("verify hostname failure", func(t *testing.T) {
@@ -175,18 +177,10 @@ func TestMainFunc(t *testing.T) {
 		os.Args = append(os.Args, fmt.Sprintf(testArgsDataset, testDatasetID))
 		os.Args = append(os.Args, testArgsDays)
 
-		panic := func() { main() }
-		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
+		panicFunc := func() { main() }
+		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
 	})
 }
-
-/* type SpyWrapper struct {
-	Calls int
-}
-
-func (s *SpyWrapper) wrapOS(*logrus.Logger) {
-	s.Calls++
-} */
 
 func TestOsWrapper(t *testing.T) {
 	t.Run("wrapOsExecutable should return & log the path", func(t *testing.T) {
@@ -217,8 +211,8 @@ func TestOsWrapper(t *testing.T) {
 		defer patch2.Unpatch()
 
 		testLogger, hook = setupLogs()
-		panic := func() { wrapOs(testLogger, osExecutableLog, os.Executable) }
-		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
+		panicFunc := func() { wrapOs(testLogger, osExecutableLog, os.Executable) }
+		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
 
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := testOsExecutableErr
@@ -252,8 +246,8 @@ func TestOsWrapper(t *testing.T) {
 		defer patch2.Unpatch()
 
 		testLogger, hook = setupLogs()
-		panic := func() { wrapOs(testLogger, osHostnameLog, os.Hostname) }
-		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
+		panicFunc := func() { wrapOs(testLogger, osHostnameLog, os.Hostname) }
+		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
 
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := testHostnameErr
@@ -294,8 +288,8 @@ func TestWrapLookupIP(t *testing.T) {
 		hostname, _ := os.Hostname()
 
 		testLogger, hook = setupLogs()
-		panic := func() { wrapLookupIP(testLogger, hostname, net.LookupIP) }
-		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
+		panicFunc := func() { wrapLookupIP(testLogger, hostname, net.LookupIP) }
+		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
 
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := testLookupIPErr
@@ -323,8 +317,8 @@ func TestWrapLookupIP(t *testing.T) {
 		hostname, _ := os.Hostname()
 
 		testLogger, hook = setupLogs()
-		panic := func() { wrapLookupIP(testLogger, hostname, net.LookupIP) }
-		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
+		panicFunc := func() { wrapLookupIP(testLogger, hostname, net.LookupIP) }
+		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
 
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := complexIPLog
@@ -396,11 +390,11 @@ func TestGetSourceFile(t *testing.T) {
 		testLogger, hook = setupLogs()
 		fs := os.DirFS("")
 
-		panic := func() {
+		panicFunc := func() {
 			getSourceFile(fs, "/", testDoesNotExistFile, testLogger)
 		}
 
-		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
+		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(testEmptyRootErr, testDoesNotExistFile)
 
@@ -419,12 +413,95 @@ func TestGetSourceFile(t *testing.T) {
 			testMismatchPath: {Data: []byte(testContent)},
 		}
 
-		panic := func() {
+		panicFunc := func() {
 			file := getSourceFile(fsys, "/", testDoesNotExistFile, testLogger)
 			println(file)
 		}
 
-		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
+		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
+		gotLogMsg := hook.LastEntry().Message
+		wantLogMsg := fmt.Sprintf(testOpenDoesNotExistErr, testDoesNotExistFile)
+
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
+	})
+}
+
+/* type MockGetAfs struct {
+	mockAfs afero.Fs
+}
+
+func (m *MockGetAfs) getAfs() {
+	mockAfs, _ := createAferoTest(t, 1, true)
+	m.mockAfs = mockAfs
+} */
+
+func TestGetAfs(t *testing.T) {
+	t.Run("getAfs returns the afs & logs it", func(t *testing.T) {
+		testLogger, hook = setupLogs()
+		want, _ := createAferoTest(t, 1, true)
+
+		got := getAfs(want)
+
+		assert.Equal(t, want, got)
+	})
+}
+
+func TestGetFileList(t *testing.T) {
+	t.Run("getFileList should return a list of files", func(t *testing.T) {
+		testLogger, hook = setupLogs()
+		fsys, want := createAferoTest(t, 10, true)
+
+		dir := getWorkDir()
+
+		testSF := fmt.Sprintf(testSourceFile, dir)
+		got := getFileList(fsys, testSF, testLogger)
+
+		for i := range got {
+			assert.Equal(t, want[i].smbName, got[i].smbName)
+			assert.Equal(t, want[i].stagingPath, got[i].stagingPath)
+			assert.Equal(t, want[i].createTime.Unix(), got[i].createTime.Unix())
+			assert.Equal(t, want[i].size, got[i].size)
+			assert.Equal(t, want[i].id, got[i].id)
+			assert.Equal(t, want[i].fanIP, got[i].fanIP)
+			assert.Equal(t, want[i].fileInfo, got[i].fileInfo)
+		}
+	})
+	t.Run("getFileList should log properly", func(t *testing.T) {
+		testLogger, hook = setupLogs()
+		fsys, want := createAferoTest(t, 1, true)
+
+		dir := getWorkDir()
+
+		testSF := fmt.Sprintf(testSourceFile, dir)
+		getFileList(fsys, testSF, testLogger)
+
+		gotLogMsg := hook.LastEntry().Message
+		wantLogMsg := fmt.Sprintf(fAddedToListLog,
+			want[0].smbName,
+			want[0].id,
+			want[0].stagingPath,
+			want[0].createTime.Unix(),
+			want[0].size,
+			want[0].fanIP,
+			want[0].fileInfo.Name())
+
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
+	})
+	t.Run("getFileList should fatal if sourcefile does not exist", func(t *testing.T) {
+		fakeExit := func(int) {
+			panic(osPanicTrue)
+		}
+		patch := monkey.Patch(os.Exit, fakeExit)
+		defer patch.Unpatch()
+
+		testLogger, hook = setupLogs()
+		fsys, _ := createAferoTest(t, 1, true)
+
+		testSF := testDoesNotExistFile
+		panicFunc := func() { getFileList(fsys, testSF, testLogger) }
+
+		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
+
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(testOpenDoesNotExistErr, testDoesNotExistFile)
 
@@ -459,9 +536,9 @@ func TestGetDatasetID(t *testing.T) {
 		defer patch.Unpatch()
 
 		testLogger, hook = setupLogs()
-		panic := func() { getDatasetID(testNotADataset, testLogger) }
+		panicFunc := func() { getDatasetID(testNotADataset, testLogger) }
 
-		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
+		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
 		gotLogMsg := hook.LastEntry().Message
 		err := fmt.Sprintf(datasetRegexLog, testNotADataset, regexDatasetMatch)
 		wantLogMsg := err
@@ -483,9 +560,9 @@ func TestGetDatasetID(t *testing.T) {
 		defer patch2.Unpatch()
 
 		testLogger, hook = setupLogs()
-		panic := func() { getDatasetID(testNotADataset, testLogger) }
+		panicFunc := func() { getDatasetID(testNotADataset, testLogger) }
 
-		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
+		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
 		gotLogMsg := hook.LastEntry().Message
 		err := testRegexMatchErr
 		wantLogMsg := err
@@ -500,9 +577,9 @@ func TestGetDatasetID(t *testing.T) {
 		defer patch.Unpatch()
 
 		testLogger, hook = setupLogs()
-		panic := func() { getDatasetID(testID, testLogger) }
+		panicFunc := func() { getDatasetID(testID, testLogger) }
 
-		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
+		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(compareDatasetIDNotMatchLog, testID, testDatasetID)
 
@@ -529,8 +606,8 @@ func TestCompareDatasetId(t *testing.T) {
 		defer patch.Unpatch()
 
 		testLogger, hook = setupLogs()
-		panic := func() { compareDatasetID(testID, testLogger) }
-		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
+		panicFunc := func() { compareDatasetID(testID, testLogger) }
+		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
 
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(compareDatasetIDNotMatchLog, testID, testDatasetID)
@@ -645,9 +722,9 @@ func TestSetPWD(t *testing.T) {
 		defer patch2.Unpatch()
 		testLogger, hook = setupLogs()
 
-		panic := func() { setPWD(testBadPath, testLogger) }
+		panicFunc := func() { setPWD(testBadPath, testLogger) }
 
-		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
+		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := testChdirErr
 
@@ -670,11 +747,46 @@ func TestSetPWD(t *testing.T) {
 		defer patch2.Unpatch()
 		testLogger, hook = setupLogs()
 
-		panic := func() { setPWD(testBadPath, testLogger) }
+		panicFunc := func() { setPWD(testBadPath, testLogger) }
 
-		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
+		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := testGetwdErr
+
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
+	})
+}
+
+// TestVerifyEnvDataset
+
+func TestVerifyDataset(t *testing.T) {
+	t.Run("it should return true if env.datasetID matches asyncProcessed & log it", func(t *testing.T) {
+		testLogger, hook = setupLogs()
+		env = new(Env)
+		env.datasetID = testDatasetID
+		assert.True(t, env.verifyDataset(testLogger))
+
+		gotLogMsg := hook.LastEntry().Message
+		wantLogMsg := fmt.Sprintf(eMatchAsyncProcessedDSTrueLog, env.datasetID, testDatasetID)
+
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
+	})
+	t.Run("returns false if env.DsID does not match asyncProcessed & log it", func(t *testing.T) {
+		fakeExit := func(int) {
+			panic(osPanicTrue)
+		}
+		patch := monkey.Patch(os.Exit, fakeExit)
+		defer patch.Unpatch()
+
+		testLogger, hook = setupLogs()
+		env = new(Env)
+		env.datasetID = testWrongDataset
+
+		panicFunc := func() { env.verifyDataset(testLogger) }
+		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
+
+		gotLogMsg := hook.LastEntry().Message
+		wantLogMsg := fmt.Sprintf(eMatchAsyncProcessedDSFalseLog, env.datasetID, testDatasetID)
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})

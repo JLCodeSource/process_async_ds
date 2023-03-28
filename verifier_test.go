@@ -136,20 +136,22 @@ func TestVerify(t *testing.T) {
 
 	var files []File
 
-	fsys, files = createFSTest(10)
+	fsys, files = createFSTest(t, 10)
 
-	env := Env{
+	env = new(Env)
+	env = &Env{
 		fsys:  fsys,
 		limit: afterNow,
 		sysIP: ips[0],
-		pwd:   testEnv.pwd,
+		//pwd:       testEnv.pwd,
+		datasetID: testDatasetID,
 	}
 
 	testLogger, hook = setupLogs()
 
 	t.Run("Gen verify", func(t *testing.T) {
 		for _, f := range files {
-			ok := f.verify(env, testLogger)
+			ok := f.verify(testLogger)
 			assert.True(t, ok)
 
 			gotLogMsg := hook.LastEntry().Message
@@ -160,7 +162,7 @@ func TestVerify(t *testing.T) {
 }
 
 // TestVerifyEnvSettings encompasses TestVerifyIP & TestVerifyTimeLimit
-func TestVerifyEnvSettings(t *testing.T) {
+func TestVerifyEnvMatch(t *testing.T) {
 	// setup server ip
 	hostname, _ := os.Hostname()
 	ips, _ := net.LookupIP(hostname)
@@ -171,7 +173,8 @@ func TestVerifyEnvSettings(t *testing.T) {
 
 	t.Run("returns true if config metadata matches", func(t *testing.T) {
 		limit = now.Add(-24 * time.Hour)
-		testEnv = Env{
+		env = getEnv()
+		env = &Env{
 			sysIP: ips[0],
 			limit: limit,
 		}
@@ -183,13 +186,14 @@ func TestVerifyEnvSettings(t *testing.T) {
 			fanIP:       ips[0],
 		}
 		testLogger, hook = setupLogs()
-		assert.True(t, file.verifyEnv(testEnv, testLogger))
+		assert.True(t, file.verifyEnvMatch(testLogger))
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(fEnvMatchLog, file.smbName, file.id, file.stagingPath)
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
 	t.Run("returns false if ip is not the same as the current machine", func(t *testing.T) {
-		testEnv = Env{
+		env = getEnv()
+		env = &Env{
 			sysIP: ip,
 		}
 		file = File{
@@ -198,7 +202,7 @@ func TestVerifyEnvSettings(t *testing.T) {
 			fanIP:   ips[0],
 		}
 		testLogger, hook = setupLogs()
-		assert.False(t, file.verifyEnv(testEnv, testLogger))
+		assert.False(t, file.verifyEnvMatch(testLogger))
 
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(fIPMatchFalseLog, file.smbName, file.id, file.fanIP, ip)
@@ -214,12 +218,13 @@ func TestVerifyEnvSettings(t *testing.T) {
 			fanIP:      ips[0],
 		}
 		limit = now.Add(24 * time.Hour)
-		testEnv = Env{
+		env = getEnv()
+		env = &Env{
 			limit: limit,
 			sysIP: ips[0],
 		}
 		testLogger, hook = setupLogs()
-		assert.False(t, file.verifyEnv(testEnv, testLogger))
+		assert.False(t, file.verifyEnvMatch(testLogger))
 
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(fCreateTimeBeforeTimeLimitLog,
@@ -330,7 +335,9 @@ func TestVerifyGBMetadata(t *testing.T) {
 
 	defer out.Close()
 	t.Run("returns true if file.datasetID matches DatasetID", func(t *testing.T) {
-		_, files := createFSTest(1)
+		_, files := createFSTest(t, 1)
+		env = new(Env)
+		env.datasetID = testDatasetID
 
 		testLogger, hook = setupLogs()
 		assert.True(t, files[0].verifyGBMetadata(testLogger))
@@ -372,14 +379,16 @@ func TestVerifyGBMetadata(t *testing.T) {
 		file = File{
 			smbName:   testSmbName,
 			id:        testFileIDInWrongDataset,
-			datasetID: testDatasetID,
+			datasetID: testWrongDataset,
 		}
+		env = new(Env)
+		env.datasetID = testWrongDataset
 		testLogger, hook = setupLogs()
 		assert.False(t, file.verifyGBMetadata(testLogger))
 
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(
-			fDatasetMatchFalseLog, testSmbName, testFileIDInWrongDataset, testDatasetID, testWrongDataset)
+			fDatasetMatchFalseLog, testSmbName, testFileIDInWrongDataset, testWrongDataset, testDatasetID)
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
 }
@@ -438,6 +447,8 @@ func TestGetMBDatasetByFileID(t *testing.T) {
 			id:        testFileID,
 			datasetID: testDatasetID,
 		}
+		env = new(Env)
+		env.datasetID = testDatasetID
 		testLogger, hook = setupLogs()
 		ok := file.verifyMBDatasetByFileID(testLogger)
 		assert.True(t, ok)
@@ -482,15 +493,16 @@ func TestParseFileNameByID(t *testing.T) {
 	})
 }
 
-func TestParseFileDatasetByID(t *testing.T) {
-	t.Run("should return the dataset by id if it exists", func(t *testing.T) {
+func TestSetFileDatasetByID(t *testing.T) {
+	t.Run("should set f.datasetID if it exists", func(t *testing.T) {
 		testLogger, hook = setupLogs()
 		file = File{
 			smbName: testSmbName,
 			id:      testFileID,
 		}
 		testLogger, hook = setupLogs()
-		got := file.parseMBDatasetByFileID(testGbrFileIDDetailOutLog, testLogger)
+		file.setMBDatasetByFileID(testGbrFileIDDetailOutLog, testLogger)
+		got := file.datasetID
 		want := testDatasetID
 		assertCorrectString(t, got, want)
 
@@ -506,7 +518,7 @@ func TestParseFileDatasetByID(t *testing.T) {
 			smbName: testSmbName,
 			id:      testBadFileID,
 		}
-		got := file.parseMBDatasetByFileID("", testLogger)
+		got := file.setMBDatasetByFileID("", testLogger)
 		want := ""
 		assertCorrectString(t, got, want)
 
@@ -812,17 +824,18 @@ func TestVerifyFileIDName(t *testing.T) {
 	})
 }
 
-func createFSTest(numFiles int) (fstest.MapFS, []File) {
-	// handle gbr input
+func createFSTest(t *testing.T, numFiles int) (fstest.MapFS, []File) {
+	// Create gbrList file
 	var list string
 
-	for _, d := range workDirs {
-		list = fmt.Sprintf(gbrList, d)
-		if err := os.Truncate(list, 0); err != nil {
-			log.Printf("Failed to truncate: %v", err)
-		} else {
-			break
-		}
+	// Create err
+	var err error
+
+	dir := getWorkDir()
+
+	list = fmt.Sprintf(gbrList, dir)
+	if err := os.Truncate(list, 0); err != nil {
+		log.Printf("Failed to truncate: %v", err)
 	}
 
 	out, err := os.OpenFile(list, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
@@ -891,7 +904,7 @@ func createFSTest(numFiles int) (fstest.MapFS, []File) {
 
 		_, err = out.WriteString(fmt.Sprintf("%v,%v\n", f.id, f.smbName))
 		if err != nil {
-			log.Fatal(err)
+			t.Fatal(err)
 		}
 	}
 

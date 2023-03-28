@@ -66,9 +66,9 @@ func TestParseAsyncProcessedDSID(t *testing.T) {
 		defer patch.Unpatch()
 
 		testLogger, hook = setupLogs()
-		panic := func() { parseAsyncProcessedDSID("", testLogger) }
+		panicFunc := func() { parseAsyncProcessedDSID("", testLogger) }
 
-		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
+		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
 
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := gbrAsyncProcessedDSErrLog
@@ -87,9 +87,9 @@ func TestAsyncProcessedDSIDErrLog(t *testing.T) {
 		defer patch.Unpatch()
 
 		testLogger, hook = setupLogs()
-		panic := func() { asyncProcessedDSIDErrLog(errors.New(osPanicTrue), testLogger) }
+		panicFunc := func() { asyncProcessedDSIDErrLog(errors.New(osPanicTrue), testLogger) }
 
-		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
+		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
 		gotLogMsgs := hook.Entries
 		wantLogMsg := osPanicTrue
 		assertCorrectString(t, gotLogMsgs[0].Message, wantLogMsg)

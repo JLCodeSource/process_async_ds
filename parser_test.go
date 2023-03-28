@@ -4,12 +4,13 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path"
 	"strconv"
 	"testing"
-	"testing/fstest"
 	"time"
 
 	"bou.ke/monkey"
+	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -72,12 +73,19 @@ func TestParseFile(t *testing.T) {
 		for _, tt := range parsingTests {
 			t.Run(tt.name, func(t *testing.T) {
 				testLogger, hook = setupLogs()
-				fsys = fstest.MapFS{
-					testProcessedFilesOut: {
-						Data: []byte(tt.content)},
+				fs := afero.NewMemMapFs()
+				afs = &afero.Afero{Fs: fs}
+				dir, _ := path.Split(testProcessedFilesOut)
+				err := fs.MkdirAll(dir, 0755)
+				if err != nil {
+					t.Fatal(err)
+				}
+				err = afero.WriteFile(afs, testProcessedFilesOut, []byte(tt.content), 0755)
+				if err != nil {
+					t.Fatal(err)
 				}
 
-				got := parseFile(fsys, testProcessedFilesOut, testLogger)
+				got := parseFile(afs, testProcessedFilesOut, testLogger)
 
 				logs := hook.AllEntries()
 
@@ -100,16 +108,14 @@ func TestParseFile(t *testing.T) {
 		defer patch.Unpatch()
 
 		testLogger, hook = setupLogs()
-		fsys = fstest.MapFS{
-			testProcessedFilesOut: {
-				Data: []byte(multiline)},
+		fs := afero.NewMemMapFs()
+		afs := &afero.Afero{Fs: fs}
+
+		panicFunc := func() {
+			parseFile(afs, testDoesNotExistFile, testLogger)
 		}
 
-		panic := func() {
-			parseFile(fsys, testDoesNotExistFile, testLogger)
-		}
-
-		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
+		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(testFsysDoesNotExistErr, testDoesNotExistFile)
 
@@ -205,9 +211,9 @@ func TestParseLine(t *testing.T) {
 		defer patch2.Unpatch()
 
 		testLogger, hook = setupLogs()
-		panic := func() { parseLine(onelineOldDate, testLogger) }
+		panicFunc := func() { parseLine(onelineOldDate, testLogger) }
 
-		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
+		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
 
 		gotLogMsg := hook.LastEntry().Message
 		err := testTimeLoadLocError
@@ -231,9 +237,9 @@ func TestParseLine(t *testing.T) {
 		defer patch2.Unpatch()
 
 		testLogger, hook = setupLogs()
-		panic := func() { parseLine(onelineOldDate, testLogger) }
+		panicFunc := func() { parseLine(onelineOldDate, testLogger) }
 
-		assert.PanicsWithValue(t, osPanicTrue, panic, osPanicFalse)
+		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
 
 		gotLogMsg := hook.LastEntry().Message
 		err := testTimeParseInLocErr

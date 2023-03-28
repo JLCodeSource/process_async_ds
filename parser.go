@@ -3,13 +3,13 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"io/fs"
 	"net"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/afero"
 )
 
 const (
@@ -24,13 +24,18 @@ const (
 	easternTime = "America/New_York"
 )
 
-func parseFile(fsys fs.FS, f string, logger *logrus.Logger) []string {
-	file, err := fsys.Open(f)
-	//defer file.Close()
-
+func parseFile(fsys afero.Fs, f string, logger *logrus.Logger) []string {
+	_, err := fsys.Stat(f)
 	if err != nil {
 		logger.Fatal(err)
 	}
+
+	file, err := fsys.Open(f)
+	if err != nil {
+		logger.Fatal(err)
+	}
+
+	//defer file.Close()
 
 	lines := []string{}
 
@@ -54,7 +59,8 @@ func parseLine(line string, logger *logrus.Logger) File {
 	var dateTime time.Time
 
 	fileMetadata := strings.SplitAfter(line, "|")
-	for i := 0; i < len(fileMetadata); i++ {
+	// len-1 because the last split is empty
+	for i := 0; i < len(fileMetadata)-1; i++ {
 		fileMetadata[i] = fileMetadata[i][0 : len(fileMetadata[i])-1]
 	}
 
