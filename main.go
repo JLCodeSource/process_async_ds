@@ -322,7 +322,7 @@ func main() {
 	e.logger = logger
 
 	// Get executable path
-	ex := wrapOs(logger, osExecutableLog, os.Executable)
+	ex := wrapOs(e.logger, osExecutableLog, os.Executable)
 
 	// Set PWD to root
 	root := e.setPWD(ex)
@@ -339,13 +339,13 @@ func main() {
 	e.setTimeLimit(numDays)
 	e.setDryRun(dryrun)
 
-	hostname := wrapOs(logger, osHostnameLog, os.Hostname)
+	hostname := wrapOs(e.logger, osHostnameLog, os.Hostname)
 
-	ip := wrapLookupIP(logger, hostname, net.LookupIP)
+	ip := wrapLookupIP(e.logger, hostname, net.LookupIP)
 
 	e.sysIP = ip
 
-	e.verifyDataset(logger)
+	e.verifyDataset(e.logger)
 }
 
 func wrapOs(logger *logrus.Logger, wrapped string, f func() (string, error)) string {
