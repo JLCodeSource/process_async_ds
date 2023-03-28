@@ -245,7 +245,7 @@ func (ap *AsyncProcessor) setTimeLimit(days int64) {
 	logger.Info(fmt.Sprintf(timelimitDaysLog, days, limit))
 }
 
-func getDryRun(dryrun bool, logger *logrus.Logger) bool {
+func setDryRun(dryrun bool, logger *logrus.Logger) bool {
 	if dryrun {
 		e.afs = afero.NewReadOnlyFs(afero.NewOsFs())
 
@@ -333,7 +333,7 @@ func main() {
 	ap.setSourceFile(ex, sourceFile)
 	ap.setDatasetID(datasetID)
 	ap.setTimeLimit(numDays)
-	ndr := getDryRun(dryrun, logger)
+	ndr := setDryRun(dryrun, logger)
 
 	if testrun {
 		e.afs = getAfs(nil)

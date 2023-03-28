@@ -703,7 +703,7 @@ func TestGetDryRun(t *testing.T) {
 		testLogger, hook = setupLogs()
 		e = &testEnv
 
-		got := getDryRun(true, testLogger)
+		got := setDryRun(true, testLogger)
 
 		assert.True(t, got)
 
@@ -721,7 +721,7 @@ func TestGetDryRun(t *testing.T) {
 		testLogger, hook = setupLogs()
 		e = &testEnv
 
-		got := getDryRun(false, testLogger)
+		got := setDryRun(false, testLogger)
 
 		assert.False(t, got)
 
