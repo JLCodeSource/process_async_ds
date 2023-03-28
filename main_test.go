@@ -531,9 +531,16 @@ func TestGetFileList(t *testing.T) {
 }
 
 func TestGetDatasetID(t *testing.T) {
+	files := &[]File{}
+	e = new(env)
+	e.afs = afs
+	ap := NewAsyncProcessor(testLogger, e, files)
+
 	t.Run("verify it returns the right dataset id", func(t *testing.T) {
 		testLogger, _ = setupLogs()
-		got := getDatasetID(testDatasetID, testLogger)
+		ap.Logger = testLogger
+		ap.getDatasetID(testDatasetID)
+		got := ap.Env.datasetID
 		want := testDatasetID
 
 		assertCorrectString(t, got, want)
@@ -541,7 +548,9 @@ func TestGetDatasetID(t *testing.T) {
 
 	t.Run("verify it logs the right dataset id", func(t *testing.T) {
 		testLogger, hook = setupLogs()
-		_ = getDatasetID(testDatasetID, testLogger)
+		ap.Logger = testLogger
+
+		ap.getDatasetID(testDatasetID)
 
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(datasetLog, testDatasetID)
@@ -557,7 +566,9 @@ func TestGetDatasetID(t *testing.T) {
 		defer patch.Unpatch()
 
 		testLogger, hook = setupLogs()
-		panicFunc := func() { getDatasetID(testNotADataset, testLogger) }
+		ap.Logger = testLogger
+
+		panicFunc := func() { ap.getDatasetID(testNotADataset) }
 
 		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
 		gotLogMsg := hook.LastEntry().Message
@@ -581,7 +592,8 @@ func TestGetDatasetID(t *testing.T) {
 		defer patch2.Unpatch()
 
 		testLogger, hook = setupLogs()
-		panicFunc := func() { getDatasetID(testNotADataset, testLogger) }
+		ap.Logger = testLogger
+		panicFunc := func() { ap.getDatasetID(testNotADataset) }
 
 		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
 		gotLogMsg := hook.LastEntry().Message
@@ -598,7 +610,8 @@ func TestGetDatasetID(t *testing.T) {
 		defer patch.Unpatch()
 
 		testLogger, hook = setupLogs()
-		panicFunc := func() { getDatasetID(testID, testLogger) }
+		ap.Logger = testLogger
+		panicFunc := func() { ap.getDatasetID(testID) }
 
 		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
 		gotLogMsg := hook.LastEntry().Message
@@ -611,11 +624,11 @@ func TestGetDatasetID(t *testing.T) {
 func TestCompareDatasetId(t *testing.T) {
 	t.Run("Should return true if datasetid & asyncdelds check match & log it", func(t *testing.T) {
 		testLogger, hook = setupLogs()
-		match, dataset := compareDatasetID(testDatasetID, testLogger)
+		match := compareDatasetID(testDatasetID, testLogger)
 		assert.True(t, match)
 
 		gotLogMsg := hook.LastEntry().Message
-		wantLogMsg := fmt.Sprintf(compareDatasetIDMatchLog, testDatasetID, dataset)
+		wantLogMsg := fmt.Sprintf(compareDatasetIDMatchLog, testDatasetID, testDatasetID)
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})

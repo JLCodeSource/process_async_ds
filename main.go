@@ -195,7 +195,8 @@ func (ap *AsyncProcessor) getFileList(sourcefile string) {
 	//return files
 }
 
-func getDatasetID(id string, logger *logrus.Logger) string {
+func (ap *AsyncProcessor) getDatasetID(id string) {
+	logger := ap.Logger
 	match, err := regexp.MatchString(regexDatasetMatch, id)
 	if err != nil {
 		logger.Fatal(err.Error())
@@ -203,29 +204,28 @@ func getDatasetID(id string, logger *logrus.Logger) string {
 
 	if !match {
 		logger.Fatal(fmt.Sprintf(datasetRegexLog, id, regexDatasetMatch))
-		return ""
 	}
 
-	ok, _ := compareDatasetID(id, logger)
+	ok := compareDatasetID(id, logger)
 	if !ok {
-		return ""
+		return
 	}
 
 	logger.Info(fmt.Sprintf(datasetLog, id))
 
-	return id
+	ap.Env.datasetID = id
 }
 
-func compareDatasetID(datasetID string, logger *logrus.Logger) (bool, string) {
+func compareDatasetID(datasetID string, logger *logrus.Logger) bool {
 	asyncProcessedDS := getAsyncProcessedDSID(logger)
 	if asyncProcessedDS != datasetID {
 		logger.Fatal(fmt.Sprintf(compareDatasetIDNotMatchLog, datasetID, asyncProcessedDS))
-		return false, ""
+		return false
 	}
 
 	logger.Info(fmt.Sprintf(compareDatasetIDMatchLog, datasetID, asyncProcessedDS))
 
-	return true, asyncProcessedDS
+	return true
 }
 
 func getTimeLimit(days int64, logger *logrus.Logger) (limit time.Time) {
@@ -329,7 +329,7 @@ func main() {
 	ap := NewAsyncProcessor(logger, e, &files)
 
 	ap.getSourceFile(ex, sourceFile)
-	ds := getDatasetID(datasetID, logger)
+	ap.getDatasetID(datasetID)
 	l := getTimeLimit(numDays, logger)
 	ndr := getDryRun(dryrun, logger)
 
@@ -345,7 +345,7 @@ func main() {
 		fsys:       e.fsys,
 		afs:        afs,
 		sourceFile: sourceFile,
-		datasetID:  ds,
+		datasetID:  e.datasetID,
 		limit:      l,
 		dryrun:     ndr,
 		sysIP:      ip,
