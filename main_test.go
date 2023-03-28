@@ -651,11 +651,17 @@ func TestCompareDatasetId(t *testing.T) {
 }
 
 func TestSetTimeLimit(t *testing.T) {
+	files := &[]File{}
+	e = new(env)
+	ap := NewAsyncProcessor(testLogger, e, files)
 	t.Run("zero days", func(t *testing.T) {
 		testLogger, hook = setupLogs()
+		ap.Logger = testLogger
 
 		var days = int64(0)
-		gotDays := setTimeLimit(days, testLogger)
+		ap.setTimeLimit(days)
+
+		gotDays := e.limit
 		wantDays := time.Time{}
 
 		assertCorrectString(t, gotDays.String(), wantDays.String())
@@ -667,12 +673,15 @@ func TestSetTimeLimit(t *testing.T) {
 
 	t.Run("Multiple days", func(t *testing.T) {
 		testLogger, hook = setupLogs()
+		ap.Logger = testLogger
 
 		now = time.Now()
 		days := int64(15)
 		daysInTime := time.Duration(-15 * 24 * time.Hour)
 		limit = now.Add(daysInTime)
-		gotDays := setTimeLimit(days, testLogger)
+
+		ap.setTimeLimit(days)
+		gotDays := e.limit
 		wantDays := limit
 
 		assertCorrectString(t, gotDays.Round(time.Millisecond).String(), wantDays.Round(time.Millisecond).String())

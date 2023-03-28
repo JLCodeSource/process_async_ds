@@ -191,8 +191,6 @@ func (ap *AsyncProcessor) getFileList(sourcefile string) {
 			newFile.fanIP,
 			newFile.fileInfo.Name()))
 	}
-
-	//return files
 }
 
 func (ap *AsyncProcessor) setDatasetID(id string) {
@@ -211,9 +209,9 @@ func (ap *AsyncProcessor) setDatasetID(id string) {
 		return
 	}
 
-	logger.Info(fmt.Sprintf(datasetLog, id))
-
 	ap.Env.datasetID = id
+
+	logger.Info(fmt.Sprintf(datasetLog, id))
 }
 
 func compareDatasetID(datasetID string, logger *logrus.Logger) bool {
@@ -228,8 +226,9 @@ func compareDatasetID(datasetID string, logger *logrus.Logger) bool {
 	return true
 }
 
-func setTimeLimit(days int64, logger *logrus.Logger) (limit time.Time) {
-	limit = time.Time{}
+func (ap *AsyncProcessor) setTimeLimit(days int64) {
+	limit := time.Time{}
+	logger := ap.Logger
 
 	if days == 0 {
 		logger.Warn(timelimitNoDaysLog)
@@ -238,9 +237,10 @@ func setTimeLimit(days int64, logger *logrus.Logger) (limit time.Time) {
 
 	now := time.Now()
 	limit = now.Add(-24 * time.Duration(days) * time.Hour)
-	logger.Info(fmt.Sprintf(timelimitDaysLog, days, limit))
 
-	return
+	ap.Env.limit = limit
+
+	logger.Info(fmt.Sprintf(timelimitDaysLog, days, limit))
 }
 
 func getDryRun(dryrun bool, logger *logrus.Logger) bool {
@@ -330,7 +330,7 @@ func main() {
 
 	ap.setSourceFile(ex, sourceFile)
 	ap.setDatasetID(datasetID)
-	l := setTimeLimit(numDays, logger)
+	ap.setTimeLimit(numDays)
 	ndr := getDryRun(dryrun, logger)
 
 	if testrun {
@@ -346,7 +346,7 @@ func main() {
 		afs:        afs,
 		sourceFile: sourceFile,
 		datasetID:  e.datasetID,
-		limit:      l,
+		limit:      e.limit,
 		dryrun:     ndr,
 		sysIP:      ip,
 	}
