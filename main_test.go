@@ -465,7 +465,8 @@ func TestGetFileList(t *testing.T) {
 		dir := getWorkDir()
 
 		testSF := fmt.Sprintf(testSourceFile, dir)
-		got := ap.getFileList(testSF)
+		ap.getFileList(testSF)
+		got := *ap.Files
 
 		for i := range got {
 			assert.Equal(t, want[i].smbName, got[i].smbName)

@@ -160,8 +160,7 @@ func (ap *AsyncProcessor) getSourceFile(ex string, f string) fs.FileInfo {
 	return file
 }
 
-func (ap *AsyncProcessor) getFileList(sourcefile string) []File {
-	files := *ap.Files
+func (ap *AsyncProcessor) getFileList(sourcefile string) {
 	fsys := ap.Env.afs
 	logger := ap.Logger
 
@@ -193,7 +192,7 @@ func (ap *AsyncProcessor) getFileList(sourcefile string) []File {
 			newFile.fileInfo.Name()))
 	}
 
-	return files
+	//return files
 }
 
 func getDatasetID(id string, logger *logrus.Logger) string {
