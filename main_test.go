@@ -322,7 +322,7 @@ func TestWrapLookupIP(t *testing.T) {
 	})
 }
 
-func TestGetSourceFile(t *testing.T) {
+func TestSetSourceFile(t *testing.T) {
 	e = new(env)
 	t.Run("check for source file", func(t *testing.T) {
 		testLogger, hook = setupLogs()
@@ -331,7 +331,7 @@ func TestGetSourceFile(t *testing.T) {
 		}
 		files := &[]File{}
 		ap := NewAsyncProcessor(testLogger, e, files)
-		file := ap.getSourceFile("", testPath)
+		file := ap.setSourceFile("", testPath)
 
 		got := file.Name()
 		want := testName
@@ -350,7 +350,7 @@ func TestGetSourceFile(t *testing.T) {
 		fullpath := string(os.PathSeparator) + testPath
 		files := &[]File{}
 		ap := NewAsyncProcessor(testLogger, e, files)
-		file := ap.getSourceFile("", string(os.PathSeparator)+testPath)
+		file := ap.setSourceFile("", string(os.PathSeparator)+testPath)
 
 		got := file.Name()
 		want := testName
@@ -372,7 +372,7 @@ func TestGetSourceFile(t *testing.T) {
 		}
 		files := &[]File{}
 		ap := NewAsyncProcessor(testLogger, e, files)
-		file := ap.getSourceFile(ex, testName)
+		file := ap.setSourceFile(ex, testName)
 
 		got := file.Name()
 		want := testName
@@ -395,7 +395,7 @@ func TestGetSourceFile(t *testing.T) {
 		ap := NewAsyncProcessor(testLogger, e, files)
 
 		panicFunc := func() {
-			ap.getSourceFile("/", testDoesNotExistFile)
+			ap.setSourceFile("/", testDoesNotExistFile)
 		}
 
 		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
@@ -419,7 +419,7 @@ func TestGetSourceFile(t *testing.T) {
 		ap := NewAsyncProcessor(testLogger, e, files)
 
 		panicFunc := func() {
-			file := ap.getSourceFile("/", testDoesNotExistFile)
+			file := ap.setSourceFile("/", testDoesNotExistFile)
 			println(file)
 		}
 

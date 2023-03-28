@@ -133,7 +133,7 @@ func (e *env) verifyDataset(logger *logrus.Logger) bool {
 	return true
 }
 
-func (ap *AsyncProcessor) getSourceFile(ex string, f string) fs.FileInfo {
+func (ap *AsyncProcessor) setSourceFile(ex string, f string) fs.FileInfo {
 	var pth string
 	filesystem := ap.Env.fsys
 
@@ -328,7 +328,7 @@ func main() {
 
 	ap := NewAsyncProcessor(logger, e, &files)
 
-	ap.getSourceFile(ex, sourceFile)
+	ap.setSourceFile(ex, sourceFile)
 	ap.setDatasetID(datasetID)
 	l := getTimeLimit(numDays, logger)
 	ndr := getDryRun(dryrun, logger)
