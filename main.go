@@ -195,7 +195,7 @@ func (ap *AsyncProcessor) getFileList(sourcefile string) {
 	//return files
 }
 
-func (ap *AsyncProcessor) getDatasetID(id string) {
+func (ap *AsyncProcessor) setDatasetID(id string) {
 	logger := ap.Logger
 	match, err := regexp.MatchString(regexDatasetMatch, id)
 	if err != nil {
@@ -329,7 +329,7 @@ func main() {
 	ap := NewAsyncProcessor(logger, e, &files)
 
 	ap.getSourceFile(ex, sourceFile)
-	ap.getDatasetID(datasetID)
+	ap.setDatasetID(datasetID)
 	l := getTimeLimit(numDays, logger)
 	ndr := getDryRun(dryrun, logger)
 

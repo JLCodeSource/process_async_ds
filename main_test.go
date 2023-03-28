@@ -530,7 +530,7 @@ func TestGetFileList(t *testing.T) {
 	})
 }
 
-func TestGetDatasetID(t *testing.T) {
+func TestSetDatasetID(t *testing.T) {
 	files := &[]File{}
 	e = new(env)
 	e.afs = afs
@@ -539,7 +539,7 @@ func TestGetDatasetID(t *testing.T) {
 	t.Run("verify it returns the right dataset id", func(t *testing.T) {
 		testLogger, _ = setupLogs()
 		ap.Logger = testLogger
-		ap.getDatasetID(testDatasetID)
+		ap.setDatasetID(testDatasetID)
 		got := ap.Env.datasetID
 		want := testDatasetID
 
@@ -550,7 +550,7 @@ func TestGetDatasetID(t *testing.T) {
 		testLogger, hook = setupLogs()
 		ap.Logger = testLogger
 
-		ap.getDatasetID(testDatasetID)
+		ap.setDatasetID(testDatasetID)
 
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(datasetLog, testDatasetID)
@@ -568,7 +568,7 @@ func TestGetDatasetID(t *testing.T) {
 		testLogger, hook = setupLogs()
 		ap.Logger = testLogger
 
-		panicFunc := func() { ap.getDatasetID(testNotADataset) }
+		panicFunc := func() { ap.setDatasetID(testNotADataset) }
 
 		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
 		gotLogMsg := hook.LastEntry().Message
@@ -593,7 +593,7 @@ func TestGetDatasetID(t *testing.T) {
 
 		testLogger, hook = setupLogs()
 		ap.Logger = testLogger
-		panicFunc := func() { ap.getDatasetID(testNotADataset) }
+		panicFunc := func() { ap.setDatasetID(testNotADataset) }
 
 		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
 		gotLogMsg := hook.LastEntry().Message
@@ -611,7 +611,7 @@ func TestGetDatasetID(t *testing.T) {
 
 		testLogger, hook = setupLogs()
 		ap.Logger = testLogger
-		panicFunc := func() { ap.getDatasetID(testID) }
+		panicFunc := func() { ap.setDatasetID(testID) }
 
 		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
 		gotLogMsg := hook.LastEntry().Message
