@@ -452,14 +452,20 @@ func TestGetAfs(t *testing.T) {
 }
 
 func TestGetFileList(t *testing.T) {
+	e = new(env)
 	t.Run("getFileList should return a list of files", func(t *testing.T) {
 		testLogger, hook = setupLogs()
-		fsys, want := createAferoTest(t, 10, true)
 
+		afs, want := createAferoTest(t, 10, true)
+		files := &[]File{}
+
+		e.afs = afs
+
+		ap := NewAsyncProcessor(testLogger, e, files)
 		dir := getWorkDir()
 
 		testSF := fmt.Sprintf(testSourceFile, dir)
-		got := getFileList(fsys, testSF, testLogger)
+		got := ap.getFileList(testSF)
 
 		for i := range got {
 			assert.Equal(t, want[i].smbName, got[i].smbName)
@@ -473,12 +479,17 @@ func TestGetFileList(t *testing.T) {
 	})
 	t.Run("getFileList should log properly", func(t *testing.T) {
 		testLogger, hook = setupLogs()
-		fsys, want := createAferoTest(t, 1, true)
+
+		afs, want := createAferoTest(t, 1, true)
+		files := &[]File{}
+
+		e.afs = afs
+		ap := NewAsyncProcessor(testLogger, e, files)
 
 		dir := getWorkDir()
 
 		testSF := fmt.Sprintf(testSourceFile, dir)
-		getFileList(fsys, testSF, testLogger)
+		ap.getFileList(testSF)
 
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(fAddedToListLog,
@@ -500,10 +511,14 @@ func TestGetFileList(t *testing.T) {
 		defer patch.Unpatch()
 
 		testLogger, hook = setupLogs()
-		fsys, _ := createAferoTest(t, 1, true)
+		afs, _ := createAferoTest(t, 1, true)
+		files := &[]File{}
+		ap := NewAsyncProcessor(testLogger, e, files)
+
+		e.afs = afs
 
 		testSF := testDoesNotExistFile
-		panicFunc := func() { getFileList(fsys, testSF, testLogger) }
+		panicFunc := func() { ap.getFileList(testSF) }
 
 		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
 

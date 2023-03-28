@@ -160,8 +160,10 @@ func (ap *AsyncProcessor) getSourceFile(ex string, f string) fs.FileInfo {
 	return file
 }
 
-func getFileList(fsys afero.Fs, sourcefile string, logger *logrus.Logger) []File {
-	var files = []File{}
+func (ap *AsyncProcessor) getFileList(sourcefile string) []File {
+	files := *ap.Files
+	fsys := ap.Env.afs
+	logger := ap.Logger
 
 	_, err := fsys.Stat(sourcefile)
 	if err != nil {
@@ -180,7 +182,7 @@ func getFileList(fsys afero.Fs, sourcefile string, logger *logrus.Logger) []File
 			continue
 		}
 
-		files = append(files, newFile)
+		*ap.Files = append(*ap.Files, newFile)
 		logger.Info(fmt.Sprintf(fAddedToListLog,
 			newFile.smbName,
 			newFile.id,
