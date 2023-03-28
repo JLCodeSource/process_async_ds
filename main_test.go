@@ -694,11 +694,11 @@ func TestSetTimeLimit(t *testing.T) {
 func TestSetDryRun(t *testing.T) {
 	files := &[]File{}
 	e = new(env)
-	ap := NewAsyncProcessor(e, files)
+	NewAsyncProcessor(e, files)
 	t.Run("default dry run", func(t *testing.T) {
 		e.logger, hook = setupLogs()
 
-		ap.setDryRun(true)
+		e.setDryRun(true)
 		got := e.dryrun
 		assert.True(t, got)
 
@@ -715,7 +715,7 @@ func TestSetDryRun(t *testing.T) {
 	t.Run("non-dry run execute move", func(t *testing.T) {
 		e.logger, hook = setupLogs()
 
-		ap.setDryRun(false)
+		e.setDryRun(false)
 		got := e.dryrun
 
 		assert.False(t, got)

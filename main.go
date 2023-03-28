@@ -245,8 +245,8 @@ func (e *env) setTimeLimit(days int64) {
 	logger.Info(fmt.Sprintf(timelimitDaysLog, days, limit))
 }
 
-func (ap *AsyncProcessor) setDryRun(dryrun bool) {
-	logger := ap.Env.logger
+func (e *env) setDryRun(dryrun bool) {
+	logger := e.logger
 	if dryrun {
 		e.afs = afero.NewReadOnlyFs(afero.NewOsFs())
 		e.dryrun = true
@@ -310,14 +310,14 @@ func init() {
 }
 
 func main() {
-	// Set logger
-	logger := log.GetLogger()
-
 	// Parse flags
 	flag.Parse()
 
 	// Get pointer to new Env
 	e = new(env)
+
+	// Set logger
+	logger := log.GetLogger()
 
 	// Get executable path
 	ex := wrapOs(logger, osExecutableLog, os.Executable)
@@ -331,31 +331,18 @@ func main() {
 
 	files := []File{}
 
-	ap := NewAsyncProcessor(e, &files)
+	NewAsyncProcessor(e, &files)
 
 	e.setSourceFile(ex, sourceFile)
 	e.setDatasetID(datasetID)
 	e.setTimeLimit(numDays)
-	ap.setDryRun(dryrun)
-
-	if testrun {
-		e.afs = getAfs(nil)
-	}
+	e.setDryRun(dryrun)
 
 	hostname := wrapOs(logger, osHostnameLog, os.Hostname)
 
 	ip := wrapLookupIP(logger, hostname, net.LookupIP)
 
 	e.sysIP = ip
-	/*e = &env{
-		fsys:       e.fsys,
-		afs:        e.afs,
-		sourceFile: sourceFile,
-		datasetID:  e.datasetID,
-		limit:      e.limit,
-		dryrun:     e.dryrun,
-		sysIP:      ip,
-	}*/
 
 	e.verifyDataset(logger)
 }
