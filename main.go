@@ -228,9 +228,9 @@ func (e *env) compareDatasetID(datasetID string) bool {
 	return true
 }
 
-func (ap *AsyncProcessor) setTimeLimit(days int64) {
+func (e *env) setTimeLimit(days int64) {
 	limit := time.Time{}
-	logger := ap.Env.logger
+	logger := e.logger
 
 	if days == 0 {
 		logger.Warn(timelimitNoDaysLog)
@@ -240,7 +240,7 @@ func (ap *AsyncProcessor) setTimeLimit(days int64) {
 	now := time.Now()
 	limit = now.Add(-24 * time.Duration(days) * time.Hour)
 
-	ap.Env.limit = limit
+	e.limit = limit
 
 	logger.Info(fmt.Sprintf(timelimitDaysLog, days, limit))
 }
@@ -335,7 +335,7 @@ func main() {
 
 	e.setSourceFile(ex, sourceFile)
 	e.setDatasetID(datasetID)
-	ap.setTimeLimit(numDays)
+	e.setTimeLimit(numDays)
 	ap.setDryRun(dryrun)
 
 	if testrun {

@@ -653,12 +653,12 @@ func TestCompareDatasetId(t *testing.T) {
 func TestSetTimeLimit(t *testing.T) {
 	files := &[]File{}
 	e = new(env)
-	ap := NewAsyncProcessor(e, files)
+	NewAsyncProcessor(e, files)
 	t.Run("zero days", func(t *testing.T) {
 		e.logger, hook = setupLogs()
 
 		var days = int64(0)
-		ap.setTimeLimit(days)
+		e.setTimeLimit(days)
 
 		gotDays := e.limit
 		wantDays := time.Time{}
@@ -678,7 +678,7 @@ func TestSetTimeLimit(t *testing.T) {
 		daysInTime := time.Duration(-15 * 24 * time.Hour)
 		limit = now.Add(daysInTime)
 
-		ap.setTimeLimit(days)
+		e.setTimeLimit(days)
 		gotDays := e.limit
 		wantDays := limit
 
