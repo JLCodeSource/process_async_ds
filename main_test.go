@@ -622,10 +622,14 @@ func TestSetDatasetID(t *testing.T) {
 }
 
 func TestCompareDatasetId(t *testing.T) {
+	files := &[]File{}
+	e = new(env)
+	ap := NewAsyncProcessor(testLogger, e, files)
 	t.Run("Should return true if datasetid & asyncdelds check match & log it", func(t *testing.T) {
 		testLogger, hook = setupLogs()
-		match := compareDatasetID(testDatasetID, testLogger)
-		assert.True(t, match)
+		ap.Logger = testLogger
+
+		ap.compareDatasetID(testDatasetID)
 
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(compareDatasetIDMatchLog, testDatasetID, testDatasetID)
@@ -640,7 +644,8 @@ func TestCompareDatasetId(t *testing.T) {
 		defer patch.Unpatch()
 
 		testLogger, hook = setupLogs()
-		panicFunc := func() { compareDatasetID(testID, testLogger) }
+		ap.Logger = testLogger
+		panicFunc := func() { ap.compareDatasetID(testID) }
 		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
 
 		gotLogMsg := hook.LastEntry().Message
