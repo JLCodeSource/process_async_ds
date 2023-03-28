@@ -109,9 +109,9 @@ type env struct {
 }
 
 // AsyncProcessor interface is the interface for AD
-/*type AsyncProcessor interface {
-
-}*/
+type AsyncProcessor interface {
+	getFileList()
+}
 
 // asyncProcessor is the async processing instance
 type asyncProcessor struct {
@@ -166,40 +166,6 @@ func (e *env) setSourceFile(ex string, f string) {
 
 	e.logger.Info(fmt.Sprintf(sourceLog, f))
 
-}
-
-func (ap *asyncProcessor) getFileList() {
-	e = ap.Env
-	afs := e.afs
-	logger := e.logger
-
-	_, err := afs.Stat(e.sourceFile)
-	if err != nil {
-		logger.Fatal(err)
-	}
-
-	lines := parseFile(afs, e.sourceFile, logger)
-
-	for _, line := range lines {
-		newFile := parseLine(line, logger)
-		newFile.fileInfo, err = afs.Stat(newFile.stagingPath)
-
-		if err != nil {
-			// Need to add testing
-			logger.Error(err)
-			continue
-		}
-
-		*ap.Files = append(*ap.Files, newFile)
-		logger.Info(fmt.Sprintf(fAddedToListLog,
-			newFile.smbName,
-			newFile.id,
-			newFile.stagingPath,
-			newFile.createTime.Unix(),
-			newFile.size,
-			newFile.fanIP,
-			newFile.fileInfo.Name()))
-	}
 }
 
 func (e *env) setDatasetID(id string) {
@@ -315,8 +281,42 @@ type GetAfs interface {
 }
 */
 
-func getAfs(afs afero.Fs) afero.Fs {
-	return afs
+func (e *env) getAfs() afero.Fs {
+	return e.afs
+}
+
+func (ap *asyncProcessor) getFileList() {
+	e = ap.Env
+	afs := e.afs
+	logger := e.logger
+
+	_, err := afs.Stat(e.sourceFile)
+	if err != nil {
+		logger.Fatal(err)
+	}
+
+	lines := parseFile(afs, e.sourceFile, logger)
+
+	for _, line := range lines {
+		newFile := parseLine(line, logger)
+		newFile.fileInfo, err = afs.Stat(newFile.stagingPath)
+
+		if err != nil {
+			// Need to add testing
+			logger.Error(err)
+			continue
+		}
+
+		*ap.Files = append(*ap.Files, newFile)
+		logger.Info(fmt.Sprintf(fAddedToListLog,
+			newFile.smbName,
+			newFile.id,
+			newFile.stagingPath,
+			newFile.createTime.Unix(),
+			newFile.size,
+			newFile.fanIP,
+			newFile.fileInfo.Name()))
+	}
 }
 
 func init() {

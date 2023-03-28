@@ -444,11 +444,13 @@ func (m *MockGetAfs) getAfs() {
 } */
 
 func TestGetAfs(t *testing.T) {
+	e = new(env)
 	t.Run("getAfs returns the afs & logs it", func(t *testing.T) {
-		testLogger, hook = setupLogs()
+		e.logger, hook = setupLogs()
 		want, _ := createAferoTest(t, 1, true)
 
-		got := getAfs(want)
+		e.afs = want
+		got := e.getAfs()
 
 		assert.Equal(t, want, got)
 	})
