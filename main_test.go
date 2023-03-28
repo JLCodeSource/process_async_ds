@@ -32,14 +32,14 @@ const (
 	testBadPath      = "/not/a/path"
 	testMismatchPath = "data1/staging/testMismatch.txt"
 	testNotADataset  = "123"
-	testSourceFile   = "%v/test.out"
+	testSourceFile   = "%v/test.file"
 
-	testArgsFile    = "-sourcefile=%v/test.out"
+	testArgsFile    = "-sourcefile=%v/test.file"
 	testArgsDataset = "-datasetid=%v"
 	testArgsDays    = "-days=123"
 	testArgsHelp    = "-help"
 
-	testPostArgsFile = "%v/test.out"
+	testPostArgsFile = "%v/test.file"
 	testPostArgsDays = int64(123)
 
 	osPanicTrue  = "os.Exit called"
