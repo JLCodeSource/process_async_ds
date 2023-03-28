@@ -161,8 +161,9 @@ func (e *env) setSourceFile(ex string, f string) {
 }
 
 func (ap *AsyncProcessor) getFileList(sourcefile string) {
-	fsys := ap.Env.afs
-	logger := ap.Env.logger
+	e = ap.Env
+	fsys := e.afs
+	logger := e.logger
 
 	_, err := fsys.Stat(sourcefile)
 	if err != nil {
@@ -346,6 +347,7 @@ func main() {
 	e.sysIP = ip
 
 	e.verifyDataset(e.logger)
+
 }
 
 func wrapOs(logger *logrus.Logger, wrapped string, f func() (string, error)) string {
