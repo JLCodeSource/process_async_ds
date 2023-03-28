@@ -228,7 +228,7 @@ func compareDatasetID(datasetID string, logger *logrus.Logger) bool {
 	return true
 }
 
-func getTimeLimit(days int64, logger *logrus.Logger) (limit time.Time) {
+func setTimeLimit(days int64, logger *logrus.Logger) (limit time.Time) {
 	limit = time.Time{}
 
 	if days == 0 {
@@ -330,7 +330,7 @@ func main() {
 
 	ap.setSourceFile(ex, sourceFile)
 	ap.setDatasetID(datasetID)
-	l := getTimeLimit(numDays, logger)
+	l := setTimeLimit(numDays, logger)
 	ndr := getDryRun(dryrun, logger)
 
 	if testrun {
