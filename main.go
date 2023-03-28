@@ -204,21 +204,28 @@ func (ap *AsyncProcessor) setDatasetID(id string) {
 		logger.Fatal(fmt.Sprintf(datasetRegexLog, id, regexDatasetMatch))
 	}
 
-	ap.compareDatasetID(id)
+	// if no fatal datsets match
+	ok := ap.compareDatasetID(id)
+	if !ok {
+		return
+	}
 
 	ap.Env.datasetID = id
 
 	logger.Info(fmt.Sprintf(datasetLog, id))
 }
 
-func (ap *AsyncProcessor) compareDatasetID(datasetID string) {
+func (ap *AsyncProcessor) compareDatasetID(datasetID string) bool {
 	logger := ap.Logger
 	asyncProcessedDS := getAsyncProcessedDSID(logger)
 	if asyncProcessedDS != datasetID {
 		logger.Fatal(fmt.Sprintf(compareDatasetIDNotMatchLog, datasetID, asyncProcessedDS))
+		return false
 	}
 
 	logger.Info(fmt.Sprintf(compareDatasetIDMatchLog, datasetID, asyncProcessedDS))
+
+	return true
 }
 
 func (ap *AsyncProcessor) setTimeLimit(days int64) {
