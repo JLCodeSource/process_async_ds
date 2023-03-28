@@ -650,12 +650,12 @@ func TestCompareDatasetId(t *testing.T) {
 	})
 }
 
-func TestGetTimeLimit(t *testing.T) {
+func TestSetTimeLimit(t *testing.T) {
 	t.Run("zero days", func(t *testing.T) {
 		testLogger, hook = setupLogs()
 
 		var days = int64(0)
-		gotDays := getTimeLimit(days, testLogger)
+		gotDays := setTimeLimit(days, testLogger)
 		wantDays := time.Time{}
 
 		assertCorrectString(t, gotDays.String(), wantDays.String())
@@ -672,7 +672,7 @@ func TestGetTimeLimit(t *testing.T) {
 		days := int64(15)
 		daysInTime := time.Duration(-15 * 24 * time.Hour)
 		limit = now.Add(daysInTime)
-		gotDays := getTimeLimit(days, testLogger)
+		gotDays := setTimeLimit(days, testLogger)
 		wantDays := limit
 
 		assertCorrectString(t, gotDays.Round(time.Millisecond).String(), wantDays.Round(time.Millisecond).String())
