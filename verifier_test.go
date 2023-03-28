@@ -138,8 +138,8 @@ func TestVerify(t *testing.T) {
 
 	fsys, files = createFSTest(t, 10)
 
-	e = new(Env)
-	e = &Env{
+	e = new(env)
+	e = &env{
 		fsys:  fsys,
 		limit: afterNow,
 		sysIP: ips[0],
@@ -174,7 +174,7 @@ func TestVerifyEnvMatch(t *testing.T) {
 	t.Run("returns true if config metadata matches", func(t *testing.T) {
 		limit = now.Add(-24 * time.Hour)
 		e = getEnv()
-		e = &Env{
+		e = &env{
 			sysIP: ips[0],
 			limit: limit,
 		}
@@ -193,7 +193,7 @@ func TestVerifyEnvMatch(t *testing.T) {
 	})
 	t.Run("returns false if ip is not the same as the current machine", func(t *testing.T) {
 		e = getEnv()
-		e = &Env{
+		e = &env{
 			sysIP: ip,
 		}
 		file = File{
@@ -219,7 +219,7 @@ func TestVerifyEnvMatch(t *testing.T) {
 		}
 		limit = now.Add(24 * time.Hour)
 		e = getEnv()
-		e = &Env{
+		e = &env{
 			limit: limit,
 			sysIP: ips[0],
 		}
@@ -336,7 +336,7 @@ func TestVerifyGBMetadata(t *testing.T) {
 	defer out.Close()
 	t.Run("returns true if file.datasetID matches DatasetID", func(t *testing.T) {
 		_, files := createFSTest(t, 1)
-		e = new(Env)
+		e = new(env)
 		e.datasetID = testDatasetID
 
 		testLogger, hook = setupLogs()
@@ -381,7 +381,7 @@ func TestVerifyGBMetadata(t *testing.T) {
 			id:        testFileIDInWrongDataset,
 			datasetID: testWrongDataset,
 		}
-		e = new(Env)
+		e = new(env)
 		e.datasetID = testWrongDataset
 		testLogger, hook = setupLogs()
 		assert.False(t, file.verifyGBMetadata(testLogger))
@@ -447,7 +447,7 @@ func TestGetMBDatasetByFileID(t *testing.T) {
 			id:        testFileID,
 			datasetID: testDatasetID,
 		}
-		e = new(Env)
+		e = new(env)
 		e.datasetID = testDatasetID
 		testLogger, hook = setupLogs()
 		ok := file.verifyMBDatasetByFileID(testLogger)

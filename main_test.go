@@ -67,7 +67,7 @@ var (
 	hook       *test.Hook
 
 	// setup env
-	testEnv Env
+	testEnv env
 	limit   time.Time
 	ip      net.IP
 
@@ -89,7 +89,7 @@ func TestMainFunc(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		e = new(Env)
+		e = new(env)
 		e.afs = afs
 		os.Args = append(os.Args, fmt.Sprintf(testArgsFile, pwd[1:]))
 		os.Args = append(os.Args, fmt.Sprintf(testArgsDataset, testDatasetID))
@@ -762,7 +762,7 @@ func TestSetPWD(t *testing.T) {
 func TestVerifyDataset(t *testing.T) {
 	t.Run("it should return true if env.datasetID matches asyncProcessed & log it", func(t *testing.T) {
 		testLogger, hook = setupLogs()
-		e = new(Env)
+		e = new(env)
 		e.datasetID = testDatasetID
 		assert.True(t, e.verifyDataset(testLogger))
 
@@ -779,7 +779,7 @@ func TestVerifyDataset(t *testing.T) {
 		defer patch.Unpatch()
 
 		testLogger, hook = setupLogs()
-		e = new(Env)
+		e = new(env)
 		e.datasetID = testWrongDataset
 
 		panicFunc := func() { e.verifyDataset(testLogger) }

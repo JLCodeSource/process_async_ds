@@ -61,7 +61,7 @@ var (
 	dryrun     bool
 	testrun    bool
 	afs        afero.Fs
-	e          *Env
+	e          *env
 	files      []File
 )
 
@@ -84,8 +84,8 @@ type E interface {
 }
 */
 
-// Env type holds config and environment settings
-type Env struct {
+// env type holds config and environment settings
+type env struct {
 	fsys       fs.FS
 	afs        afero.Fs
 	sourceFile string
@@ -124,7 +124,7 @@ func NewAsyncProcessor(Logger *logrus.Logger, Env *Env, Files *Files) *AsyncProc
 */
 
 // verify env
-func (e *Env) verifyDataset(logger *logrus.Logger) bool {
+func (e *env) verifyDataset(logger *logrus.Logger) bool {
 	ds := getAsyncProcessedDSID(logger)
 	if e.datasetID != ds {
 		logger.Fatal(fmt.Sprintf(eMatchAsyncProcessedDSFalseLog, e.datasetID, ds))
@@ -281,7 +281,7 @@ func setPWD(ex string, logger *logrus.Logger) string {
 	return pwd
 }
 
-func getEnv() *Env {
+func getEnv() *env {
 	return e
 }
 
@@ -314,7 +314,7 @@ func main() {
 	flag.Parse()
 
 	// Get pointer to new Env
-	e = new(Env)
+	e = new(env)
 
 	// Get executable path
 	ex := wrapOs(logger, osExecutableLog, os.Executable)
@@ -338,7 +338,7 @@ func main() {
 
 	ip := wrapLookupIP(logger, hostname, net.LookupIP)
 
-	e = &Env{
+	e = &env{
 		fsys:       fsys,
 		afs:        afs,
 		sourceFile: sourceFile,
