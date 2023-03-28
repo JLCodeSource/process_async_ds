@@ -103,6 +103,19 @@ func (e *Env) verifyDataset(logger *logrus.Logger) bool {
 	return true
 }
 
+// AsyncProcessor is the async processing instance
+type AsyncProcessor struct {
+	Logger *logrus.Logger
+	Env    *Env
+}
+
+func NewAsyncProcessor(Logger *logrus.Logger, Env *Env) *AsyncProcessor {
+	return &AsyncProcessor{
+		Logger: Logger,
+		Env:    Env,
+	}
+}
+
 func getSourceFile(filesystem fs.FS, ex string, f string, logger *logrus.Logger) fs.FileInfo {
 	var pth string
 
@@ -270,14 +283,19 @@ func init() {
 }
 
 func main() {
+	// Set logger
 	logger := log.GetLogger()
 
+	// Parse flags
 	flag.Parse()
 
+	// Get pointer to new Env
 	env = new(Env)
 
+	// Get executable path
 	ex := wrapOs(logger, osExecutableLog, os.Executable)
 
+	// Set PWD to root
 	root := setPWD(ex, logger)
 
 	fsys := os.DirFS(root)
@@ -335,10 +353,3 @@ func wrapLookupIP(logger *logrus.Logger, hostname string, f func(string) ([]net.
 
 	return ip
 }
-
-/*
-//go:generate mockery --name osWrapper
-type Wrapper interface {
-	wrapOs(logger *logrus.Logger, f func() (string, error)) string
-}
-*/
