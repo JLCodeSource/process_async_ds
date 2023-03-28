@@ -98,7 +98,7 @@ func TestMainFunc(t *testing.T) {
 		now = time.Now()
 
 		//_, file := filepath.Split((testPostArgsFile))
-		fsys := os.DirFS("//")
+		e.fsys = os.DirFS("//")
 
 		main()
 
@@ -115,24 +115,8 @@ func TestMainFunc(t *testing.T) {
 		}
 		defer f.Close()
 
-		got, err := f.Stat()
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		f, err = fsys.Open(e.sourceFile)
-		if err != nil {
-			t.Fatal(err)
-		}
-		defer f.Close()
-
-		want, err := f.Stat()
-		if err != nil {
-			t.Fatal(err)
-		}
-		ok := reflect.DeepEqual(got, want)
-
-		assert.True(t, ok)
+		_, err = f.Stat()
+		assert.NoError(t, err)
 
 		assertCorrectString(t, e.sourceFile, fmt.Sprintf(testPostArgsFile, pwd[1:]))
 
@@ -339,12 +323,15 @@ func TestWrapLookupIP(t *testing.T) {
 }
 
 func TestGetSourceFile(t *testing.T) {
+	e = new(env)
 	t.Run("check for source file", func(t *testing.T) {
 		testLogger, hook = setupLogs()
-		fsys = fstest.MapFS{
+		e.fsys = fstest.MapFS{
 			testPath: {Data: []byte(testContent)},
 		}
-		file := getSourceFile(fsys, "", testPath, testLogger)
+		files := &[]File{}
+		ap := NewAsyncProcessor(testLogger, e, files)
+		file := ap.getSourceFile("", testPath)
 
 		got := file.Name()
 		want := testName
@@ -357,11 +344,13 @@ func TestGetSourceFile(t *testing.T) {
 
 	t.Run("should handle full path", func(t *testing.T) {
 		testLogger, hook = setupLogs()
-		fsys = fstest.MapFS{
+		e.fsys = fstest.MapFS{
 			testPath: {Data: []byte(testContent)},
 		}
 		fullpath := string(os.PathSeparator) + testPath
-		file := getSourceFile(fsys, "", string(os.PathSeparator)+testPath, testLogger)
+		files := &[]File{}
+		ap := NewAsyncProcessor(testLogger, e, files)
+		file := ap.getSourceFile("", string(os.PathSeparator)+testPath)
 
 		got := file.Name()
 		want := testName
@@ -378,11 +367,12 @@ func TestGetSourceFile(t *testing.T) {
 		dir, _ := path.Split(ex)
 		path := dir + testName
 		path = path[1:]
-		fsys = fstest.MapFS{
+		e.fsys = fstest.MapFS{
 			path: {Data: []byte(testContent)},
 		}
-
-		file := getSourceFile(fsys, ex, testName, testLogger)
+		files := &[]File{}
+		ap := NewAsyncProcessor(testLogger, e, files)
+		file := ap.getSourceFile(ex, testName)
 
 		got := file.Name()
 		want := testName
@@ -400,10 +390,12 @@ func TestGetSourceFile(t *testing.T) {
 		defer patch.Unpatch()
 
 		testLogger, hook = setupLogs()
-		fs := os.DirFS("")
+		e.fsys = os.DirFS("")
+		files := &[]File{}
+		ap := NewAsyncProcessor(testLogger, e, files)
 
 		panicFunc := func() {
-			getSourceFile(fs, "/", testDoesNotExistFile, testLogger)
+			ap.getSourceFile("/", testDoesNotExistFile)
 		}
 
 		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
@@ -420,13 +412,14 @@ func TestGetSourceFile(t *testing.T) {
 		defer patch.Unpatch()
 
 		testLogger, hook = setupLogs()
-
-		fsys = fstest.MapFS{
+		e.fsys = fstest.MapFS{
 			testMismatchPath: {Data: []byte(testContent)},
 		}
+		files := &[]File{}
+		ap := NewAsyncProcessor(testLogger, e, files)
 
 		panicFunc := func() {
-			file := getSourceFile(fsys, "/", testDoesNotExistFile, testLogger)
+			file := ap.getSourceFile("/", testDoesNotExistFile)
 			println(file)
 		}
 

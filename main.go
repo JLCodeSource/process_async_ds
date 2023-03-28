@@ -133,8 +133,9 @@ func (e *env) verifyDataset(logger *logrus.Logger) bool {
 	return true
 }
 
-func getSourceFile(filesystem fs.FS, ex string, f string, logger *logrus.Logger) fs.FileInfo {
+func (ap *AsyncProcessor) getSourceFile(ex string, f string) fs.FileInfo {
 	var pth string
+	filesystem := ap.Env.fsys
 
 	dir, fn := path.Split(f)
 
@@ -151,10 +152,10 @@ func getSourceFile(filesystem fs.FS, ex string, f string, logger *logrus.Logger)
 	file, err := fs.Stat(filesystem, pth)
 
 	if err != nil {
-		logger.Fatal(err.Error())
+		ap.Logger.Fatal(err.Error())
 	}
 
-	logger.Info(fmt.Sprintf(sourceLog, f))
+	ap.Logger.Info(fmt.Sprintf(sourceLog, f))
 
 	return file
 }
@@ -319,10 +320,14 @@ func main() {
 	// Set PWD to root
 	root := setPWD(ex, logger)
 
-	fsys := os.DirFS(root)
-	afs := afero.NewOsFs()
+	e.fsys = os.DirFS(root)
+	e.afs = afero.NewOsFs()
 
-	getSourceFile(fsys, ex, sourceFile, logger)
+	files := []File{}
+
+	ap := NewAsyncProcessor(logger, e, &files)
+
+	ap.getSourceFile(ex, sourceFile)
 	ds := getDatasetID(datasetID, logger)
 	l := getTimeLimit(numDays, logger)
 	ndr := getDryRun(dryrun, logger)
@@ -336,7 +341,7 @@ func main() {
 	ip := wrapLookupIP(logger, hostname, net.LookupIP)
 
 	e = &env{
-		fsys:       fsys,
+		fsys:       e.fsys,
 		afs:        afs,
 		sourceFile: sourceFile,
 		datasetID:  ds,
