@@ -133,7 +133,7 @@ func (e *env) verifyDataset(logger *logrus.Logger) bool {
 	return true
 }
 
-func (ap *AsyncProcessor) setSourceFile(ex string, f string) fs.FileInfo {
+func (ap *AsyncProcessor) setSourceFile(ex string, f string) {
 	var pth string
 	filesystem := ap.Env.fsys
 
@@ -149,15 +149,16 @@ func (ap *AsyncProcessor) setSourceFile(ex string, f string) fs.FileInfo {
 		pth = f
 	}
 
-	file, err := fs.Stat(filesystem, pth)
+	_, err := fs.Stat(filesystem, pth)
 
 	if err != nil {
 		ap.Logger.Fatal(err.Error())
 	}
 
+	ap.Env.sourceFile = f
+
 	ap.Logger.Info(fmt.Sprintf(sourceLog, f))
 
-	return file
 }
 
 func (ap *AsyncProcessor) getFileList(sourcefile string) {
@@ -245,17 +246,19 @@ func (ap *AsyncProcessor) setTimeLimit(days int64) {
 	logger.Info(fmt.Sprintf(timelimitDaysLog, days, limit))
 }
 
-func setDryRun(dryrun bool, logger *logrus.Logger) bool {
+func (ap *AsyncProcessor) setDryRun(dryrun bool) {
+	logger := ap.Logger
 	if dryrun {
 		e.afs = afero.NewReadOnlyFs(afero.NewOsFs())
+		e.dryrun = true
 
 		logger.Info(dryRunTrueLog)
 	} else {
 		e.afs = afero.NewOsFs()
+		e.dryrun = false
+
 		logger.Warn(dryRunFalseLog)
 	}
-
-	return dryrun
 }
 
 func setPWD(ex string, logger *logrus.Logger) string {
@@ -333,7 +336,7 @@ func main() {
 	ap.setSourceFile(ex, sourceFile)
 	ap.setDatasetID(datasetID)
 	ap.setTimeLimit(numDays)
-	ndr := setDryRun(dryrun, logger)
+	ap.setDryRun(dryrun)
 
 	if testrun {
 		e.afs = getAfs(nil)
@@ -343,15 +346,16 @@ func main() {
 
 	ip := wrapLookupIP(logger, hostname, net.LookupIP)
 
-	e = &env{
+	e.sysIP = ip
+	/*e = &env{
 		fsys:       e.fsys,
-		afs:        afs,
+		afs:        e.afs,
 		sourceFile: sourceFile,
 		datasetID:  e.datasetID,
 		limit:      e.limit,
-		dryrun:     ndr,
+		dryrun:     e.dryrun,
 		sysIP:      ip,
-	}
+	}*/
 
 	e.verifyDataset(logger)
 }

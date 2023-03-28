@@ -67,9 +67,9 @@ var (
 	hook       *test.Hook
 
 	// setup env
-	testEnv env
-	limit   time.Time
-	ip      net.IP
+	//testEnv env
+	limit time.Time
+	ip    net.IP
 
 	// setup file
 	file File
@@ -331,10 +331,10 @@ func TestSetSourceFile(t *testing.T) {
 		}
 		files := &[]File{}
 		ap := NewAsyncProcessor(testLogger, e, files)
-		file := ap.setSourceFile("", testPath)
+		ap.setSourceFile("", testPath)
 
-		got := file.Name()
-		want := testName
+		got := e.sourceFile
+		want := testPath
 		assertCorrectString(t, got, want)
 
 		gotLogMsg := hook.LastEntry().Message
@@ -350,10 +350,10 @@ func TestSetSourceFile(t *testing.T) {
 		fullpath := string(os.PathSeparator) + testPath
 		files := &[]File{}
 		ap := NewAsyncProcessor(testLogger, e, files)
-		file := ap.setSourceFile("", string(os.PathSeparator)+testPath)
+		ap.setSourceFile("", string(os.PathSeparator)+testPath)
 
-		got := file.Name()
-		want := testName
+		got := e.sourceFile
+		want := string(os.PathSeparator) + testPath
 		assertCorrectString(t, got, want)
 
 		gotLogMsg := hook.LastEntry().Message
@@ -372,9 +372,9 @@ func TestSetSourceFile(t *testing.T) {
 		}
 		files := &[]File{}
 		ap := NewAsyncProcessor(testLogger, e, files)
-		file := ap.setSourceFile(ex, testName)
+		ap.setSourceFile(ex, testName)
 
-		got := file.Name()
+		got := e.sourceFile
 		want := testName
 		assertCorrectString(t, got, want)
 
@@ -419,8 +419,7 @@ func TestSetSourceFile(t *testing.T) {
 		ap := NewAsyncProcessor(testLogger, e, files)
 
 		panicFunc := func() {
-			file := ap.setSourceFile("/", testDoesNotExistFile)
-			println(file)
+			ap.setSourceFile("/", testDoesNotExistFile)
 		}
 
 		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
@@ -698,13 +697,16 @@ func TestSetTimeLimit(t *testing.T) {
 	})
 }
 
-func TestGetDryRun(t *testing.T) {
+func TestSetDryRun(t *testing.T) {
+	files := &[]File{}
+	e = new(env)
+	ap := NewAsyncProcessor(testLogger, e, files)
 	t.Run("default dry run", func(t *testing.T) {
 		testLogger, hook = setupLogs()
-		e = &testEnv
+		ap.Logger = testLogger
 
-		got := setDryRun(true, testLogger)
-
+		ap.setDryRun(true)
+		got := e.dryrun
 		assert.True(t, got)
 
 		typ := reflect.TypeOf(e.afs)
@@ -719,9 +721,10 @@ func TestGetDryRun(t *testing.T) {
 
 	t.Run("non-dry run execute move", func(t *testing.T) {
 		testLogger, hook = setupLogs()
-		e = &testEnv
+		ap.Logger = testLogger
 
-		got := setDryRun(false, testLogger)
+		ap.setDryRun(false)
+		got := e.dryrun
 
 		assert.False(t, got)
 
