@@ -80,6 +80,9 @@ var (
 )
 
 func TestMainFunc(t *testing.T) {
+	files := &[]File{}
+	e = new(env)
+	NewAsyncProcessor(e, files)
 	t.Run("verify main args work", func(t *testing.T) {
 		afs, _ := createAferoTest(t, 5, true)
 		testLogger, hook = setupLogs()
@@ -89,7 +92,7 @@ func TestMainFunc(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		e = new(env)
+		e.Logger = testLogger
 		e.afs = afs
 		os.Args = append(os.Args, fmt.Sprintf(testArgsFile, pwd[1:]))
 		os.Args = append(os.Args, fmt.Sprintf(testArgsDataset, testDatasetID))
@@ -170,9 +173,10 @@ func TestNewAsyncProcessor(t *testing.T) {
 	t.Run("should return the ap", func(t *testing.T) {
 		testLogger, _ = setupLogs()
 		e = new(env)
+		e.Logger = testLogger
 		fileList = &[]File{}
-		ap := NewAsyncProcessor(testLogger, e, fileList)
-		assert.Equal(t, testLogger, ap.Logger)
+		ap := NewAsyncProcessor(e, fileList)
+		assert.Equal(t, testLogger, ap.Env.Logger)
 		assert.Equal(t, e, ap.Env)
 		assert.Equal(t, fileList, ap.Files)
 	})
@@ -325,12 +329,12 @@ func TestWrapLookupIP(t *testing.T) {
 func TestSetSourceFile(t *testing.T) {
 	e = new(env)
 	t.Run("check for source file", func(t *testing.T) {
-		testLogger, hook = setupLogs()
+		e.Logger, hook = setupLogs()
 		e.fsys = fstest.MapFS{
 			testPath: {Data: []byte(testContent)},
 		}
 		files := &[]File{}
-		ap := NewAsyncProcessor(testLogger, e, files)
+		ap := NewAsyncProcessor(e, files)
 		ap.setSourceFile("", testPath)
 
 		got := e.sourceFile
@@ -343,13 +347,13 @@ func TestSetSourceFile(t *testing.T) {
 	})
 
 	t.Run("should handle full path", func(t *testing.T) {
-		testLogger, hook = setupLogs()
+		e.Logger, hook = setupLogs()
 		e.fsys = fstest.MapFS{
 			testPath: {Data: []byte(testContent)},
 		}
 		fullpath := string(os.PathSeparator) + testPath
 		files := &[]File{}
-		ap := NewAsyncProcessor(testLogger, e, files)
+		ap := NewAsyncProcessor(e, files)
 		ap.setSourceFile("", string(os.PathSeparator)+testPath)
 
 		got := e.sourceFile
@@ -362,7 +366,7 @@ func TestSetSourceFile(t *testing.T) {
 	})
 
 	t.Run("should warn to use full path on local path", func(t *testing.T) {
-		testLogger, hook = setupLogs()
+		e.Logger, hook = setupLogs()
 		ex, _ := os.Executable()
 		dir, _ := path.Split(ex)
 		path := dir + testName
@@ -371,7 +375,7 @@ func TestSetSourceFile(t *testing.T) {
 			path: {Data: []byte(testContent)},
 		}
 		files := &[]File{}
-		ap := NewAsyncProcessor(testLogger, e, files)
+		ap := NewAsyncProcessor(e, files)
 		ap.setSourceFile(ex, testName)
 
 		got := e.sourceFile
@@ -389,10 +393,10 @@ func TestSetSourceFile(t *testing.T) {
 		patch := monkey.Patch(os.Exit, fakeExit)
 		defer patch.Unpatch()
 
-		testLogger, hook = setupLogs()
+		e.Logger, hook = setupLogs()
 		e.fsys = os.DirFS("")
 		files := &[]File{}
-		ap := NewAsyncProcessor(testLogger, e, files)
+		ap := NewAsyncProcessor(e, files)
 
 		panicFunc := func() {
 			ap.setSourceFile("/", testDoesNotExistFile)
@@ -411,12 +415,12 @@ func TestSetSourceFile(t *testing.T) {
 		patch := monkey.Patch(os.Exit, fakeExit)
 		defer patch.Unpatch()
 
-		testLogger, hook = setupLogs()
+		e.Logger, hook = setupLogs()
 		e.fsys = fstest.MapFS{
 			testMismatchPath: {Data: []byte(testContent)},
 		}
 		files := &[]File{}
-		ap := NewAsyncProcessor(testLogger, e, files)
+		ap := NewAsyncProcessor(e, files)
 
 		panicFunc := func() {
 			ap.setSourceFile("/", testDoesNotExistFile)
@@ -453,14 +457,14 @@ func TestGetAfs(t *testing.T) {
 func TestGetFileList(t *testing.T) {
 	e = new(env)
 	t.Run("getFileList should return a list of files", func(t *testing.T) {
-		testLogger, hook = setupLogs()
+		e.Logger, hook = setupLogs()
 
 		afs, want := createAferoTest(t, 10, true)
 		files := &[]File{}
 
 		e.afs = afs
 
-		ap := NewAsyncProcessor(testLogger, e, files)
+		ap := NewAsyncProcessor(e, files)
 		dir := getWorkDir()
 
 		testSF := fmt.Sprintf(testSourceFile, dir)
@@ -478,13 +482,13 @@ func TestGetFileList(t *testing.T) {
 		}
 	})
 	t.Run("getFileList should log properly", func(t *testing.T) {
-		testLogger, hook = setupLogs()
+		e.Logger, hook = setupLogs()
 
 		afs, want := createAferoTest(t, 1, true)
 		files := &[]File{}
 
 		e.afs = afs
-		ap := NewAsyncProcessor(testLogger, e, files)
+		ap := NewAsyncProcessor(e, files)
 
 		dir := getWorkDir()
 
@@ -510,10 +514,10 @@ func TestGetFileList(t *testing.T) {
 		patch := monkey.Patch(os.Exit, fakeExit)
 		defer patch.Unpatch()
 
-		testLogger, hook = setupLogs()
+		e.Logger, hook = setupLogs()
 		afs, _ := createAferoTest(t, 1, true)
 		files := &[]File{}
-		ap := NewAsyncProcessor(testLogger, e, files)
+		ap := NewAsyncProcessor(e, files)
 
 		e.afs = afs
 
@@ -533,11 +537,10 @@ func TestSetDatasetID(t *testing.T) {
 	files := &[]File{}
 	e = new(env)
 	e.afs = afs
-	ap := NewAsyncProcessor(testLogger, e, files)
+	ap := NewAsyncProcessor(e, files)
 
 	t.Run("verify it returns the right dataset id", func(t *testing.T) {
-		testLogger, _ = setupLogs()
-		ap.Logger = testLogger
+		e.Logger, _ = setupLogs()
 		ap.setDatasetID(testDatasetID)
 		got := ap.Env.datasetID
 		want := testDatasetID
@@ -546,8 +549,7 @@ func TestSetDatasetID(t *testing.T) {
 	})
 
 	t.Run("verify it logs the right dataset id", func(t *testing.T) {
-		testLogger, hook = setupLogs()
-		ap.Logger = testLogger
+		e.Logger, hook = setupLogs()
 
 		ap.setDatasetID(testDatasetID)
 
@@ -564,8 +566,7 @@ func TestSetDatasetID(t *testing.T) {
 		patch := monkey.Patch(os.Exit, fakeExit)
 		defer patch.Unpatch()
 
-		testLogger, hook = setupLogs()
-		ap.Logger = testLogger
+		e.Logger, hook = setupLogs()
 
 		panicFunc := func() { ap.setDatasetID(testNotADataset) }
 
@@ -590,8 +591,7 @@ func TestSetDatasetID(t *testing.T) {
 		patch2 := monkey.Patch(regexp.MatchString, fakeRegexMatch)
 		defer patch2.Unpatch()
 
-		testLogger, hook = setupLogs()
-		ap.Logger = testLogger
+		e.Logger, hook = setupLogs()
 		panicFunc := func() { ap.setDatasetID(testNotADataset) }
 
 		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
@@ -608,8 +608,7 @@ func TestSetDatasetID(t *testing.T) {
 		patch := monkey.Patch(os.Exit, fakeExit)
 		defer patch.Unpatch()
 
-		testLogger, hook = setupLogs()
-		ap.Logger = testLogger
+		e.Logger, hook = setupLogs()
 		panicFunc := func() { ap.setDatasetID(testID) }
 
 		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
@@ -623,10 +622,9 @@ func TestSetDatasetID(t *testing.T) {
 func TestCompareDatasetId(t *testing.T) {
 	files := &[]File{}
 	e = new(env)
-	ap := NewAsyncProcessor(testLogger, e, files)
+	ap := NewAsyncProcessor(e, files)
 	t.Run("Should return true if datasetid & asyncdelds check match & log it", func(t *testing.T) {
-		testLogger, hook = setupLogs()
-		ap.Logger = testLogger
+		e.Logger, hook = setupLogs()
 
 		ap.compareDatasetID(testDatasetID)
 
@@ -642,8 +640,7 @@ func TestCompareDatasetId(t *testing.T) {
 		patch := monkey.Patch(os.Exit, fakeExit)
 		defer patch.Unpatch()
 
-		testLogger, hook = setupLogs()
-		ap.Logger = testLogger
+		e.Logger, hook = setupLogs()
 		panicFunc := func() { ap.compareDatasetID(testID) }
 		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
 
@@ -657,10 +654,9 @@ func TestCompareDatasetId(t *testing.T) {
 func TestSetTimeLimit(t *testing.T) {
 	files := &[]File{}
 	e = new(env)
-	ap := NewAsyncProcessor(testLogger, e, files)
+	ap := NewAsyncProcessor(e, files)
 	t.Run("zero days", func(t *testing.T) {
-		testLogger, hook = setupLogs()
-		ap.Logger = testLogger
+		e.Logger, hook = setupLogs()
 
 		var days = int64(0)
 		ap.setTimeLimit(days)
@@ -676,8 +672,7 @@ func TestSetTimeLimit(t *testing.T) {
 	})
 
 	t.Run("Multiple days", func(t *testing.T) {
-		testLogger, hook = setupLogs()
-		ap.Logger = testLogger
+		e.Logger, hook = setupLogs()
 
 		now = time.Now()
 		days := int64(15)
@@ -700,10 +695,9 @@ func TestSetTimeLimit(t *testing.T) {
 func TestSetDryRun(t *testing.T) {
 	files := &[]File{}
 	e = new(env)
-	ap := NewAsyncProcessor(testLogger, e, files)
+	ap := NewAsyncProcessor(e, files)
 	t.Run("default dry run", func(t *testing.T) {
-		testLogger, hook = setupLogs()
-		ap.Logger = testLogger
+		e.Logger, hook = setupLogs()
 
 		ap.setDryRun(true)
 		got := e.dryrun
@@ -720,8 +714,7 @@ func TestSetDryRun(t *testing.T) {
 	})
 
 	t.Run("non-dry run execute move", func(t *testing.T) {
-		testLogger, hook = setupLogs()
-		ap.Logger = testLogger
+		e.Logger, hook = setupLogs()
 
 		ap.setDryRun(false)
 		got := e.dryrun

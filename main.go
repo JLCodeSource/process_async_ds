@@ -92,6 +92,7 @@ type files struct {
 
 // env type holds config and environment settings
 type env struct {
+	Logger     *logrus.Logger
 	fsys       fs.FS
 	afs        afero.Fs
 	sourceFile string
@@ -106,17 +107,15 @@ type env struct {
 
 // AsyncProcessor is the async processing instance
 type AsyncProcessor struct {
-	Logger *logrus.Logger
-	Env    *env
-	Files  *[]File
+	Env   *env
+	Files *[]File
 }
 
 // NewAsyncProcessor returns a pointer to an AsyncProcessor
-func NewAsyncProcessor(Logger *logrus.Logger, Env *env, Files *[]File) *AsyncProcessor {
+func NewAsyncProcessor(Env *env, Files *[]File) *AsyncProcessor {
 	return &AsyncProcessor{
-		Logger: Logger,
-		Env:    Env,
-		Files:  Files,
+		Env:   Env,
+		Files: Files,
 	}
 }
 
@@ -152,18 +151,18 @@ func (ap *AsyncProcessor) setSourceFile(ex string, f string) {
 	_, err := fs.Stat(filesystem, pth)
 
 	if err != nil {
-		ap.Logger.Fatal(err.Error())
+		ap.Env.Logger.Fatal(err.Error())
 	}
 
 	ap.Env.sourceFile = f
 
-	ap.Logger.Info(fmt.Sprintf(sourceLog, f))
+	ap.Env.Logger.Info(fmt.Sprintf(sourceLog, f))
 
 }
 
 func (ap *AsyncProcessor) getFileList(sourcefile string) {
 	fsys := ap.Env.afs
-	logger := ap.Logger
+	logger := ap.Env.Logger
 
 	_, err := fsys.Stat(sourcefile)
 	if err != nil {
@@ -195,7 +194,7 @@ func (ap *AsyncProcessor) getFileList(sourcefile string) {
 }
 
 func (ap *AsyncProcessor) setDatasetID(id string) {
-	logger := ap.Logger
+	logger := ap.Env.Logger
 	match, err := regexp.MatchString(regexDatasetMatch, id)
 	if err != nil {
 		logger.Fatal(err.Error())
@@ -217,7 +216,7 @@ func (ap *AsyncProcessor) setDatasetID(id string) {
 }
 
 func (ap *AsyncProcessor) compareDatasetID(datasetID string) bool {
-	logger := ap.Logger
+	logger := ap.Env.Logger
 	asyncProcessedDS := getAsyncProcessedDSID(logger)
 	if asyncProcessedDS != datasetID {
 		logger.Fatal(fmt.Sprintf(compareDatasetIDNotMatchLog, datasetID, asyncProcessedDS))
@@ -231,7 +230,7 @@ func (ap *AsyncProcessor) compareDatasetID(datasetID string) bool {
 
 func (ap *AsyncProcessor) setTimeLimit(days int64) {
 	limit := time.Time{}
-	logger := ap.Logger
+	logger := ap.Env.Logger
 
 	if days == 0 {
 		logger.Warn(timelimitNoDaysLog)
@@ -247,7 +246,7 @@ func (ap *AsyncProcessor) setTimeLimit(days int64) {
 }
 
 func (ap *AsyncProcessor) setDryRun(dryrun bool) {
-	logger := ap.Logger
+	logger := ap.Env.Logger
 	if dryrun {
 		e.afs = afero.NewReadOnlyFs(afero.NewOsFs())
 		e.dryrun = true
@@ -326,12 +325,13 @@ func main() {
 	// Set PWD to root
 	root := setPWD(ex, logger)
 
+	e.Logger = logger
 	e.fsys = os.DirFS(root)
 	e.afs = afero.NewOsFs()
 
 	files := []File{}
 
-	ap := NewAsyncProcessor(logger, e, &files)
+	ap := NewAsyncProcessor(e, &files)
 
 	ap.setSourceFile(ex, sourceFile)
 	ap.setDatasetID(datasetID)
