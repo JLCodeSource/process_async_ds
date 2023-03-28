@@ -50,6 +50,8 @@ const (
 	timelimitArgHelp  = "number of days ago (default 0)"
 	dryrunArgTxt      = "dryrun"
 	dryrunArgHelp     = "execute as dry run (default true)"
+	testrunArgTxt     = "test"
+	testrunArgHelp    = "execute with test fs (default false)"
 )
 
 var (
@@ -57,6 +59,7 @@ var (
 	datasetID  string
 	numDays    int64
 	dryrun     bool
+	testrun    bool
 	afs        afero.Fs
 	env        *Env
 	files      []File
@@ -247,17 +250,12 @@ func getEnv() *Env {
 	return env
 }
 
-/* type GetAfs interface {
+type GetAfs interface {
 	getAfs()
 }
-*/
 
 func getAfs(afs afero.Fs) afero.Fs {
-	if afs != nil {
-		return afs
-	} else {
-		return afero.NewOsFs()
-	}
+	return afs
 }
 
 func init() {
@@ -268,6 +266,7 @@ func init() {
 	flag.StringVar(&datasetID, datasetIDArgTxt, "", datasetIDArgHelp)
 	flag.Int64Var(&numDays, timelimitArgTxt, 0, timelimitArgHelp)
 	flag.BoolVar(&dryrun, dryrunArgTxt, true, dryrunArgHelp)
+	flag.BoolVar(&testrun, testrunArgTxt, false, testrunArgHelp)
 }
 
 func main() {
@@ -287,6 +286,10 @@ func main() {
 	ds := getDatasetID(datasetID, logger)
 	l := getTimeLimit(numDays, logger)
 	ndr := getDryRun(dryrun, logger)
+
+	if testrun {
+		env.afs = getAfs(nil)
+	}
 
 	hostname := wrapOs(logger, osHostnameLog, os.Hostname)
 

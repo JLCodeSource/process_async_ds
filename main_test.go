@@ -445,7 +445,7 @@ func TestGetAfs(t *testing.T) {
 		assert.Equal(t, want, got)
 
 		gotLogMsg := hook.LastEntry().Message
-		wantLogMsg := fmt.Sprintf()
+		wantLogMsg := fmt.Sprintf("")
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 
