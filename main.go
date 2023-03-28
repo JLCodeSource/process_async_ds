@@ -92,14 +92,19 @@ type Env struct {
 
 }
 
+// File type holds a pointer to a list of files
+type Files struct {
+	files []File
+}
+
 // AsyncProcessor is the async processing instance
 type AsyncProcessor struct {
 	Logger *logrus.Logger
 	Env    *Env
-	Files  *[]File
+	Files  *Files
 }
 
-func NewAsyncProcessor(Logger *logrus.Logger, Env *Env, Files *[]File) *AsyncProcessor {
+func NewAsyncProcessor(Logger *logrus.Logger, Env *Env, Files *Files) *AsyncProcessor {
 	return &AsyncProcessor{
 		Logger: Logger,
 		Env:    Env,
