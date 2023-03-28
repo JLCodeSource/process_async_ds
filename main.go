@@ -92,17 +92,6 @@ type Env struct {
 
 }
 
-// verify env
-func (e *Env) verifyDataset(logger *logrus.Logger) bool {
-	ds := getAsyncProcessedDSID(logger)
-	if e.datasetID != ds {
-		logger.Fatal(fmt.Sprintf(eMatchAsyncProcessedDSFalseLog, e.datasetID, ds))
-		return false
-	}
-	logger.Info(fmt.Sprintf(eMatchAsyncProcessedDSTrueLog, e.datasetID, ds))
-	return true
-}
-
 // AsyncProcessor is the async processing instance
 type AsyncProcessor struct {
 	Logger *logrus.Logger
@@ -114,6 +103,17 @@ func NewAsyncProcessor(Logger *logrus.Logger, Env *Env) *AsyncProcessor {
 		Logger: Logger,
 		Env:    Env,
 	}
+}
+
+// verify env
+func (e *Env) verifyDataset(logger *logrus.Logger) bool {
+	ds := getAsyncProcessedDSID(logger)
+	if e.datasetID != ds {
+		logger.Fatal(fmt.Sprintf(eMatchAsyncProcessedDSFalseLog, e.datasetID, ds))
+		return false
+	}
+	logger.Info(fmt.Sprintf(eMatchAsyncProcessedDSTrueLog, e.datasetID, ds))
+	return true
 }
 
 func getSourceFile(filesystem fs.FS, ex string, f string, logger *logrus.Logger) fs.FileInfo {
