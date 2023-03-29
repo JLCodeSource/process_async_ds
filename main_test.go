@@ -92,6 +92,14 @@ func (m mockAsyncProcessor) getEnv() *env {
 	return m.Env
 }
 
+func (m mockAsyncProcessor) setEnv(env *env) {
+	m.Env = env
+}
+
+func (m mockAsyncProcessor) setFiles() {
+	return
+}
+
 func TestMainFunc(t *testing.T) {
 	//files := &[]File{}
 	//e = new(env)
@@ -205,16 +213,22 @@ func TestNewAsyncProcessor(t *testing.T) {
 		e = new(env)
 		e.logger = testLogger
 		files = &[]File{}
+		f := File{
+			smbName:     testName,
+			stagingPath: testStagingPath,
+		}
+		*files = append(*files, f)
 		ap = NewAsyncProcessor(e, files)
 		ap = mockAsyncProcessor{
 			Env:   e,
 			Files: files,
 		}
 		getEnv := ap.getEnv()
-		getFiles := ap.getFiles()
+		ap.setFiles()
+
 		assert.Equal(t, testLogger, getEnv.logger)
 		assert.Equal(t, e, getEnv)
-		assert.Equal(t, files, getFiles)
+		assert.Equal(t, files, ap.getFiles())
 	})
 }
 
@@ -470,9 +484,20 @@ func TestSetSourceFile(t *testing.T) {
 	})
 }
 
-func TestGetFileList(t *testing.T) {
+func TestGetFiles(t *testing.T) {
+	files := &[]File{}
 	e = new(env)
-	t.Run("getFileList should return a list of files", func(t *testing.T) {
+	ap = NewAsyncProcessor(e, files)
+	t.Run("ap.getFiles returns ap.Files", func(t *testing.T) {
+		got := ap.getFiles()
+		want := files
+		assert.Equal(t, want, got)
+	})
+}
+
+func TestSetFiles(t *testing.T) {
+	e = new(env)
+	t.Run("ap.setFiles should return a list of files", func(t *testing.T) {
 		e.logger, hook = setupLogs()
 
 		afs, want := createAferoTest(t, 10, true)
@@ -484,6 +509,7 @@ func TestGetFileList(t *testing.T) {
 		dir := getWorkDir()
 
 		e.sourceFile = fmt.Sprintf(testSourceFile, dir)
+		ap.setFiles()
 		got := ap.getFiles()
 
 		for i := range *got {
@@ -496,7 +522,7 @@ func TestGetFileList(t *testing.T) {
 			assert.Equal(t, want[i].fileInfo, (*got)[i].fileInfo)
 		}
 	})
-	t.Run("getFileList should log properly", func(t *testing.T) {
+	t.Run("ap.setFiles should log properly", func(t *testing.T) {
 		e.logger, hook = setupLogs()
 
 		afs, want := createAferoTest(t, 1, true)
@@ -508,7 +534,7 @@ func TestGetFileList(t *testing.T) {
 		dir := getWorkDir()
 
 		e.sourceFile = fmt.Sprintf(testSourceFile, dir)
-		ap.getFiles()
+		ap.setFiles()
 
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(fAddedToListLog,
@@ -522,7 +548,7 @@ func TestGetFileList(t *testing.T) {
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
-	t.Run("getFileList should fatal if sourcefile does not exist", func(t *testing.T) {
+	t.Run("ap.setFiles should fatal if sourcefile does not exist", func(t *testing.T) {
 		fakeExit := func(int) {
 			panic(osPanicTrue)
 		}
@@ -537,7 +563,7 @@ func TestGetFileList(t *testing.T) {
 		e.afs = afs
 
 		e.sourceFile = testDoesNotExistFile
-		panicFunc := func() { ap.getFiles() }
+		panicFunc := func() { ap.setFiles() }
 
 		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
 
@@ -545,6 +571,33 @@ func TestGetFileList(t *testing.T) {
 		wantLogMsg := fmt.Sprintf(testOpenDoesNotExistErr, testDoesNotExistFile)
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
+	})
+}
+
+func TestSetEnv(t *testing.T) {
+	files := &[]File{}
+	e = new(env)
+	ap = NewAsyncProcessor(e, files)
+	t.Run("ap.setEnv should set env", func(t *testing.T) {
+		exePath := "/"
+		sysIP := net.ParseIP("192.168.101.1")
+		env := &env{
+			logger:     testLogger,
+			exePath:    exePath,
+			fsys:       fsys,
+			afs:        afs,
+			sysIP:      sysIP,
+			sourceFile: sourceFile,
+			datasetID:  datasetID,
+			limit:      limit,
+			dryrun:     true,
+			testrun:    false,
+		}
+		ap.setEnv(env)
+		got := ap.getEnv()
+		want := env
+		assert.Equal(t, want, got)
+
 	})
 }
 

@@ -98,8 +98,10 @@ type env struct {
 
 // AsyncProcessor interface is the interface for AD
 type AsyncProcessor interface {
-	getFiles() *[]File
 	getEnv() *env
+	getFiles() *[]File
+	setEnv(*env)
+	setFiles()
 }
 
 // asyncProcessor is the async processing instance
@@ -270,10 +272,18 @@ func (e *env) setPWD(ex string) string {
 }
 
 func (ap *asyncProcessor) getEnv() *env {
-	return e
+	return ap.Env
 }
 
 func (ap *asyncProcessor) getFiles() *[]File {
+	return ap.Files
+}
+
+func (ap *asyncProcessor) setEnv(env *env) {
+	ap.Env = env
+}
+
+func (ap *asyncProcessor) setFiles() {
 	e = ap.Env
 	afs := e.afs
 	logger := e.logger
@@ -306,7 +316,7 @@ func (ap *asyncProcessor) getFiles() *[]File {
 			newFile.fileInfo.Name()))
 	}
 
-	return ap.Files
+	return
 }
 
 func init() {
@@ -350,7 +360,7 @@ func main() {
 
 	e.verifyDataset(e.logger)
 
-	ap.getFiles()
+	ap.setFiles()
 
 }
 

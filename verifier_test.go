@@ -173,6 +173,11 @@ func TestVerifyEnvMatch(t *testing.T) {
 
 	now = time.Now()
 
+	e = new(env)
+	files = &[]File{}
+
+	ap = NewAsyncProcessor(e, files)
+
 	t.Run("returns true if config metadata matches", func(t *testing.T) {
 		limit = now.Add(-24 * time.Hour)
 		e = ap.getEnv()
@@ -180,6 +185,8 @@ func TestVerifyEnvMatch(t *testing.T) {
 			sysIP: ips[0],
 			limit: limit,
 		}
+		ap.setEnv(e)
+
 		file = File{
 			smbName:     testName,
 			id:          testFileID,
@@ -187,8 +194,8 @@ func TestVerifyEnvMatch(t *testing.T) {
 			stagingPath: testPath,
 			fanIP:       ips[0],
 		}
-		testLogger, hook = setupLogs()
-		assert.True(t, file.verifyEnvMatch(testLogger))
+		e.logger, hook = setupLogs()
+		assert.True(t, file.verifyEnvMatch(e.logger))
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(fEnvMatchLog, file.smbName, file.id, file.stagingPath)
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
@@ -198,6 +205,7 @@ func TestVerifyEnvMatch(t *testing.T) {
 		e = &env{
 			sysIP: ip,
 		}
+		ap.setEnv(e)
 		file = File{
 			smbName: testName,
 			id:      testFileID,
@@ -225,6 +233,7 @@ func TestVerifyEnvMatch(t *testing.T) {
 			limit: limit,
 			sysIP: ips[0],
 		}
+		ap.setEnv(e)
 		testLogger, hook = setupLogs()
 		assert.False(t, file.verifyEnvMatch(testLogger))
 
@@ -340,6 +349,7 @@ func TestVerifyGBMetadata(t *testing.T) {
 		_, files := createFSTest(t, 1)
 		e = new(env)
 		e.datasetID = testDatasetID
+		ap.setEnv(e)
 
 		testLogger, hook = setupLogs()
 		assert.True(t, (*files)[0].verifyGBMetadata(testLogger))
