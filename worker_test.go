@@ -44,3 +44,30 @@ func TestWorker(t *testing.T) {
 
 	})
 }
+
+func TestCompareHashes(t *testing.T) {
+	t.Run("matching hashes should return true", func(t *testing.T) {
+		var f File
+		var hash [32]byte
+		var b []byte
+
+		b = []byte("test")
+		hash = sha256.Sum256(b)
+		f.hash = hash
+		f.oldHash = hash
+		assert.True(t, f.compareHashes())
+	})
+	t.Run("non-matching hashes should return false", func(t *testing.T) {
+		var f File
+		var hash [32]byte
+		var b []byte
+
+		b = []byte("test")
+		hash = sha256.Sum256(b)
+		f.hash = hash
+		b = []byte("difftest")
+		hash = sha256.Sum256(b)
+		f.oldHash = hash
+		assert.False(t, f.compareHashes())
+	})
+}

@@ -83,6 +83,8 @@ type File struct {
 	datasetID      string
 	fileInfo       fs.FileInfo
 	hash           [32]byte
+	oldHash        [32]byte
+	success        bool
 }
 
 // env type holds config and environment settings
