@@ -44,18 +44,22 @@ func TestNewPath(t *testing.T) {
 }
 
 func TestMoveFile(t *testing.T) {
-	appFs, files := createAferoTest(t, 10, false)
+	afs, files := createAferoTest(t, 10, false)
+	e = new(env)
+	e.afs = afs
+	ap = NewAsyncProcessor(e, &files)
 	t.Run("should move file to new path & log it", func(t *testing.T) {
 		for _, f := range files {
-			testLogger, hook = setupLogs()
 			oldPath := f.stagingPath
 			newPath := newPath(&f) //#nosec - testing code can be insecure
-			e = &env{
-				dryrun: false,
-			}
-			f.Move(appFs, testLogger)
+
+			e.logger, hook = setupLogs()
+			e.dryrun = false
+
+			f.Move()
+
 			assert.NotEqual(t, oldPath, newPath)
-			_, err := appFs.Stat(newPath)
+			_, err := afs.Stat(newPath)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -81,12 +85,14 @@ func TestMoveFile(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			testLogger, hook = setupLogs()
+
+			e.afs = afs
+			e.logger, hook = setupLogs()
 
 			newPath := newPath(&f) //#nosec - testing code can be insecure
 			dir, _ := path.Split(newPath)
 
-			f.Move(fs, testLogger)
+			f.Move()
 
 			gotLogMsg := hook.LastEntry().Message
 			wantLogMsg := fmt.Sprintf(testFsysDoesNotExistErr, dir[:len(dir)-1])
@@ -103,13 +109,12 @@ func TestMoveFile(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			testLogger, hook = setupLogs()
 
-			e = &env{
-				dryrun: true,
-			}
+			e.afs = afs
+			e.logger, hook = setupLogs()
+			e.dryrun = true
 
-			f.Move(fs, testLogger)
+			f.Move()
 
 			gotLogMsg := hook.LastEntry().Message
 			wantLogMsg := fmt.Sprintf(fMoveDryRunTrueLog, f.smbName, f.id)
@@ -126,13 +131,12 @@ func TestMoveFile(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			testLogger, hook = setupLogs()
 
-			e = &env{
-				dryrun: false,
-			}
+			e.afs = afs
+			e.logger, hook = setupLogs()
+			e.dryrun = false
 
-			f.Move(fs, testLogger)
+			f.Move()
 
 			gotLogMsg := hook.Entries[1].Message
 			wantLogMsg := fmt.Sprintf(fMoveDryRunFalseLog, f.smbName, f.id)
