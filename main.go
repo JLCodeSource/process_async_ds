@@ -352,6 +352,7 @@ func init() {
 }
 
 func main() {
+	// Force build
 	// Parse flags
 	flag.Parse()
 
