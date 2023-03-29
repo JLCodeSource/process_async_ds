@@ -119,14 +119,14 @@ func NewAsyncProcessor(Env *env, Files *[]File) AsyncProcessor {
 }
 
 // verify env
-func (e *env) verifyDataset(logger *logrus.Logger) bool {
-	ds := getAsyncProcessedDSID(logger)
+func (e *env) verifyDataset() bool {
+	ds := getAsyncProcessedDSID(e.logger)
 	if e.datasetID != ds {
-		logger.Fatal(fmt.Sprintf(eMatchAsyncProcessedDSFalseLog, e.datasetID, ds))
+		e.logger.Fatal(fmt.Sprintf(eMatchAsyncProcessedDSFalseLog, e.datasetID, ds))
 		return false
 	}
 
-	logger.Info(fmt.Sprintf(eMatchAsyncProcessedDSTrueLog, e.datasetID, ds))
+	e.logger.Info(fmt.Sprintf(eMatchAsyncProcessedDSTrueLog, e.datasetID, ds))
 
 	return true
 }
@@ -358,7 +358,7 @@ func main() {
 	e.setTestRun(testrun)
 	e.setSysIP()
 
-	e.verifyDataset(e.logger)
+	e.verifyDataset()
 
 	ap.setFiles()
 

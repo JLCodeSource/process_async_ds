@@ -925,10 +925,10 @@ func TestSetPWD(t *testing.T) {
 
 func TestVerifyDataset(t *testing.T) {
 	t.Run("it should return true if env.datasetID matches asyncProcessed & log it", func(t *testing.T) {
-		testLogger, hook = setupLogs()
 		e = new(env)
+		e.logger, hook = setupLogs()
 		e.datasetID = testDatasetID
-		assert.True(t, e.verifyDataset(testLogger))
+		assert.True(t, e.verifyDataset())
 
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(eMatchAsyncProcessedDSTrueLog, e.datasetID, testDatasetID)
@@ -942,11 +942,11 @@ func TestVerifyDataset(t *testing.T) {
 		patch := monkey.Patch(os.Exit, fakeExit)
 		defer patch.Unpatch()
 
-		testLogger, hook = setupLogs()
 		e = new(env)
+		e.logger, hook = setupLogs()
 		e.datasetID = testWrongDataset
 
-		panicFunc := func() { e.verifyDataset(testLogger) }
+		panicFunc := func() { e.verifyDataset() }
 		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
 
 		gotLogMsg := hook.LastEntry().Message
