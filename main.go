@@ -105,6 +105,7 @@ type AsyncProcessor interface {
 	getFiles() *[]File
 	setEnv(*env)
 	setFiles()
+	processFiles()
 }
 
 // asyncProcessor is the async processing instance

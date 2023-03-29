@@ -99,6 +99,9 @@ func (m mockAsyncProcessor) setEnv(_ *env) {
 func (m mockAsyncProcessor) setFiles() {
 }
 
+func (m mockAsyncProcessor) processFiles() {
+}
+
 func TestMainFunc(t *testing.T) {
 	//files := &[]File{}
 	//e = new(env)
