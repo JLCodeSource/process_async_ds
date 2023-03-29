@@ -149,6 +149,8 @@ func TestVerify(t *testing.T) {
 
 	testLogger, hook = setupLogs()
 
+	ap = NewAsyncProcessor(e, files)
+
 	t.Run("Gen verify", func(t *testing.T) {
 		for _, f := range *files {
 			ok := f.verify(testLogger)
@@ -173,7 +175,7 @@ func TestVerifyEnvMatch(t *testing.T) {
 
 	t.Run("returns true if config metadata matches", func(t *testing.T) {
 		limit = now.Add(-24 * time.Hour)
-		e = getEnv()
+		e = ap.getEnv()
 		e = &env{
 			sysIP: ips[0],
 			limit: limit,
@@ -192,7 +194,7 @@ func TestVerifyEnvMatch(t *testing.T) {
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
 	t.Run("returns false if ip is not the same as the current machine", func(t *testing.T) {
-		e = getEnv()
+		e = ap.getEnv()
 		e = &env{
 			sysIP: ip,
 		}
@@ -218,7 +220,7 @@ func TestVerifyEnvMatch(t *testing.T) {
 			fanIP:      ips[0],
 		}
 		limit = now.Add(24 * time.Hour)
-		e = getEnv()
+		e = ap.getEnv()
 		e = &env{
 			limit: limit,
 			sysIP: ips[0],

@@ -58,7 +58,7 @@ func (f *File) verify(logger *logrus.Logger) bool {
 
 // verify config metadata
 func (f *File) verifyEnvMatch(logger *logrus.Logger) bool {
-	e = getEnv()
+	e = ap.getEnv()
 	if !f.verifyIP(e.sysIP, logger) {
 		return false
 	}
@@ -140,7 +140,7 @@ func (f *File) verifyMBFileNameByFileID(logger *logrus.Logger) bool {
 }
 
 func (f *File) verifyMBDatasetByFileID(logger *logrus.Logger) bool {
-	e = getEnv()
+	e = ap.getEnv()
 	id := f.id
 	cmd := exec.Command("/usr/bin/gbr", "file", "ls", "-i", id, "-d")
 	cmdOut, err := cmd.CombinedOutput()
