@@ -11,9 +11,6 @@ func (ap *asyncProcessor) processFiles() {
 		if (*ap.Files)[i].compareHashes() {
 			(*ap.Files)[i].success = true
 		}
-		// Compare hashes
-		// Confirm success
-		// Set success bool on File
 	}
 }
 
