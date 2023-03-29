@@ -73,15 +73,16 @@ var (
 
 // File type is a struct which holds its relevant metadata
 type File struct {
-	smbName     string
-	stagingPath string
-	createTime  time.Time
-	size        int64
-	id          string
-	fanIP       net.IP
-	datasetID   string
-	fileInfo    fs.FileInfo
-	hash        [32]byte
+	smbName        string
+	stagingPath    string
+	oldStagingPath string
+	createTime     time.Time
+	size           int64
+	id             string
+	fanIP          net.IP
+	datasetID      string
+	fileInfo       fs.FileInfo
+	hash           [32]byte
 }
 
 // env type holds config and environment settings
