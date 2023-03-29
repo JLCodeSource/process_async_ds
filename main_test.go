@@ -92,12 +92,11 @@ func (m mockAsyncProcessor) getEnv() *env {
 	return m.Env
 }
 
-func (m mockAsyncProcessor) setEnv(env *env) {
-	m.Env = env
+func (m mockAsyncProcessor) setEnv(_ *env) {
+	//m.Env = env
 }
 
 func (m mockAsyncProcessor) setFiles() {
-	return
 }
 
 func TestMainFunc(t *testing.T) {
@@ -378,6 +377,7 @@ func TestWrapLookupIP(t *testing.T) {
 
 func TestSetSourceFile(t *testing.T) {
 	e = new(env)
+
 	t.Run("check for source file", func(t *testing.T) {
 		e.logger, hook = setupLogs()
 		e.fsys = fstest.MapFS{
@@ -488,6 +488,7 @@ func TestGetFiles(t *testing.T) {
 	files := &[]File{}
 	e = new(env)
 	ap = NewAsyncProcessor(e, files)
+
 	t.Run("ap.getFiles returns ap.Files", func(t *testing.T) {
 		got := ap.getFiles()
 		want := files
@@ -497,6 +498,7 @@ func TestGetFiles(t *testing.T) {
 
 func TestSetFiles(t *testing.T) {
 	e = new(env)
+
 	t.Run("ap.setFiles should return a list of files", func(t *testing.T) {
 		e.logger, hook = setupLogs()
 
@@ -578,6 +580,7 @@ func TestSetEnv(t *testing.T) {
 	files := &[]File{}
 	e = new(env)
 	ap = NewAsyncProcessor(e, files)
+
 	t.Run("ap.setEnv should set env", func(t *testing.T) {
 		exePath := "/"
 		sysIP := net.ParseIP("192.168.101.1")
@@ -597,7 +600,6 @@ func TestSetEnv(t *testing.T) {
 		got := ap.getEnv()
 		want := env
 		assert.Equal(t, want, got)
-
 	})
 }
 
@@ -828,7 +830,6 @@ func TestSetTestRun(t *testing.T) {
 		wantLogMsg := testRunFalseLog
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
-
 	})
 }
 
