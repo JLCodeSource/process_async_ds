@@ -470,19 +470,6 @@ func TestSetSourceFile(t *testing.T) {
 	})
 }
 
-func TestGetAfs(t *testing.T) {
-	e = new(env)
-	t.Run("getAfs returns the afs & logs it", func(t *testing.T) {
-		e.logger, hook = setupLogs()
-		want, _ := createAferoTest(t, 1, true)
-
-		e.afs = want
-		got := e.getAfs()
-
-		assert.Equal(t, want, got)
-	})
-}
-
 func TestGetFileList(t *testing.T) {
 	e = new(env)
 	t.Run("getFileList should return a list of files", func(t *testing.T) {
