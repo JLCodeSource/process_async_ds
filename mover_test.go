@@ -60,7 +60,7 @@ func TestMoveFile(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			assertCorrectString(t, f.stagingPath, newPath)
+			assert.Equal(t, f.stagingPath, newPath)
 
 			gotLogMsg := hook.Entries[0].Message
 			wantLogMsg := fmt.Sprintf(fMoveFileLog,
