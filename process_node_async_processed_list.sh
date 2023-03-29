@@ -255,7 +255,7 @@ do
       ### If hashes match
       echo "INFO [$(timestamp)]: $orig_basename hash after move $moved_file_hash matches original hash $staging_file_hash"
       ### Confirm ready for process
-      echo "INFO [$(timestamp)]: $new_path_name/$basename is ready for processing"
+      echo "INFO [$(timestamp)]: $new_path_name/$basename (id: $file_id) is ready for processing"
    else
       ### If no match, error out and exit, as this shouldn't be possible
       echo "ERROR [$(timestamp)]: $orig_basename hash after move $moved_file_hash does not match original hash $staging_file_hash"
