@@ -153,7 +153,6 @@ func (e *env) setSourceFile(ex string, f string) {
 	}
 
 	_, err := fs.Stat(filesystem, pth)
-
 	if err != nil {
 		e.logger.Fatal(err.Error())
 	}
@@ -325,20 +324,19 @@ func (ap *asyncProcessor) setFiles() {
 }
 
 func init() {
+	// Get pointer to new Env
+	e = new(env)
+
 	log.Init()
-	log.GetLogger()
+
+	// Set logger
+	e.logger = log.GetLogger()
 
 	flag.StringVar(&sourceFile, sourceFileArgTxt, "", sourceFileArgHelp)
 	flag.StringVar(&datasetID, datasetIDArgTxt, "", datasetIDArgHelp)
 	flag.Int64Var(&numDays, timelimitArgTxt, 0, timelimitArgHelp)
 	flag.BoolVar(&dryrun, dryrunArgTxt, true, dryrunArgHelp)
 	flag.BoolVar(&testrun, testrunArgTxt, false, testrunArgHelp)
-
-	// Get pointer to new Env
-	e = new(env)
-
-	// Set logger
-	e.logger = log.GetLogger()
 
 	// Get executable path
 	e.exePath = wrapOs(e.logger, osExecutableLog, os.Executable)

@@ -122,9 +122,7 @@ func TestMainFunc(t *testing.T) {
 		dryrun = true
 		testrun = false
 
-		testLogger, hook = setupLogs()
-
-		e.logger = testLogger
+		e.logger, hook = setupLogs()
 		e.afs = afs
 		//e.sourceFile = sourceFile
 		/* e = &env{
