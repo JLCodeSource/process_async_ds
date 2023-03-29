@@ -260,10 +260,6 @@ func (e *env) setPWD(ex string) string {
 	return pwd
 }
 
-func (e *env) getAfs() afero.Fs {
-	return e.afs
-}
-
 func (ap *asyncProcessor) getEnv() *env {
 	return e
 }
