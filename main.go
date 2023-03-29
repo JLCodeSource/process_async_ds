@@ -66,6 +66,9 @@ var (
 	e          *env
 	afs        afero.Fs
 	files      *[]File
+
+	// testIntegrationTestSetup
+	testIntegrationTestSetup AsyncProcessor
 )
 
 // File type is a struct which holds its relevant metadata
@@ -226,7 +229,7 @@ func (e *env) setDryRun(dryrun bool) {
 	}
 }
 
-func (e *env) setTestRun(testrun bool) {
+func (e *env) setTestRun(testrun bool) bool {
 	logger := e.logger
 
 	e.testrun = testrun
@@ -236,6 +239,8 @@ func (e *env) setTestRun(testrun bool) {
 	} else {
 		logger.Warn(testRunFalseLog)
 	}
+
+	return testrun
 }
 
 func (e *env) setSysIP() {
@@ -351,11 +356,15 @@ func main() {
 	// Parse flags
 	flag.Parse()
 
+	if e.setTestRun(testrun) {
+		ap = testIntegrationTestSetup
+	}
+
 	e.setSourceFile(e.exePath, sourceFile)
 	e.setDatasetID(datasetID)
 	e.setTimeLimit(numDays)
 	e.setDryRun(dryrun)
-	e.setTestRun(testrun)
+
 	e.setSysIP()
 
 	e.verifyDataset()
