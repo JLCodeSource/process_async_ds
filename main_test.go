@@ -124,6 +124,7 @@ func TestMainFunc(t *testing.T) {
 
 		e.logger, hook = setupLogs()
 		e.afs = afs
+		e.fsys = os.DirFS("/")
 		//e.sourceFile = sourceFile
 		/* e = &env{
 			logger: testLogger,
