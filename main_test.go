@@ -32,15 +32,15 @@ const (
 	testBadPath      = "/not/a/path"
 	testMismatchPath = "data1/staging/testMismatch.txt"
 	testNotADataset  = "123"
-	testSourceFile   = "%v/test.file"
+	testSourceFile   = "%vtest.file"
 
-	testArgsFile    = "-sourcefile=%v/test.file"
-	testArgsDataset = "-datasetid=%v"
-	testArgsDays    = "-days=123"
-	testArgsHelp    = "-help"
+	testArgsSourceFile = "-sourcefile=%vtest.file"
+	testArgsDataset    = "-datasetid=%v"
+	testArgsDays       = "-days=123"
+	testArgsHelp       = "-help"
 
-	testPostArgsFile = "%v/test.file"
-	testPostArgsDays = int64(123)
+	testPostArgsSourceFile = "%vtest.file"
+	testPostArgsDays       = int64(123)
 
 	osPanicTrue  = "os.Exit called"
 	osPanicFalse = "os.Exit was not called"
@@ -80,28 +80,56 @@ var (
 )
 
 func TestMainFunc(t *testing.T) {
-	files := &[]File{}
-	e = new(env)
-	NewAsyncProcessor(e, files)
+	//files := &[]File{}
+	//e = new(env)
+	//ap = NewAsyncProcessor(e, files)
 	t.Run("verify main args work", func(t *testing.T) {
 		afs, _ := createAferoTest(t, 5, true)
 		testLogger, hook = setupLogs()
 		hostname, _ := os.Hostname()
 		ips, _ := net.LookupIP(hostname)
-		pwd, err := os.Getwd()
-		if err != nil {
-			t.Fatal(err)
-		}
-		e.logger = testLogger
-		e.afs = afs
-		os.Args = append(os.Args, fmt.Sprintf(testArgsFile, pwd[1:]))
+		//exePath, err := os.Executable()
+		//if err != nil {
+		//		t.Fatal(err)
+		//	}
+		//pwd, err := os.Getwd()
+		//if err != nil {
+		//		t.Fatal(err)
+		//	}
+		//fsys := os.DirFS(exePath)
+
+		//sysIP := ips[0]
+
+		workdir := getWorkDir()
+		//sourceFile := fmt.Sprintf(testSourceFile, workdir)
+
+		//datasetID := testDatasetID
+
+		os.Args = append(os.Args, fmt.Sprintf(testArgsSourceFile, workdir))
 		os.Args = append(os.Args, fmt.Sprintf(testArgsDataset, testDatasetID))
 		os.Args = append(os.Args, testArgsDays)
 
 		now = time.Now()
+		limit := now.Add(-24 * time.Duration(testPostArgsDays) * time.Hour)
 
-		//_, file := filepath.Split((testPostArgsFile))
-		e.fsys = os.DirFS("//")
+		dryrun = true
+		testrun = false
+
+		e.logger = testLogger
+		e.afs = afs
+		//e.sourceFile = sourceFile
+		/* e = &env{
+			logger: testLogger,
+			//exePath:    exePath,
+			//fsys:       fsys,
+			afs: afs,
+			//sysIP:      sysIP,
+			sourceFile: sourceFile,
+			//datasetID:  datasetID,
+			//limit:      limit,
+			//dryrun:     true,
+			//testrun:    false,
+		} */
 
 		main()
 
@@ -118,19 +146,19 @@ func TestMainFunc(t *testing.T) {
 		}
 		defer f.Close()
 
+		assert.Equal(t, e.sysIP, ips[0])
+
 		_, err = f.Stat()
 		assert.NoError(t, err)
 
-		assertCorrectString(t, e.sourceFile, fmt.Sprintf(testPostArgsFile, pwd[1:]))
+		assertCorrectString(t, e.sourceFile, fmt.Sprintf(testPostArgsSourceFile, workdir))
 
 		assertCorrectString(t, e.datasetID, testDatasetID)
 
-		limit := now.Add(-24 * time.Duration(testPostArgsDays) * time.Hour).Format(time.UnixDate)
+		assertCorrectString(t, e.limit.Format(time.UnixDate), limit.Format(time.UnixDate))
 
-		assertCorrectString(t, e.limit.Format(time.UnixDate), limit)
-
-		assert.Equal(t, e.dryrun, true)
-		assert.Equal(t, e.sysIP, ips[0])
+		assert.True(t, e.dryrun)
+		assert.False(t, e.testrun)
 	})
 
 	t.Run("verify main help out", func(t *testing.T) {
@@ -160,7 +188,7 @@ func TestMainFunc(t *testing.T) {
 		patch2 := monkey.Patch(os.Hostname, fakeHostname)
 		defer patch2.Unpatch()
 
-		os.Args = append(os.Args, testArgsFile)
+		os.Args = append(os.Args, testArgsSourceFile)
 		os.Args = append(os.Args, fmt.Sprintf(testArgsDataset, testDatasetID))
 		os.Args = append(os.Args, testArgsDays)
 
@@ -174,11 +202,11 @@ func TestNewAsyncProcessor(t *testing.T) {
 		testLogger, _ = setupLogs()
 		e = new(env)
 		e.logger = testLogger
-		fileList = &[]File{}
-		ap := NewAsyncProcessor(e, fileList)
+		files = &[]File{}
+		ap := NewAsyncProcessor(e, files)
 		assert.Equal(t, testLogger, ap.Env.logger)
 		assert.Equal(t, e, ap.Env)
-		assert.Equal(t, fileList, ap.Files)
+		assert.Equal(t, files, ap.Files)
 	})
 }
 

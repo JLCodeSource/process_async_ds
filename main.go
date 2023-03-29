@@ -62,9 +62,10 @@ var (
 	numDays    int64
 	dryrun     bool
 	testrun    bool
-	afs        afero.Fs
+	ap         *asyncProcessor
 	e          *env
-	fileList   *[]File
+	afs        afero.Fs
+	files      *[]File
 )
 
 // File type is a struct which holds its relevant metadata
@@ -94,15 +95,18 @@ type files struct {
 
 // env type holds config and environment settings
 type env struct {
-	logger     *logrus.Logger
-	fsys       fs.FS
-	afs        afero.Fs
+	logger  *logrus.Logger
+	exePath string
+	fsys    fs.FS
+	afs     afero.Fs
+	sysIP   net.IP
+
 	sourceFile string
 	datasetID  string
 	limit      time.Time
 	dryrun     bool
 	testrun    bool
-	sysIP      net.IP
+
 	//pwd        string
 	//days       int64
 
@@ -328,34 +332,30 @@ func init() {
 	flag.Int64Var(&numDays, timelimitArgTxt, 0, timelimitArgHelp)
 	flag.BoolVar(&dryrun, dryrunArgTxt, true, dryrunArgHelp)
 	flag.BoolVar(&testrun, testrunArgTxt, false, testrunArgHelp)
+
+	// Get pointer to new Env
+	e = new(env)
+
+	// Set logger
+	e.logger = log.GetLogger()
+
+	// Get executable path
+	e.exePath = wrapOs(e.logger, osExecutableLog, os.Executable)
+
+	// Set PWD to root
+	root := e.setPWD(e.exePath)
+
+	e.fsys = os.DirFS(root)
+	e.afs = afero.NewOsFs()
+
+	ap = NewAsyncProcessor(e, files)
 }
 
 func main() {
 	// Parse flags
 	flag.Parse()
 
-	// Get pointer to new Env
-	e = new(env)
-
-	// Set logger
-	logger := log.GetLogger()
-
-	e.logger = logger
-
-	// Get executable path
-	ex := wrapOs(e.logger, osExecutableLog, os.Executable)
-
-	// Set PWD to root
-	root := e.setPWD(ex)
-
-	e.fsys = os.DirFS(root)
-	e.afs = afero.NewOsFs()
-
-	files := []File{}
-
-	NewAsyncProcessor(e, &files)
-
-	e.setSourceFile(ex, sourceFile)
+	e.setSourceFile(e.exePath, sourceFile)
 	e.setDatasetID(datasetID)
 	e.setTimeLimit(numDays)
 	e.setDryRun(dryrun)
