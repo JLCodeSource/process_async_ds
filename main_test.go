@@ -779,6 +779,23 @@ func TestSetTestRun(t *testing.T) {
 	})
 }
 
+func TestSetSysIP(t *testing.T) {
+	e = new(env)
+	files = &[]File{}
+
+	t.Run("Should set e.sysIP", func(t *testing.T) {
+		e.logger, hook = setupLogs()
+		hostname, _ := os.Hostname()
+		ips, _ := net.LookupIP(hostname)
+
+		e.setSysIP()
+
+		got := e.sysIP
+		want := ips[0]
+		assert.Equal(t, got, want)
+	})
+}
+
 func TestSetPWD(t *testing.T) {
 	files := &[]File{}
 	e = new(env)

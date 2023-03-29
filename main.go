@@ -236,6 +236,15 @@ func (e *env) setTestRun(testrun bool) {
 	}
 }
 
+func (e *env) setSysIP() {
+
+	hostname := wrapOs(e.logger, osHostnameLog, os.Hostname)
+
+	ip := wrapLookupIP(e.logger, hostname, net.LookupIP)
+
+	e.sysIP = ip
+}
+
 func (e *env) setPWD(ex string) string {
 	// job needs to run in root dir
 	exPath := filepath.Dir(ex)
@@ -337,12 +346,7 @@ func main() {
 	e.setTimeLimit(numDays)
 	e.setDryRun(dryrun)
 	e.setTestRun(testrun)
-
-	hostname := wrapOs(e.logger, osHostnameLog, os.Hostname)
-
-	ip := wrapLookupIP(e.logger, hostname, net.LookupIP)
-
-	e.sysIP = ip
+	e.setSysIP()
 
 	e.verifyDataset(e.logger)
 
