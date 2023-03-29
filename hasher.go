@@ -8,10 +8,12 @@ import (
 )
 
 const (
-	fHashLog = "%v (file.id:%v) file.hash: %x"
+	fHashLog = "%v (file.id:%v) %v-move file.hash: %x"
 )
 
 func (f *File) Hasher() {
+	var prePost string
+
 	e = ap.getEnv()
 	afs = e.afs
 	logger := e.logger
@@ -26,5 +28,11 @@ func (f *File) Hasher() {
 
 	f.hash = sha
 
-	logger.Info(fmt.Sprintf(fHashLog, f.smbName, f.id, f.hash))
+	if f.oldStagingPath == "" {
+		prePost = "pre"
+	} else {
+		prePost = "post"
+	}
+
+	logger.Info(fmt.Sprintf(fHashLog, f.smbName, f.id, prePost, f.hash))
 }

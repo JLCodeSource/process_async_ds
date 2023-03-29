@@ -16,7 +16,7 @@ const (
 )
 
 func TestHasher(t *testing.T) {
-	t.Run("should return the hash of the file & log it", func(t *testing.T) {
+	t.Run("should return the hash of 'pre'file & log it", func(t *testing.T) {
 		e = new(env)
 		afs, files := createAferoTest(t, 1, false)
 		e.afs = afs
@@ -28,12 +28,13 @@ func TestHasher(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
+			prePost := "pre"
 			sha := sha256.Sum256(content)
 			f.Hasher()
 			assert.Equal(t, sha, f.hash)
 
 			gotLogMsg := hook.LastEntry().Message
-			wantLogMsg := fmt.Sprintf(fHashLog, f.smbName, f.id, f.hash)
+			wantLogMsg := fmt.Sprintf(fHashLog, f.smbName, f.id, prePost, f.hash)
 			assertCorrectString(t, gotLogMsg, wantLogMsg)
 		}
 	})
