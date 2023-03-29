@@ -8,9 +8,9 @@ func (ap *asyncProcessor) processFiles() {
 		(*ap.Files)[i].oldStagingPath = (*ap.Files)[i].stagingPath
 		(*ap.Files)[i].Move()
 		(*ap.Files)[i].Hasher()
-		/* if (*ap.Files)[i].compareHashes() {
+		if (*ap.Files)[i].compareHashes() {
 			(*ap.Files)[i].success = true
-		} */
+		}
 		// Compare hashes
 		// Confirm success
 		// Set success bool on File

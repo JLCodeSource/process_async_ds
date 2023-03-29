@@ -40,6 +40,7 @@ func TestWorker(t *testing.T) {
 			assert.Equal(t, newPaths[i], files[i].stagingPath)
 			assert.Equal(t, oldPaths[i], files[i].oldStagingPath)
 			assert.Equal(t, oldHashes[i], string(files[i].hash[:]))
+			assert.True(t, files[i].success)
 		}
 
 	})
