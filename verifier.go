@@ -47,7 +47,7 @@ func (f *File) verify(logger *logrus.Logger) bool {
 		return false
 	}
 
-	if !f.verifyStat(env.fsys, logger) {
+	if !f.verifyStat(e.fsys, logger) {
 		return false
 	}
 
@@ -58,12 +58,12 @@ func (f *File) verify(logger *logrus.Logger) bool {
 
 // verify config metadata
 func (f *File) verifyEnvMatch(logger *logrus.Logger) bool {
-	env = getEnv()
-	if !f.verifyIP(env.sysIP, logger) {
+	e = ap.getEnv()
+	if !f.verifyIP(e.sysIP, logger) {
 		return false
 	}
 
-	if !f.verifyTimeLimit(env.limit, logger) {
+	if !f.verifyTimeLimit(e.limit, logger) {
 		return false
 	}
 
@@ -140,7 +140,7 @@ func (f *File) verifyMBFileNameByFileID(logger *logrus.Logger) bool {
 }
 
 func (f *File) verifyMBDatasetByFileID(logger *logrus.Logger) bool {
-	env = getEnv()
+	e = ap.getEnv()
 	id := f.id
 	cmd := exec.Command("/usr/bin/gbr", "file", "ls", "-i", id, "-d")
 	cmdOut, err := cmd.CombinedOutput()
@@ -159,7 +159,7 @@ func (f *File) verifyMBDatasetByFileID(logger *logrus.Logger) bool {
 
 	f.setMBDatasetByFileID(out, logger)
 
-	datasetID := env.datasetID
+	datasetID := e.datasetID
 
 	return f.verifyInDataset(datasetID, logger)
 }

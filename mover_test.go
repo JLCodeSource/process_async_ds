@@ -28,7 +28,7 @@ func TestNewPath(t *testing.T) {
 	fsys, files = createFSTest(t, 10)
 
 	t.Run("should return path of xxx.processed", func(t *testing.T) {
-		for _, f := range files {
+		for _, f := range *files {
 			oldDir, fn := path.Split(f.stagingPath)
 			parts := strings.Split(oldDir, string(os.PathSeparator))
 			lastParts := parts[2:]
@@ -50,7 +50,7 @@ func TestMoveFile(t *testing.T) {
 			testLogger, hook = setupLogs()
 			oldPath := f.stagingPath
 			newPath := newPath(&f) //#nosec - testing code can be insecure
-			env = &Env{
+			e = &env{
 				dryrun: false,
 			}
 			f.Move(appFs, testLogger)
@@ -105,7 +105,7 @@ func TestMoveFile(t *testing.T) {
 			}
 			testLogger, hook = setupLogs()
 
-			env = &Env{
+			e = &env{
 				dryrun: true,
 			}
 
@@ -128,7 +128,7 @@ func TestMoveFile(t *testing.T) {
 			}
 			testLogger, hook = setupLogs()
 
-			env = &Env{
+			e = &env{
 				dryrun: false,
 			}
 

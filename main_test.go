@@ -32,15 +32,15 @@ const (
 	testBadPath      = "/not/a/path"
 	testMismatchPath = "data1/staging/testMismatch.txt"
 	testNotADataset  = "123"
-	testSourceFile   = "%v/test.file"
+	testSourceFile   = "%vtest.file"
 
-	testArgsFile    = "-sourcefile=%v/test.file"
-	testArgsDataset = "-datasetid=%v"
-	testArgsDays    = "-days=123"
-	testArgsHelp    = "-help"
+	testArgsSourceFile = "-sourcefile=%vtest.file"
+	testArgsDataset    = "-datasetid=%v"
+	testArgsDays       = "-days=123"
+	testArgsHelp       = "-help"
 
-	testPostArgsFile = "%v/test.file"
-	testPostArgsDays = int64(123)
+	testPostArgsSourceFile = "%vtest.file"
+	testPostArgsDays       = int64(123)
 
 	osPanicTrue  = "os.Exit called"
 	osPanicFalse = "os.Exit was not called"
@@ -67,9 +67,9 @@ var (
 	hook       *test.Hook
 
 	// setup env
-	testEnv Env
-	limit   time.Time
-	ip      net.IP
+	//testEnv env
+	limit time.Time
+	ip    net.IP
 
 	// setup file
 	file File
@@ -79,71 +79,95 @@ var (
 	fsys fstest.MapFS
 )
 
+type mockAsyncProcessor struct {
+	Env   *env
+	Files *[]File
+}
+
+func (m mockAsyncProcessor) getFiles() *[]File {
+	return m.Files
+}
+
+func (m mockAsyncProcessor) getEnv() *env {
+	return m.Env
+}
+
+func (m mockAsyncProcessor) setEnv(_ *env) {
+	//m.Env = env
+}
+
+func (m mockAsyncProcessor) setFiles() {
+}
+
 func TestMainFunc(t *testing.T) {
+	//files := &[]File{}
+	//e = new(env)
+	//ap = NewAsyncProcessor(e, files)
 	t.Run("verify main args work", func(t *testing.T) {
-		afs, _ := createAferoTest(t, 5, true)
-		testLogger, hook = setupLogs()
+		afs, files := createAferoTest(t, 5, true)
 		hostname, _ := os.Hostname()
 		ips, _ := net.LookupIP(hostname)
-		pwd, err := os.Getwd()
-		if err != nil {
-			t.Fatal(err)
-		}
-		env = new(Env)
-		env.afs = afs
-		os.Args = append(os.Args, fmt.Sprintf(testArgsFile, pwd[1:]))
+		workdir := getWorkDir()
+
+		os.Args = append(os.Args, fmt.Sprintf(testArgsSourceFile, workdir))
 		os.Args = append(os.Args, fmt.Sprintf(testArgsDataset, testDatasetID))
 		os.Args = append(os.Args, testArgsDays)
 
 		now = time.Now()
+		limit = now.Add(-24 * time.Duration(testPostArgsDays) * time.Hour)
 
-		//_, file := filepath.Split((testPostArgsFile))
-		fsys := os.DirFS("//")
+		dryrun = true
+		testrun = false
+
+		testLogger, hook = setupLogs()
+
+		e.logger = testLogger
+		e.afs = afs
+		//e.sourceFile = sourceFile
+		/* e = &env{
+			logger: testLogger,
+			//exePath:    exePath,
+			//fsys:       fsys,
+			afs: afs,
+			//sysIP:      sysIP,
+			sourceFile: sourceFile,
+			//datasetID:  datasetID,
+			//limit:      limit,
+			//dryrun:     true,
+			//testrun:    false,
+		} */
+
+		ap = mockAsyncProcessor{
+			Env:   e,
+			Files: &files,
+		}
 
 		main()
 
-		// Set for other tests
-		//testEnv.pwd = pwd
 		gotLogMsg := hook.LastEntry().Message
-		wantLogMsg := fmt.Sprintf(eMatchAsyncProcessedDSTrueLog, env.datasetID, testDatasetID)
+		wantLogMsg := fmt.Sprintf(eMatchAsyncProcessedDSTrueLog, e.datasetID, testDatasetID)
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 
-		f, err := env.fsys.Open(env.sourceFile)
+		f, err := e.afs.Open(e.sourceFile)
 		if err != nil {
 			t.Fatal(err)
 		}
 		defer f.Close()
 
-		got, err := f.Stat()
-		if err != nil {
-			t.Fatal(err)
-		}
+		assert.Equal(t, e.sysIP, ips[0])
 
-		f, err = fsys.Open(env.sourceFile)
-		if err != nil {
-			t.Fatal(err)
-		}
-		defer f.Close()
+		_, err = f.Stat()
+		assert.NoError(t, err)
 
-		want, err := f.Stat()
-		if err != nil {
-			t.Fatal(err)
-		}
-		ok := reflect.DeepEqual(got, want)
+		assertCorrectString(t, e.sourceFile, fmt.Sprintf(testPostArgsSourceFile, workdir))
 
-		assert.True(t, ok)
+		assertCorrectString(t, e.datasetID, testDatasetID)
 
-		assertCorrectString(t, env.sourceFile, fmt.Sprintf(testPostArgsFile, pwd[1:]))
+		assertCorrectString(t, e.limit.Format(time.UnixDate), limit.Format(time.UnixDate))
 
-		assertCorrectString(t, env.datasetID, testDatasetID)
-
-		limit := now.Add(-24 * time.Duration(testPostArgsDays) * time.Hour).Format(time.UnixDate)
-
-		assertCorrectString(t, env.limit.Format(time.UnixDate), limit)
-
-		assert.Equal(t, env.dryrun, true)
-		assert.Equal(t, env.sysIP, ips[0])
+		assert.True(t, e.dryrun)
+		assert.False(t, e.testrun)
 	})
 
 	t.Run("verify main help out", func(t *testing.T) {
@@ -173,12 +197,37 @@ func TestMainFunc(t *testing.T) {
 		patch2 := monkey.Patch(os.Hostname, fakeHostname)
 		defer patch2.Unpatch()
 
-		os.Args = append(os.Args, testArgsFile)
+		os.Args = append(os.Args, testArgsSourceFile)
 		os.Args = append(os.Args, fmt.Sprintf(testArgsDataset, testDatasetID))
 		os.Args = append(os.Args, testArgsDays)
 
 		panicFunc := func() { main() }
 		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
+	})
+}
+
+func TestNewAsyncProcessor(t *testing.T) {
+	t.Run("should return the ap", func(t *testing.T) {
+		testLogger, _ = setupLogs()
+		e = new(env)
+		e.logger = testLogger
+		files = &[]File{}
+		f := File{
+			smbName:     testName,
+			stagingPath: testStagingPath,
+		}
+		*files = append(*files, f)
+		ap = NewAsyncProcessor(e, files)
+		ap = mockAsyncProcessor{
+			Env:   e,
+			Files: files,
+		}
+		getEnv := ap.getEnv()
+		ap.setFiles()
+
+		assert.Equal(t, testLogger, getEnv.logger)
+		assert.Equal(t, e, getEnv)
+		assert.Equal(t, files, ap.getFiles())
 	})
 }
 
@@ -326,16 +375,20 @@ func TestWrapLookupIP(t *testing.T) {
 	})
 }
 
-func TestGetSourceFile(t *testing.T) {
+func TestSetSourceFile(t *testing.T) {
+	e = new(env)
+
 	t.Run("check for source file", func(t *testing.T) {
-		testLogger, hook = setupLogs()
-		fsys = fstest.MapFS{
+		e.logger, hook = setupLogs()
+		e.fsys = fstest.MapFS{
 			testPath: {Data: []byte(testContent)},
 		}
-		file := getSourceFile(fsys, "", testPath, testLogger)
+		files := &[]File{}
+		NewAsyncProcessor(e, files)
+		e.setSourceFile("", testPath)
 
-		got := file.Name()
-		want := testName
+		got := e.sourceFile
+		want := testPath
 		assertCorrectString(t, got, want)
 
 		gotLogMsg := hook.LastEntry().Message
@@ -344,15 +397,17 @@ func TestGetSourceFile(t *testing.T) {
 	})
 
 	t.Run("should handle full path", func(t *testing.T) {
-		testLogger, hook = setupLogs()
-		fsys = fstest.MapFS{
+		e.logger, hook = setupLogs()
+		e.fsys = fstest.MapFS{
 			testPath: {Data: []byte(testContent)},
 		}
 		fullpath := string(os.PathSeparator) + testPath
-		file := getSourceFile(fsys, "", string(os.PathSeparator)+testPath, testLogger)
+		files := &[]File{}
+		NewAsyncProcessor(e, files)
+		e.setSourceFile("", string(os.PathSeparator)+testPath)
 
-		got := file.Name()
-		want := testName
+		got := e.sourceFile
+		want := string(os.PathSeparator) + testPath
 		assertCorrectString(t, got, want)
 
 		gotLogMsg := hook.LastEntry().Message
@@ -361,18 +416,19 @@ func TestGetSourceFile(t *testing.T) {
 	})
 
 	t.Run("should warn to use full path on local path", func(t *testing.T) {
-		testLogger, hook = setupLogs()
+		e.logger, hook = setupLogs()
 		ex, _ := os.Executable()
 		dir, _ := path.Split(ex)
 		path := dir + testName
 		path = path[1:]
-		fsys = fstest.MapFS{
+		e.fsys = fstest.MapFS{
 			path: {Data: []byte(testContent)},
 		}
+		files := &[]File{}
+		NewAsyncProcessor(e, files)
+		e.setSourceFile(ex, testName)
 
-		file := getSourceFile(fsys, ex, testName, testLogger)
-
-		got := file.Name()
+		got := e.sourceFile
 		want := testName
 		assertCorrectString(t, got, want)
 
@@ -387,11 +443,13 @@ func TestGetSourceFile(t *testing.T) {
 		patch := monkey.Patch(os.Exit, fakeExit)
 		defer patch.Unpatch()
 
-		testLogger, hook = setupLogs()
-		fs := os.DirFS("")
+		e.logger, hook = setupLogs()
+		e.fsys = os.DirFS("")
+		files := &[]File{}
+		NewAsyncProcessor(e, files)
 
 		panicFunc := func() {
-			getSourceFile(fs, "/", testDoesNotExistFile, testLogger)
+			e.setSourceFile("/", testDoesNotExistFile)
 		}
 
 		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
@@ -407,15 +465,15 @@ func TestGetSourceFile(t *testing.T) {
 		patch := monkey.Patch(os.Exit, fakeExit)
 		defer patch.Unpatch()
 
-		testLogger, hook = setupLogs()
-
-		fsys = fstest.MapFS{
+		e.logger, hook = setupLogs()
+		e.fsys = fstest.MapFS{
 			testMismatchPath: {Data: []byte(testContent)},
 		}
+		files := &[]File{}
+		NewAsyncProcessor(e, files)
 
 		panicFunc := func() {
-			file := getSourceFile(fsys, "/", testDoesNotExistFile, testLogger)
-			println(file)
+			e.setSourceFile("/", testDoesNotExistFile)
 		}
 
 		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
@@ -426,54 +484,59 @@ func TestGetSourceFile(t *testing.T) {
 	})
 }
 
-/* type MockGetAfs struct {
-	mockAfs afero.Fs
-}
+func TestGetFiles(t *testing.T) {
+	files := &[]File{}
+	e = new(env)
+	ap = NewAsyncProcessor(e, files)
 
-func (m *MockGetAfs) getAfs() {
-	mockAfs, _ := createAferoTest(t, 1, true)
-	m.mockAfs = mockAfs
-} */
-
-func TestGetAfs(t *testing.T) {
-	t.Run("getAfs returns the afs & logs it", func(t *testing.T) {
-		testLogger, hook = setupLogs()
-		want, _ := createAferoTest(t, 1, true)
-
-		got := getAfs(want)
-
+	t.Run("ap.getFiles returns ap.Files", func(t *testing.T) {
+		got := ap.getFiles()
+		want := files
 		assert.Equal(t, want, got)
 	})
 }
 
-func TestGetFileList(t *testing.T) {
-	t.Run("getFileList should return a list of files", func(t *testing.T) {
-		testLogger, hook = setupLogs()
-		fsys, want := createAferoTest(t, 10, true)
+func TestSetFiles(t *testing.T) {
+	e = new(env)
 
+	t.Run("ap.setFiles should return a list of files", func(t *testing.T) {
+		e.logger, hook = setupLogs()
+
+		afs, want := createAferoTest(t, 10, true)
+		files := &[]File{}
+
+		e.afs = afs
+
+		ap := NewAsyncProcessor(e, files)
 		dir := getWorkDir()
 
-		testSF := fmt.Sprintf(testSourceFile, dir)
-		got := getFileList(fsys, testSF, testLogger)
+		e.sourceFile = fmt.Sprintf(testSourceFile, dir)
+		ap.setFiles()
+		got := ap.getFiles()
 
-		for i := range got {
-			assert.Equal(t, want[i].smbName, got[i].smbName)
-			assert.Equal(t, want[i].stagingPath, got[i].stagingPath)
-			assert.Equal(t, want[i].createTime.Unix(), got[i].createTime.Unix())
-			assert.Equal(t, want[i].size, got[i].size)
-			assert.Equal(t, want[i].id, got[i].id)
-			assert.Equal(t, want[i].fanIP, got[i].fanIP)
-			assert.Equal(t, want[i].fileInfo, got[i].fileInfo)
+		for i := range *got {
+			assert.Equal(t, want[i].smbName, (*got)[i].smbName)
+			assert.Equal(t, want[i].stagingPath, (*got)[i].stagingPath)
+			assert.Equal(t, want[i].createTime.Unix(), (*got)[i].createTime.Unix())
+			assert.Equal(t, want[i].size, (*got)[i].size)
+			assert.Equal(t, want[i].id, (*got)[i].id)
+			assert.Equal(t, want[i].fanIP, (*got)[i].fanIP)
+			assert.Equal(t, want[i].fileInfo, (*got)[i].fileInfo)
 		}
 	})
-	t.Run("getFileList should log properly", func(t *testing.T) {
-		testLogger, hook = setupLogs()
-		fsys, want := createAferoTest(t, 1, true)
+	t.Run("ap.setFiles should log properly", func(t *testing.T) {
+		e.logger, hook = setupLogs()
+
+		afs, want := createAferoTest(t, 1, true)
+		files := &[]File{}
+
+		e.afs = afs
+		ap := NewAsyncProcessor(e, files)
 
 		dir := getWorkDir()
 
-		testSF := fmt.Sprintf(testSourceFile, dir)
-		getFileList(fsys, testSF, testLogger)
+		e.sourceFile = fmt.Sprintf(testSourceFile, dir)
+		ap.setFiles()
 
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(fAddedToListLog,
@@ -487,18 +550,22 @@ func TestGetFileList(t *testing.T) {
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
-	t.Run("getFileList should fatal if sourcefile does not exist", func(t *testing.T) {
+	t.Run("ap.setFiles should fatal if sourcefile does not exist", func(t *testing.T) {
 		fakeExit := func(int) {
 			panic(osPanicTrue)
 		}
 		patch := monkey.Patch(os.Exit, fakeExit)
 		defer patch.Unpatch()
 
-		testLogger, hook = setupLogs()
-		fsys, _ := createAferoTest(t, 1, true)
+		e.logger, hook = setupLogs()
+		afs, _ := createAferoTest(t, 1, true)
+		files := &[]File{}
+		ap := NewAsyncProcessor(e, files)
 
-		testSF := testDoesNotExistFile
-		panicFunc := func() { getFileList(fsys, testSF, testLogger) }
+		e.afs = afs
+
+		e.sourceFile = testDoesNotExistFile
+		panicFunc := func() { ap.setFiles() }
 
 		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
 
@@ -509,18 +576,52 @@ func TestGetFileList(t *testing.T) {
 	})
 }
 
-func TestGetDatasetID(t *testing.T) {
+func TestSetEnv(t *testing.T) {
+	files := &[]File{}
+	e = new(env)
+	ap = NewAsyncProcessor(e, files)
+
+	t.Run("ap.setEnv should set env", func(t *testing.T) {
+		exePath := "/"
+		sysIP := net.ParseIP("192.168.101.1")
+		env := &env{
+			logger:     testLogger,
+			exePath:    exePath,
+			fsys:       fsys,
+			afs:        afs,
+			sysIP:      sysIP,
+			sourceFile: sourceFile,
+			datasetID:  datasetID,
+			limit:      limit,
+			dryrun:     true,
+			testrun:    false,
+		}
+		ap.setEnv(env)
+		got := ap.getEnv()
+		want := env
+		assert.Equal(t, want, got)
+	})
+}
+
+func TestSetDatasetID(t *testing.T) {
+	files := &[]File{}
+	e = new(env)
+	e.afs = afs
+	ap := NewAsyncProcessor(e, files)
+
 	t.Run("verify it returns the right dataset id", func(t *testing.T) {
-		testLogger, _ = setupLogs()
-		got := getDatasetID(testDatasetID, testLogger)
+		e.logger, _ = setupLogs()
+		e.setDatasetID(testDatasetID)
+		got := ap.getEnv().datasetID
 		want := testDatasetID
 
 		assertCorrectString(t, got, want)
 	})
 
 	t.Run("verify it logs the right dataset id", func(t *testing.T) {
-		testLogger, hook = setupLogs()
-		_ = getDatasetID(testDatasetID, testLogger)
+		e.logger, hook = setupLogs()
+
+		e.setDatasetID(testDatasetID)
 
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(datasetLog, testDatasetID)
@@ -535,8 +636,9 @@ func TestGetDatasetID(t *testing.T) {
 		patch := monkey.Patch(os.Exit, fakeExit)
 		defer patch.Unpatch()
 
-		testLogger, hook = setupLogs()
-		panicFunc := func() { getDatasetID(testNotADataset, testLogger) }
+		e.logger, hook = setupLogs()
+
+		panicFunc := func() { e.setDatasetID(testNotADataset) }
 
 		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
 		gotLogMsg := hook.LastEntry().Message
@@ -559,8 +661,8 @@ func TestGetDatasetID(t *testing.T) {
 		patch2 := monkey.Patch(regexp.MatchString, fakeRegexMatch)
 		defer patch2.Unpatch()
 
-		testLogger, hook = setupLogs()
-		panicFunc := func() { getDatasetID(testNotADataset, testLogger) }
+		e.logger, hook = setupLogs()
+		panicFunc := func() { e.setDatasetID(testNotADataset) }
 
 		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
 		gotLogMsg := hook.LastEntry().Message
@@ -576,8 +678,8 @@ func TestGetDatasetID(t *testing.T) {
 		patch := monkey.Patch(os.Exit, fakeExit)
 		defer patch.Unpatch()
 
-		testLogger, hook = setupLogs()
-		panicFunc := func() { getDatasetID(testID, testLogger) }
+		e.logger, hook = setupLogs()
+		panicFunc := func() { e.setDatasetID(testID) }
 
 		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
 		gotLogMsg := hook.LastEntry().Message
@@ -588,13 +690,15 @@ func TestGetDatasetID(t *testing.T) {
 }
 
 func TestCompareDatasetId(t *testing.T) {
+	files := &[]File{}
+	e = new(env)
+	NewAsyncProcessor(e, files)
 	t.Run("Should return true if datasetid & asyncdelds check match & log it", func(t *testing.T) {
-		testLogger, hook = setupLogs()
-		match, dataset := compareDatasetID(testDatasetID, testLogger)
-		assert.True(t, match)
+		e.logger, hook = setupLogs()
+		e.compareDatasetID(testDatasetID)
 
 		gotLogMsg := hook.LastEntry().Message
-		wantLogMsg := fmt.Sprintf(compareDatasetIDMatchLog, testDatasetID, dataset)
+		wantLogMsg := fmt.Sprintf(compareDatasetIDMatchLog, testDatasetID, testDatasetID)
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
@@ -605,8 +709,8 @@ func TestCompareDatasetId(t *testing.T) {
 		patch := monkey.Patch(os.Exit, fakeExit)
 		defer patch.Unpatch()
 
-		testLogger, hook = setupLogs()
-		panicFunc := func() { compareDatasetID(testID, testLogger) }
+		e.logger, hook = setupLogs()
+		panicFunc := func() { e.compareDatasetID(testID) }
 		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
 
 		gotLogMsg := hook.LastEntry().Message
@@ -616,12 +720,17 @@ func TestCompareDatasetId(t *testing.T) {
 	})
 }
 
-func TestGetTimeLimit(t *testing.T) {
+func TestSetTimeLimit(t *testing.T) {
+	files := &[]File{}
+	e = new(env)
+	NewAsyncProcessor(e, files)
 	t.Run("zero days", func(t *testing.T) {
-		testLogger, hook = setupLogs()
+		e.logger, hook = setupLogs()
 
 		var days = int64(0)
-		gotDays := getTimeLimit(days, testLogger)
+		e.setTimeLimit(days)
+
+		gotDays := e.limit
 		wantDays := time.Time{}
 
 		assertCorrectString(t, gotDays.String(), wantDays.String())
@@ -632,13 +741,15 @@ func TestGetTimeLimit(t *testing.T) {
 	})
 
 	t.Run("Multiple days", func(t *testing.T) {
-		testLogger, hook = setupLogs()
+		e.logger, hook = setupLogs()
 
 		now = time.Now()
 		days := int64(15)
 		daysInTime := time.Duration(-15 * 24 * time.Hour)
 		limit = now.Add(daysInTime)
-		gotDays := getTimeLimit(days, testLogger)
+
+		e.setTimeLimit(days)
+		gotDays := e.limit
 		wantDays := limit
 
 		assertCorrectString(t, gotDays.Round(time.Millisecond).String(), wantDays.Round(time.Millisecond).String())
@@ -650,16 +761,18 @@ func TestGetTimeLimit(t *testing.T) {
 	})
 }
 
-func TestGetDryRun(t *testing.T) {
+func TestSetDryRun(t *testing.T) {
+	files := &[]File{}
+	e = new(env)
+	NewAsyncProcessor(e, files)
 	t.Run("default dry run", func(t *testing.T) {
-		testLogger, hook = setupLogs()
-		env = &testEnv
+		e.logger, hook = setupLogs()
 
-		got := getDryRun(true, testLogger)
-
+		e.setDryRun(true)
+		got := e.dryrun
 		assert.True(t, got)
 
-		typ := reflect.TypeOf(env.afs)
+		typ := reflect.TypeOf(e.afs)
 		rofs := new(afero.ReadOnlyFs)
 		assert.Equal(t, typ, reflect.TypeOf(rofs))
 
@@ -670,14 +783,14 @@ func TestGetDryRun(t *testing.T) {
 	})
 
 	t.Run("non-dry run execute move", func(t *testing.T) {
-		testLogger, hook = setupLogs()
-		env = &testEnv
+		e.logger, hook = setupLogs()
 
-		got := getDryRun(false, testLogger)
+		e.setDryRun(false)
+		got := e.dryrun
 
 		assert.False(t, got)
 
-		typ := reflect.TypeOf(env.afs)
+		typ := reflect.TypeOf(e.afs)
 		osfs := new(afero.OsFs)
 		assert.Equal(t, typ, reflect.TypeOf(osfs))
 
@@ -688,21 +801,73 @@ func TestGetDryRun(t *testing.T) {
 	})
 }
 
+func TestSetTestRun(t *testing.T) {
+	files := &[]File{}
+	e = new(env)
+	NewAsyncProcessor(e, files)
+	t.Run("test run", func(t *testing.T) {
+		e.logger, hook = setupLogs()
+
+		e.setTestRun(true)
+		got := e.testrun
+		assert.True(t, got)
+
+		gotLogMsg := hook.LastEntry().Message
+		wantLogMsg := testRunTrueLog
+
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
+	})
+
+	t.Run("nontest run", func(t *testing.T) {
+		e.logger, hook = setupLogs()
+
+		e.setTestRun(false)
+		got := e.testrun
+
+		assert.False(t, got)
+
+		gotLogMsg := hook.LastEntry().Message
+		wantLogMsg := testRunFalseLog
+
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
+	})
+}
+
+func TestSetSysIP(t *testing.T) {
+	e = new(env)
+	files = &[]File{}
+
+	t.Run("Should set e.sysIP", func(t *testing.T) {
+		e.logger, hook = setupLogs()
+		hostname, _ := os.Hostname()
+		ips, _ := net.LookupIP(hostname)
+
+		e.setSysIP()
+
+		got := e.sysIP
+		want := ips[0]
+		assert.Equal(t, got, want)
+	})
+}
+
 func TestSetPWD(t *testing.T) {
+	files := &[]File{}
+	e = new(env)
+	NewAsyncProcessor(e, files)
 	t.Run("setPWD should shift execution to root from current path", func(t *testing.T) {
-		testLogger, _ = setupLogs()
+		e.logger, _ = setupLogs()
 		ex, _ := os.Executable()
 
-		got := setPWD(ex, testLogger)
+		got := e.setPWD(ex)
 		want := "/"
 		assertCorrectString(t, got, want)
 	})
 
 	t.Run("setPWD should shift execution to root from any path", func(t *testing.T) {
-		testLogger, _ = setupLogs()
+		e.logger, _ = setupLogs()
 		ex := "/workflows/process_async_processed/logger/logger.go"
 
-		got := setPWD(ex, testLogger)
+		got := e.setPWD(ex)
 		want := "/"
 		assertCorrectString(t, got, want)
 	})
@@ -720,9 +885,9 @@ func TestSetPWD(t *testing.T) {
 
 		patch2 := monkey.Patch(os.Chdir, fakeChdir)
 		defer patch2.Unpatch()
-		testLogger, hook = setupLogs()
+		e.logger, hook = setupLogs()
 
-		panicFunc := func() { setPWD(testBadPath, testLogger) }
+		panicFunc := func() { e.setPWD(testBadPath) }
 
 		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
 		gotLogMsg := hook.LastEntry().Message
@@ -745,9 +910,9 @@ func TestSetPWD(t *testing.T) {
 
 		patch2 := monkey.Patch(os.Getwd, fakeGetwd)
 		defer patch2.Unpatch()
-		testLogger, hook = setupLogs()
+		e.logger, hook = setupLogs()
 
-		panicFunc := func() { setPWD(testBadPath, testLogger) }
+		panicFunc := func() { e.setPWD(testBadPath) }
 
 		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
 		gotLogMsg := hook.LastEntry().Message
@@ -761,13 +926,13 @@ func TestSetPWD(t *testing.T) {
 
 func TestVerifyDataset(t *testing.T) {
 	t.Run("it should return true if env.datasetID matches asyncProcessed & log it", func(t *testing.T) {
-		testLogger, hook = setupLogs()
-		env = new(Env)
-		env.datasetID = testDatasetID
-		assert.True(t, env.verifyDataset(testLogger))
+		e = new(env)
+		e.logger, hook = setupLogs()
+		e.datasetID = testDatasetID
+		assert.True(t, e.verifyDataset())
 
 		gotLogMsg := hook.LastEntry().Message
-		wantLogMsg := fmt.Sprintf(eMatchAsyncProcessedDSTrueLog, env.datasetID, testDatasetID)
+		wantLogMsg := fmt.Sprintf(eMatchAsyncProcessedDSTrueLog, e.datasetID, testDatasetID)
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
@@ -778,15 +943,15 @@ func TestVerifyDataset(t *testing.T) {
 		patch := monkey.Patch(os.Exit, fakeExit)
 		defer patch.Unpatch()
 
-		testLogger, hook = setupLogs()
-		env = new(Env)
-		env.datasetID = testWrongDataset
+		e = new(env)
+		e.logger, hook = setupLogs()
+		e.datasetID = testWrongDataset
 
-		panicFunc := func() { env.verifyDataset(testLogger) }
+		panicFunc := func() { e.verifyDataset() }
 		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
 
 		gotLogMsg := hook.LastEntry().Message
-		wantLogMsg := fmt.Sprintf(eMatchAsyncProcessedDSFalseLog, env.datasetID, testDatasetID)
+		wantLogMsg := fmt.Sprintf(eMatchAsyncProcessedDSFalseLog, e.datasetID, testDatasetID)
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})

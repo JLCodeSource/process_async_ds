@@ -29,6 +29,8 @@ const (
 	timelimitDaysLog            = "timelimit: Days time limit set to %v days ago which is %v"
 	dryRunTrueLog               = "dryrun: true; skipping exeecute move"
 	dryRunFalseLog              = "dryrun: false; executing move"
+	testRunTrueLog              = "testrun: setting to true"
+	testRunFalseLog             = "testrun: setting to false"
 	complexIPLog                = "net.LookupIP: unexpected; more ips than expected"
 	wrapOsLog                   = "%v: %v"
 	osHostnameLog               = "os.Hostname"
@@ -60,9 +62,13 @@ var (
 	numDays    int64
 	dryrun     bool
 	testrun    bool
+	ap         AsyncProcessor
+	e          *env
 	afs        afero.Fs
-	env        *Env
-	files      []File
+	files      *[]File
+
+	// testIntegrationTestSetup
+	testIntegrationTestSetup AsyncProcessor
 )
 
 // File type is a struct which holds its relevant metadata
@@ -78,66 +84,60 @@ type File struct {
 	hash        [32]byte
 }
 
-/*
-type E interface {
-	GetEnv() *Env
-}
-*/
+// env type holds config and environment settings
+type env struct {
+	logger  *logrus.Logger
+	exePath string
+	fsys    fs.FS
+	afs     afero.Fs
+	sysIP   net.IP
 
-// Env type holds config and environment settings
-type Env struct {
-	fsys       fs.FS
-	afs        afero.Fs
 	sourceFile string
 	datasetID  string
 	limit      time.Time
 	dryrun     bool
-	sysIP      net.IP
-	//pwd        string
-	//days       int64
-
+	testrun    bool
 }
 
-/*
-// File type holds a pointer to a list of files
-type Files struct {
-	files []File
+// AsyncProcessor interface is the interface for AD
+type AsyncProcessor interface {
+	getEnv() *env
+	getFiles() *[]File
+	setEnv(*env)
+	setFiles()
 }
 
-
-// AsyncProcessor is the async processing instance
-type AsyncProcessor struct {
-	Logger *logrus.Logger
-	Env    *Env
-	Files  *Files
+// asyncProcessor is the async processing instance
+type asyncProcessor struct {
+	Env   *env
+	Files *[]File
 }
-
 
 // NewAsyncProcessor returns a pointer to an AsyncProcessor
-func NewAsyncProcessor(Logger *logrus.Logger, Env *Env, Files *Files) *AsyncProcessor {
-	return &AsyncProcessor{
-		Logger: Logger,
-		Env:    Env,
-		Files:  Files,
+func NewAsyncProcessor(Env *env, Files *[]File) AsyncProcessor {
+	return &asyncProcessor{
+		Env:   Env,
+		Files: Files,
 	}
 }
-*/
 
 // verify env
-func (e *Env) verifyDataset(logger *logrus.Logger) bool {
-	ds := getAsyncProcessedDSID(logger)
+func (e *env) verifyDataset() bool {
+	ds := getAsyncProcessedDSID(e.logger)
 	if e.datasetID != ds {
-		logger.Fatal(fmt.Sprintf(eMatchAsyncProcessedDSFalseLog, e.datasetID, ds))
+		e.logger.Fatal(fmt.Sprintf(eMatchAsyncProcessedDSFalseLog, e.datasetID, ds))
 		return false
 	}
 
-	logger.Info(fmt.Sprintf(eMatchAsyncProcessedDSTrueLog, e.datasetID, ds))
+	e.logger.Info(fmt.Sprintf(eMatchAsyncProcessedDSTrueLog, e.datasetID, ds))
 
 	return true
 }
 
-func getSourceFile(filesystem fs.FS, ex string, f string, logger *logrus.Logger) fs.FileInfo {
+func (e *env) setSourceFile(ex string, f string) {
 	var pth string
+
+	filesystem := e.fsys
 
 	dir, fn := path.Split(f)
 
@@ -151,86 +151,56 @@ func getSourceFile(filesystem fs.FS, ex string, f string, logger *logrus.Logger)
 		pth = f
 	}
 
-	file, err := fs.Stat(filesystem, pth)
+	_, err := fs.Stat(filesystem, pth)
 
 	if err != nil {
-		logger.Fatal(err.Error())
+		e.logger.Fatal(err.Error())
 	}
 
-	logger.Info(fmt.Sprintf(sourceLog, f))
+	e.sourceFile = f
 
-	return file
+	e.logger.Info(fmt.Sprintf(sourceLog, f))
 }
 
-func getFileList(fsys afero.Fs, sourcefile string, logger *logrus.Logger) []File {
-	var files = []File{}
-
-	_, err := fsys.Stat(sourcefile)
-	if err != nil {
-		logger.Fatal(err)
-	}
-
-	lines := parseFile(fsys, sourcefile, logger)
-
-	for _, line := range lines {
-		newFile := parseLine(line, logger)
-		newFile.fileInfo, err = fsys.Stat(newFile.stagingPath)
-
-		if err != nil {
-			// Need to add testing
-			logger.Error(err)
-			continue
-		}
-
-		files = append(files, newFile)
-		logger.Info(fmt.Sprintf(fAddedToListLog,
-			newFile.smbName,
-			newFile.id,
-			newFile.stagingPath,
-			newFile.createTime.Unix(),
-			newFile.size,
-			newFile.fanIP,
-			newFile.fileInfo.Name()))
-	}
-
-	return files
-}
-
-func getDatasetID(id string, logger *logrus.Logger) string {
+func (e *env) setDatasetID(id string) {
+	logger := e.logger
 	match, err := regexp.MatchString(regexDatasetMatch, id)
+
 	if err != nil {
 		logger.Fatal(err.Error())
 	}
 
 	if !match {
 		logger.Fatal(fmt.Sprintf(datasetRegexLog, id, regexDatasetMatch))
-		return ""
 	}
 
-	ok, _ := compareDatasetID(id, logger)
+	// if no fatal datsets match
+	ok := e.compareDatasetID(id)
 	if !ok {
-		return ""
+		return
 	}
+
+	e.datasetID = id
 
 	logger.Info(fmt.Sprintf(datasetLog, id))
-
-	return id
 }
 
-func compareDatasetID(datasetID string, logger *logrus.Logger) (bool, string) {
+func (e *env) compareDatasetID(datasetID string) bool {
+	logger := e.logger
 	asyncProcessedDS := getAsyncProcessedDSID(logger)
+
 	if asyncProcessedDS != datasetID {
 		logger.Fatal(fmt.Sprintf(compareDatasetIDNotMatchLog, datasetID, asyncProcessedDS))
-		return false, ""
+		return false
 	}
 
 	logger.Info(fmt.Sprintf(compareDatasetIDMatchLog, datasetID, asyncProcessedDS))
 
-	return true, asyncProcessedDS
+	return true
 }
 
-func getTimeLimit(days int64, logger *logrus.Logger) (limit time.Time) {
-	limit = time.Time{}
+func (e *env) setTimeLimit(days int64) {
+	logger := e.logger
 
 	if days == 0 {
 		logger.Warn(timelimitNoDaysLog)
@@ -238,26 +208,52 @@ func getTimeLimit(days int64, logger *logrus.Logger) (limit time.Time) {
 	}
 
 	now := time.Now()
-	limit = now.Add(-24 * time.Duration(days) * time.Hour)
-	logger.Info(fmt.Sprintf(timelimitDaysLog, days, limit))
+	limit := now.Add(-24 * time.Duration(days) * time.Hour)
 
-	return
+	e.limit = limit
+
+	logger.Info(fmt.Sprintf(timelimitDaysLog, days, limit))
 }
 
-func getDryRun(dryrun bool, logger *logrus.Logger) bool {
+func (e *env) setDryRun(dryrun bool) {
+	logger := e.logger
+
 	if dryrun {
-		env.afs = afero.NewReadOnlyFs(afero.NewOsFs())
+		e.afs = afero.NewReadOnlyFs(afero.NewOsFs())
+		e.dryrun = true
 
 		logger.Info(dryRunTrueLog)
 	} else {
-		env.afs = afero.NewOsFs()
+		e.afs = afero.NewOsFs()
+		e.dryrun = false
+
 		logger.Warn(dryRunFalseLog)
 	}
-
-	return dryrun
 }
 
-func setPWD(ex string, logger *logrus.Logger) string {
+func (e *env) setTestRun(testrun bool) bool {
+	logger := e.logger
+
+	e.testrun = testrun
+
+	if testrun {
+		logger.Info(testRunTrueLog)
+	} else {
+		logger.Warn(testRunFalseLog)
+	}
+
+	return testrun
+}
+
+func (e *env) setSysIP() {
+	hostname := wrapOs(e.logger, osHostnameLog, os.Hostname)
+
+	ip := wrapLookupIP(e.logger, hostname, net.LookupIP)
+
+	e.sysIP = ip
+}
+
+func (e *env) setPWD(ex string) string {
 	// job needs to run in root dir
 	exPath := filepath.Dir(ex)
 
@@ -270,29 +266,61 @@ func setPWD(ex string, logger *logrus.Logger) string {
 
 	err := os.Chdir(dots)
 	if err != nil {
-		logger.Fatal(err)
+		e.logger.Fatal(err)
 	}
 
 	pwd, err := os.Getwd()
 	if err != nil {
-		logger.Fatal(err)
+		e.logger.Fatal(err)
 	}
 
 	return pwd
 }
 
-func getEnv() *Env {
-	return env
+func (ap *asyncProcessor) getEnv() *env {
+	return ap.Env
 }
 
-/*
-type GetAfs interface {
-	getAfs()
+func (ap *asyncProcessor) getFiles() *[]File {
+	return ap.Files
 }
-*/
 
-func getAfs(afs afero.Fs) afero.Fs {
-	return afs
+func (ap *asyncProcessor) setEnv(env *env) {
+	ap.Env = env
+}
+
+func (ap *asyncProcessor) setFiles() {
+	e = ap.Env
+	afs := e.afs
+	logger := e.logger
+
+	_, err := afs.Stat(e.sourceFile)
+	if err != nil {
+		logger.Fatal(err)
+	}
+
+	lines := parseFile(afs, e.sourceFile, logger)
+
+	for _, line := range lines {
+		newFile := parseLine(line, logger)
+		newFile.fileInfo, err = afs.Stat(newFile.stagingPath)
+
+		if err != nil {
+			// Need to add testing
+			logger.Error(err)
+			continue
+		}
+
+		*ap.Files = append(*ap.Files, newFile)
+		logger.Info(fmt.Sprintf(fAddedToListLog,
+			newFile.smbName,
+			newFile.id,
+			newFile.stagingPath,
+			newFile.createTime.Unix(),
+			newFile.size,
+			newFile.fanIP,
+			newFile.fileInfo.Name()))
+	}
 }
 
 func init() {
@@ -304,51 +332,43 @@ func init() {
 	flag.Int64Var(&numDays, timelimitArgTxt, 0, timelimitArgHelp)
 	flag.BoolVar(&dryrun, dryrunArgTxt, true, dryrunArgHelp)
 	flag.BoolVar(&testrun, testrunArgTxt, false, testrunArgHelp)
+
+	// Get pointer to new Env
+	e = new(env)
+
+	// Set logger
+	e.logger = log.GetLogger()
+
+	// Get executable path
+	e.exePath = wrapOs(e.logger, osExecutableLog, os.Executable)
+
+	// Set PWD to root
+	root := e.setPWD(e.exePath)
+
+	e.fsys = os.DirFS(root)
+	e.afs = afero.NewOsFs()
+
+	ap = NewAsyncProcessor(e, files)
 }
 
 func main() {
-	// Set logger
-	logger := log.GetLogger()
-
 	// Parse flags
 	flag.Parse()
 
-	// Get pointer to new Env
-	env = new(Env)
-
-	// Get executable path
-	ex := wrapOs(logger, osExecutableLog, os.Executable)
-
-	// Set PWD to root
-	root := setPWD(ex, logger)
-
-	fsys := os.DirFS(root)
-	afs := afero.NewOsFs()
-
-	getSourceFile(fsys, ex, sourceFile, logger)
-	ds := getDatasetID(datasetID, logger)
-	l := getTimeLimit(numDays, logger)
-	ndr := getDryRun(dryrun, logger)
-
-	if testrun {
-		env.afs = getAfs(nil)
+	if e.setTestRun(testrun) {
+		ap = testIntegrationTestSetup
 	}
 
-	hostname := wrapOs(logger, osHostnameLog, os.Hostname)
+	e.setSourceFile(e.exePath, sourceFile)
+	e.setDatasetID(datasetID)
+	e.setTimeLimit(numDays)
+	e.setDryRun(dryrun)
 
-	ip := wrapLookupIP(logger, hostname, net.LookupIP)
+	e.setSysIP()
 
-	env = &Env{
-		fsys:       fsys,
-		afs:        afs,
-		sourceFile: sourceFile,
-		datasetID:  ds,
-		limit:      l,
-		dryrun:     ndr,
-		sysIP:      ip,
-	}
+	e.verifyDataset()
 
-	env.verifyDataset(logger)
+	ap.setFiles()
 }
 
 func wrapOs(logger *logrus.Logger, wrapped string, f func() (string, error)) string {

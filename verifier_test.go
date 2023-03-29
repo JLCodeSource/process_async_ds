@@ -134,12 +134,12 @@ func TestVerify(t *testing.T) {
 			ModTime: now},
 	}
 
-	var files []File
+	var files *[]File
 
 	fsys, files = createFSTest(t, 10)
 
-	env = new(Env)
-	env = &Env{
+	e = new(env)
+	e = &env{
 		fsys:  fsys,
 		limit: afterNow,
 		sysIP: ips[0],
@@ -149,8 +149,10 @@ func TestVerify(t *testing.T) {
 
 	testLogger, hook = setupLogs()
 
+	ap = NewAsyncProcessor(e, files)
+
 	t.Run("Gen verify", func(t *testing.T) {
-		for _, f := range files {
+		for _, f := range *files {
 			ok := f.verify(testLogger)
 			assert.True(t, ok)
 
@@ -171,13 +173,20 @@ func TestVerifyEnvMatch(t *testing.T) {
 
 	now = time.Now()
 
+	e = new(env)
+	files = &[]File{}
+
+	ap = NewAsyncProcessor(e, files)
+
 	t.Run("returns true if config metadata matches", func(t *testing.T) {
 		limit = now.Add(-24 * time.Hour)
-		env = getEnv()
-		env = &Env{
+		e = ap.getEnv()
+		e = &env{
 			sysIP: ips[0],
 			limit: limit,
 		}
+		ap.setEnv(e)
+
 		file = File{
 			smbName:     testName,
 			id:          testFileID,
@@ -185,17 +194,18 @@ func TestVerifyEnvMatch(t *testing.T) {
 			stagingPath: testPath,
 			fanIP:       ips[0],
 		}
-		testLogger, hook = setupLogs()
-		assert.True(t, file.verifyEnvMatch(testLogger))
+		e.logger, hook = setupLogs()
+		assert.True(t, file.verifyEnvMatch(e.logger))
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(fEnvMatchLog, file.smbName, file.id, file.stagingPath)
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
 	t.Run("returns false if ip is not the same as the current machine", func(t *testing.T) {
-		env = getEnv()
-		env = &Env{
+		e = ap.getEnv()
+		e = &env{
 			sysIP: ip,
 		}
+		ap.setEnv(e)
 		file = File{
 			smbName: testName,
 			id:      testFileID,
@@ -218,11 +228,12 @@ func TestVerifyEnvMatch(t *testing.T) {
 			fanIP:      ips[0],
 		}
 		limit = now.Add(24 * time.Hour)
-		env = getEnv()
-		env = &Env{
+		e = ap.getEnv()
+		e = &env{
 			limit: limit,
 			sysIP: ips[0],
 		}
+		ap.setEnv(e)
 		testLogger, hook = setupLogs()
 		assert.False(t, file.verifyEnvMatch(testLogger))
 
@@ -336,13 +347,14 @@ func TestVerifyGBMetadata(t *testing.T) {
 	defer out.Close()
 	t.Run("returns true if file.datasetID matches DatasetID", func(t *testing.T) {
 		_, files := createFSTest(t, 1)
-		env = new(Env)
-		env.datasetID = testDatasetID
+		e = new(env)
+		e.datasetID = testDatasetID
+		ap.setEnv(e)
 
 		testLogger, hook = setupLogs()
-		assert.True(t, files[0].verifyGBMetadata(testLogger))
+		assert.True(t, (*files)[0].verifyGBMetadata(testLogger))
 		gotLogMsg := hook.LastEntry().Message
-		wantLogMsg := fmt.Sprintf(fDatasetMatchTrueLog, files[0].smbName, files[0].id, files[0].datasetID, testDatasetID)
+		wantLogMsg := fmt.Sprintf(fDatasetMatchTrueLog, (*files)[0].smbName, (*files)[0].id, (*files)[0].datasetID, testDatasetID)
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
 	t.Run("returns false if file.datasetID does not match DatasetID", func(t *testing.T) {
@@ -381,8 +393,8 @@ func TestVerifyGBMetadata(t *testing.T) {
 			id:        testFileIDInWrongDataset,
 			datasetID: testWrongDataset,
 		}
-		env = new(Env)
-		env.datasetID = testWrongDataset
+		e = new(env)
+		e.datasetID = testWrongDataset
 		testLogger, hook = setupLogs()
 		assert.False(t, file.verifyGBMetadata(testLogger))
 
@@ -447,8 +459,8 @@ func TestGetMBDatasetByFileID(t *testing.T) {
 			id:        testFileID,
 			datasetID: testDatasetID,
 		}
-		env = new(Env)
-		env.datasetID = testDatasetID
+		e = new(env)
+		e.datasetID = testDatasetID
 		testLogger, hook = setupLogs()
 		ok := file.verifyMBDatasetByFileID(testLogger)
 		assert.True(t, ok)
@@ -824,7 +836,7 @@ func TestVerifyFileIDName(t *testing.T) {
 	})
 }
 
-func createFSTest(t *testing.T, numFiles int) (fstest.MapFS, []File) {
+func createFSTest(t *testing.T, numFiles int) (fstest.MapFS, *[]File) {
 	// Create gbrList file
 	var list string
 
@@ -908,7 +920,7 @@ func createFSTest(t *testing.T, numFiles int) (fstest.MapFS, []File) {
 		}
 	}
 
-	return fsys, files
+	return fsys, &files
 }
 
 func genRandom(i int64, s string) (random []byte) {
