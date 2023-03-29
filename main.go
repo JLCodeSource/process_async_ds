@@ -62,7 +62,7 @@ var (
 	numDays    int64
 	dryrun     bool
 	testrun    bool
-	ap         *asyncProcessor
+	ap         AsyncProcessor
 	e          *env
 	afs        afero.Fs
 	files      *[]File
@@ -81,18 +81,6 @@ type File struct {
 	hash        [32]byte
 }
 
-/*
-type E interface {
-	GetEnv() *Env
-}
-*/
-
-/*
-// files type is a slice of Files
-type files struct {
-	files []File
-}*/
-
 // env type holds config and environment settings
 type env struct {
 	logger  *logrus.Logger
@@ -106,15 +94,12 @@ type env struct {
 	limit      time.Time
 	dryrun     bool
 	testrun    bool
-
-	//pwd        string
-	//days       int64
-
 }
 
 // AsyncProcessor interface is the interface for AD
 type AsyncProcessor interface {
-	getFileList()
+	getFiles() *[]File
+	getEnv() *env
 }
 
 // asyncProcessor is the async processing instance
@@ -124,7 +109,7 @@ type asyncProcessor struct {
 }
 
 // NewAsyncProcessor returns a pointer to an AsyncProcessor
-func NewAsyncProcessor(Env *env, Files *[]File) *asyncProcessor {
+func NewAsyncProcessor(Env *env, Files *[]File) AsyncProcessor {
 	return &asyncProcessor{
 		Env:   Env,
 		Files: Files,
@@ -275,21 +260,15 @@ func (e *env) setPWD(ex string) string {
 	return pwd
 }
 
-func getEnv() *env {
-	return e
-}
-
-/*
-type GetAfs interface {
-	getAfs()
-}
-*/
-
 func (e *env) getAfs() afero.Fs {
 	return e.afs
 }
 
-func (ap *asyncProcessor) getFileList() {
+func (ap *asyncProcessor) getEnv() *env {
+	return e
+}
+
+func (ap *asyncProcessor) getFiles() *[]File {
 	e = ap.Env
 	afs := e.afs
 	logger := e.logger
@@ -321,6 +300,8 @@ func (ap *asyncProcessor) getFileList() {
 			newFile.fanIP,
 			newFile.fileInfo.Name()))
 	}
+
+	return ap.Files
 }
 
 func init() {
@@ -369,7 +350,7 @@ func main() {
 
 	e.verifyDataset(e.logger)
 
-	//ap.getFileList()
+	ap.getFiles()
 
 }
 
