@@ -19,13 +19,15 @@ func TestHasher(t *testing.T) {
 	afs = afero.NewMemMapFs()
 
 	t.Run("should return the hash of the file & log it", func(t *testing.T) {
+		e = new(env)
 		afs, files := createAferoTest(t, 1, false)
-		for _, f := range files {
-			testLogger, hook = setupLogs()
+		e.afs = afs
 
+		for _, f := range files {
+			e.logger, hook = setupLogs()
 			content, _ := afero.ReadFile(afs, f.stagingPath)
 			sha := sha256.Sum256(content)
-			f.hasher(afs, testLogger)
+			f.Hasher()
 			assert.Equal(t, sha, f.hash)
 
 			gotLogMsg := hook.LastEntry().Message
@@ -42,10 +44,11 @@ func TestHasher(t *testing.T) {
 		defer patch.Unpatch()
 
 		afs, files := createAferoTest(t, 10, false)
+		e.afs = afs
 		for _, f := range files {
-			testLogger, hook = setupLogs()
+			e.logger, hook = setupLogs()
 
-			f.hasher(afs, testLogger)
+			f.Hasher()
 
 			gotLogMsg := hook.Entries[0].Message
 			wantLogMsg := testFsReadFileErr
