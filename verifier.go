@@ -112,20 +112,22 @@ func (f *file) verifyGBMetadata() bool {
 		return false
 	}
 
-	if !f.verifyMBFileNameByFileID(e.logger) {
+	if !f.verifyMBFileNameByFileID() {
 		return false
 	}
 
 	return f.verifyMBDatasetByFileID()
 }
 
-func (f *file) verifyMBFileNameByFileID(logger *logrus.Logger) bool {
+func (f *file) verifyMBFileNameByFileID() bool {
+	e = ap.getEnv()
+
 	id := f.id
 	cmd := exec.Command("/usr/bin/gbr", "file", "ls", "-i", id)
 	cmdOut, err := cmd.CombinedOutput()
 
 	if err != nil {
-		f.getByIDErrLog(err, logger)
+		f.getByIDErrLog(err, e.logger)
 		return false
 	}
 
@@ -133,13 +135,13 @@ func (f *file) verifyMBFileNameByFileID(logger *logrus.Logger) bool {
 	out = cleanGbrOut(out)
 
 	if out == "" {
-		logger.Warn(fmt.Sprintf(fGbrNoFileNameByFileIDLog, f.smbName, id, id))
+		e.logger.Warn(fmt.Sprintf(fGbrNoFileNameByFileIDLog, f.smbName, id, id))
 		return false
 	}
 
-	filename := f.parseMBFileNameByFileID(out, logger)
+	filename := f.parseMBFileNameByFileID(out, e.logger)
 
-	return f.verifyFileIDName(filename, logger)
+	return f.verifyFileIDName(filename, e.logger)
 }
 
 func (f *file) verifyMBDatasetByFileID() bool {

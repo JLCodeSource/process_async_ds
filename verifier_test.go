@@ -423,13 +423,17 @@ func TestVerifyGBMetadata(t *testing.T) {
 }
 
 func TestGetMBFilenameByFileID(t *testing.T) {
+	e = new(env)
+	files = &[]file{}
+
+	ap = NewAsyncProcessor(e, files)
 	t.Run("should return true if it exists", func(t *testing.T) {
 		f = file{
 			smbName: testSmbName,
 			id:      testFileID,
 		}
-		testLogger, hook = setupLogs()
-		ok := f.verifyMBFileNameByFileID(testLogger)
+		e.logger, hook = setupLogs()
+		ok := f.verifyMBFileNameByFileID()
 		assert.True(t, ok)
 
 		gotLogMsg := hook.LastEntry().Message
@@ -443,8 +447,8 @@ func TestGetMBFilenameByFileID(t *testing.T) {
 			smbName: testName,
 			id:      testFileID,
 		}
-		testLogger, hook = setupLogs()
-		ok := f.verifyMBFileNameByFileID(testLogger)
+		e.logger, hook = setupLogs()
+		ok := f.verifyMBFileNameByFileID()
 		assert.False(t, ok)
 
 		gotLogMsg := hook.LastEntry().Message
@@ -458,8 +462,8 @@ func TestGetMBFilenameByFileID(t *testing.T) {
 			smbName: testSmbName,
 			id:      testBadFileID,
 		}
-		testLogger, hook = setupLogs()
-		ok := f.verifyMBFileNameByFileID(testLogger)
+		e.logger, hook = setupLogs()
+		ok := f.verifyMBFileNameByFileID()
 		assert.False(t, ok)
 
 		gotLogMsg := hook.LastEntry().Message
