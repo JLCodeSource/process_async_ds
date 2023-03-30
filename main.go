@@ -71,19 +71,41 @@ var (
 	testIntegrationTestSetup AsyncProcessor
 )
 
-// file type is a struct which holds its relevant metadata
+// File interface is the interface for File
+type File interface {
+	compareHashes() bool
+	getByIDErrLog(err error)
+	hasher()
+	move()
+	parseMBFileNameByFileID(cmdOut string) (filename string)
+	setMBDatasetByFileID(cmdOut string)
+	verify() bool
+	verifyCreateTime(t time.Time) bool
+	verifyEnvMatch() bool
+	verifyFileIDName(fileName string) bool
+	verifyFileSize(size int64) bool
+	verifyGBMetadata() bool
+	verifyIP() bool
+	verifyInDataset(datasetID string) bool
+	verifyMBDatasetByFileID() bool
+	verifyMBFileNameByFileID() bool
+	verifyStat() bool
+	verifyTimeLimit() bool
+}
+
+// file type is a struct holding file metadata
 type file struct {
+	id             string
 	smbName        string
-	stagingPath    string
-	oldStagingPath string
 	createTime     time.Time
 	size           int64
-	id             string
-	fanIP          net.IP
 	datasetID      string
-	fileInfo       fs.FileInfo
+	fanIP          net.IP
+	stagingPath    string
+	oldStagingPath string
 	hash           [32]byte
 	oldHash        [32]byte
+	fileInfo       fs.FileInfo
 	success        bool
 }
 
