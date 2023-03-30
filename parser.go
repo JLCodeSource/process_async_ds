@@ -55,7 +55,7 @@ func parseFile(afs afero.Fs, f string, logger *logrus.Logger) []string {
 	return lines
 }
 
-func parseLine(line string, logger *logrus.Logger) File {
+func parseLine(line string, logger *logrus.Logger) file {
 	var dateTime time.Time
 
 	fileMetadata := strings.SplitAfter(line, "|")
@@ -106,7 +106,7 @@ func parseLine(line string, logger *logrus.Logger) File {
 
 	size, _ := strconv.ParseInt(sizeStr, 10, 64)
 
-	file := File{
+	file := file{
 		smbName:     smbName,
 		stagingPath: stagingPath,
 		createTime:  dateTime,

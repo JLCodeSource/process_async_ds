@@ -71,9 +71,9 @@ var (
 	limit time.Time
 	ip    net.IP
 
-	// setup file
-	file File
-	now  time.Time
+	// setup f
+	f   file
+	now time.Time
 
 	// setup fsys
 	fsys fstest.MapFS
@@ -81,10 +81,10 @@ var (
 
 type mockAsyncProcessor struct {
 	Env   *env
-	Files *[]File
+	Files *[]file
 }
 
-func (m mockAsyncProcessor) getFiles() *[]File {
+func (m mockAsyncProcessor) getFiles() *[]file {
 	return m.Files
 }
 
@@ -213,8 +213,8 @@ func TestNewAsyncProcessor(t *testing.T) {
 		testLogger, _ = setupLogs()
 		e = new(env)
 		e.logger = testLogger
-		files = &[]File{}
-		f := File{
+		files = &[]file{}
+		f := file{
 			smbName:     testName,
 			stagingPath: testStagingPath,
 		}
@@ -385,7 +385,7 @@ func TestSetSourceFile(t *testing.T) {
 		e.fsys = fstest.MapFS{
 			testPath: {Data: []byte(testContent)},
 		}
-		files := &[]File{}
+		files := &[]file{}
 		NewAsyncProcessor(e, files)
 		e.setSourceFile("", testPath)
 
@@ -404,7 +404,7 @@ func TestSetSourceFile(t *testing.T) {
 			testPath: {Data: []byte(testContent)},
 		}
 		fullpath := string(os.PathSeparator) + testPath
-		files := &[]File{}
+		files := &[]file{}
 		NewAsyncProcessor(e, files)
 		e.setSourceFile("", string(os.PathSeparator)+testPath)
 
@@ -426,7 +426,7 @@ func TestSetSourceFile(t *testing.T) {
 		e.fsys = fstest.MapFS{
 			path: {Data: []byte(testContent)},
 		}
-		files := &[]File{}
+		files := &[]file{}
 		NewAsyncProcessor(e, files)
 		e.setSourceFile(ex, testName)
 
@@ -447,7 +447,7 @@ func TestSetSourceFile(t *testing.T) {
 
 		e.logger, hook = setupLogs()
 		e.fsys = os.DirFS("")
-		files := &[]File{}
+		files := &[]file{}
 		NewAsyncProcessor(e, files)
 
 		panicFunc := func() {
@@ -471,7 +471,7 @@ func TestSetSourceFile(t *testing.T) {
 		e.fsys = fstest.MapFS{
 			testMismatchPath: {Data: []byte(testContent)},
 		}
-		files := &[]File{}
+		files := &[]file{}
 		NewAsyncProcessor(e, files)
 
 		panicFunc := func() {
@@ -487,7 +487,7 @@ func TestSetSourceFile(t *testing.T) {
 }
 
 func TestGetFiles(t *testing.T) {
-	files := &[]File{}
+	files := &[]file{}
 	e = new(env)
 	ap = NewAsyncProcessor(e, files)
 
@@ -505,7 +505,7 @@ func TestSetFiles(t *testing.T) {
 		e.logger, hook = setupLogs()
 
 		afs, want := createAferoTest(t, 10, true)
-		files := &[]File{}
+		files := &[]file{}
 
 		e.afs = afs
 
@@ -530,7 +530,7 @@ func TestSetFiles(t *testing.T) {
 		e.logger, hook = setupLogs()
 
 		afs, want := createAferoTest(t, 1, true)
-		files := &[]File{}
+		files := &[]file{}
 
 		e.afs = afs
 		ap := NewAsyncProcessor(e, files)
@@ -561,7 +561,7 @@ func TestSetFiles(t *testing.T) {
 
 		e.logger, hook = setupLogs()
 		afs, _ := createAferoTest(t, 1, true)
-		files := &[]File{}
+		files := &[]file{}
 		ap := NewAsyncProcessor(e, files)
 
 		e.afs = afs
@@ -579,7 +579,7 @@ func TestSetFiles(t *testing.T) {
 }
 
 func TestSetEnv(t *testing.T) {
-	files := &[]File{}
+	files := &[]file{}
 	e = new(env)
 	ap = NewAsyncProcessor(e, files)
 
@@ -606,7 +606,7 @@ func TestSetEnv(t *testing.T) {
 }
 
 func TestSetDatasetID(t *testing.T) {
-	files := &[]File{}
+	files := &[]file{}
 	e = new(env)
 	e.afs = afs
 	ap := NewAsyncProcessor(e, files)
@@ -692,7 +692,7 @@ func TestSetDatasetID(t *testing.T) {
 }
 
 func TestCompareDatasetId(t *testing.T) {
-	files := &[]File{}
+	files := &[]file{}
 	e = new(env)
 	NewAsyncProcessor(e, files)
 	t.Run("Should return true if datasetid & asyncdelds check match & log it", func(t *testing.T) {
@@ -723,7 +723,7 @@ func TestCompareDatasetId(t *testing.T) {
 }
 
 func TestSetTimeLimit(t *testing.T) {
-	files := &[]File{}
+	files := &[]file{}
 	e = new(env)
 	NewAsyncProcessor(e, files)
 	t.Run("zero days", func(t *testing.T) {
@@ -764,7 +764,7 @@ func TestSetTimeLimit(t *testing.T) {
 }
 
 func TestSetDryRun(t *testing.T) {
-	files := &[]File{}
+	files := &[]file{}
 	e = new(env)
 	NewAsyncProcessor(e, files)
 	t.Run("default dry run", func(t *testing.T) {
@@ -804,7 +804,7 @@ func TestSetDryRun(t *testing.T) {
 }
 
 func TestSetTestRun(t *testing.T) {
-	files := &[]File{}
+	files := &[]file{}
 	e = new(env)
 	NewAsyncProcessor(e, files)
 	t.Run("test run", func(t *testing.T) {
@@ -837,7 +837,7 @@ func TestSetTestRun(t *testing.T) {
 
 func TestSetSysIP(t *testing.T) {
 	e = new(env)
-	files = &[]File{}
+	files = &[]file{}
 
 	t.Run("Should set e.sysIP", func(t *testing.T) {
 		e.logger, hook = setupLogs()
@@ -853,7 +853,7 @@ func TestSetSysIP(t *testing.T) {
 }
 
 func TestSetPWD(t *testing.T) {
-	files := &[]File{}
+	files := &[]file{}
 	e = new(env)
 	NewAsyncProcessor(e, files)
 	t.Run("setPWD should shift execution to root from current path", func(t *testing.T) {
@@ -972,7 +972,7 @@ func TestFileMetadata(t *testing.T) {
 			testPath: {Data: []byte(testContent)},
 		}
 		fileInfo, _ := fs.Stat(fsys, testPath)
-		file = File{
+		f = file{
 			smbName:     testName,
 			stagingPath: testPath,
 			createTime:  datetime,
@@ -983,44 +983,44 @@ func TestFileMetadata(t *testing.T) {
 			fileInfo:    fileInfo,
 		}
 
-		gotSmbName := file.smbName
+		gotSmbName := f.smbName
 		wantSmbName := testName
 		assertCorrectString(t, gotSmbName, wantSmbName)
 
-		gotPath := file.stagingPath
+		gotPath := f.stagingPath
 		wantPath := testPath
 		assertCorrectString(t, gotPath, wantPath)
 
 		// N.B. Need to sort out time zones
-		gotCreateTime := file.createTime.String()
+		gotCreateTime := f.createTime.String()
 		wantCreateTime := testOldDateParsed
 		assertCorrectString(t, gotCreateTime, wantCreateTime)
 
-		gotCreateTimeUnix := strconv.FormatInt(file.createTime.Unix(), 10)
+		gotCreateTimeUnix := strconv.FormatInt(f.createTime.Unix(), 10)
 		wantCreateTimeUnix := strconv.FormatInt(1619407073, 10)
 		assertCorrectString(t, gotCreateTimeUnix, wantCreateTimeUnix)
 
-		gotCreateTimeUTC := file.createTime.UTC()
+		gotCreateTimeUTC := f.createTime.UTC()
 		wantCreateTimeUTC := testOldDateParsedUTC
 		assertCorrectString(t, gotCreateTimeUTC.String(), wantCreateTimeUTC)
 
-		gotSize := strconv.FormatInt(file.size, 10)
+		gotSize := strconv.FormatInt(f.size, 10)
 		wantSize := strconv.FormatInt(1024, 10)
 		assertCorrectString(t, gotSize, wantSize)
 
-		gotID := file.id
+		gotID := f.id
 		wantID := testFileID
 		assertCorrectString(t, gotID, wantID)
 
-		gotFanIP := file.fanIP.String()
+		gotFanIP := f.fanIP.String()
 		wantFanIP := net.ParseIP(testIP).String()
 		assertCorrectString(t, gotFanIP, wantFanIP)
 
-		gotDatasetID := file.datasetID
+		gotDatasetID := f.datasetID
 		wantDatasetID := testDatasetID
 		assertCorrectString(t, gotDatasetID, wantDatasetID)
 
-		gotFileInfo := file.fileInfo
+		gotFileInfo := f.fileInfo
 		wantFileInfo := fileInfo
 		assertCorrectString(t, gotFileInfo.Name(), wantFileInfo.Name())
 	})
@@ -1032,34 +1032,34 @@ func TestFileMetadata(t *testing.T) {
 			t.Fatalf(err.Error())
 		}
 		datetime, _ := time.ParseInLocation(time.UnixDate, datestring, loc)
-		file = File{
+		f = file{
 			stagingPath: testPath,
 			createTime:  datetime,
 			size:        int64(85512264),
 			id:          testFileID}
 
-		gotPath := file.stagingPath
+		gotPath := f.stagingPath
 		wantPath := testPath
 		assertCorrectString(t, gotPath, wantPath)
 
 		// N.B. Need to sort out time zones
-		gotCreateTime := file.createTime.String()
+		gotCreateTime := f.createTime.String()
 		wantCreateTime := testKarachiDateParsed
 		assertCorrectString(t, gotCreateTime, wantCreateTime)
 
-		gotCreateTimeUnix := strconv.FormatInt(file.createTime.Unix(), 10)
+		gotCreateTimeUnix := strconv.FormatInt(f.createTime.Unix(), 10)
 		wantCreateTimeUnix := strconv.FormatInt(1675083314, 10)
 		assertCorrectString(t, gotCreateTimeUnix, wantCreateTimeUnix)
 
-		gotCreateTimeUTC := file.createTime.UTC()
+		gotCreateTimeUTC := f.createTime.UTC()
 		wantCreateTimeUTC := testKarachiDateUTC
 		assertCorrectString(t, gotCreateTimeUTC.String(), wantCreateTimeUTC)
 
-		gotSize := strconv.FormatInt(file.size, 10)
+		gotSize := strconv.FormatInt(f.size, 10)
 		wantSize := strconv.FormatInt(85512264, 10)
 		assertCorrectString(t, gotSize, wantSize)
 
-		gotID := file.id
+		gotID := f.id
 		wantID := testFileID
 		assertCorrectString(t, gotID, wantID)
 	})

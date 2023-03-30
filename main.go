@@ -65,14 +65,14 @@ var (
 	ap         AsyncProcessor
 	e          *env
 	afs        afero.Fs
-	files      *[]File
+	files      *[]file
 
 	// testIntegrationTestSetup
 	testIntegrationTestSetup AsyncProcessor
 )
 
-// File type is a struct which holds its relevant metadata
-type File struct {
+// file type is a struct which holds its relevant metadata
+type file struct {
 	smbName        string
 	stagingPath    string
 	oldStagingPath string
@@ -105,7 +105,7 @@ type env struct {
 // AsyncProcessor interface is the interface for AD
 type AsyncProcessor interface {
 	getEnv() *env
-	getFiles() *[]File
+	getFiles() *[]file
 	setEnv(*env)
 	setFiles()
 	processFiles()
@@ -114,11 +114,11 @@ type AsyncProcessor interface {
 // asyncProcessor is the async processing instance
 type asyncProcessor struct {
 	Env   *env
-	Files *[]File
+	Files *[]file
 }
 
 // NewAsyncProcessor returns a pointer to an AsyncProcessor
-func NewAsyncProcessor(Env *env, Files *[]File) AsyncProcessor {
+func NewAsyncProcessor(Env *env, Files *[]file) AsyncProcessor {
 	return &asyncProcessor{
 		Env:   Env,
 		Files: Files,
@@ -284,7 +284,7 @@ func (ap *asyncProcessor) getEnv() *env {
 	return ap.Env
 }
 
-func (ap *asyncProcessor) getFiles() *[]File {
+func (ap *asyncProcessor) getFiles() *[]file {
 	return ap.Files
 }
 

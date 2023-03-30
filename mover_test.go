@@ -182,7 +182,7 @@ func TestWrapAferoMkdirAll(t *testing.T) {
 	})
 }
 
-func createAferoTest(t *testing.T, numFiles int, createTestFile bool) (afero.Fs, []File) {
+func createAferoTest(t *testing.T, numFiles int, createTestFile bool) (afero.Fs, []file) {
 	// createTestFile
 	var outSourceFile afero.File
 
@@ -219,7 +219,7 @@ func createAferoTest(t *testing.T, numFiles int, createTestFile bool) (afero.Fs,
 		}
 	}
 
-	var files []File
+	var files []file
 
 	var dirs = []string{}
 
@@ -235,7 +235,7 @@ func createAferoTest(t *testing.T, numFiles int, createTestFile bool) (afero.Fs,
 
 	// Create Files
 	for i := 0; i < numFiles; i++ {
-		f := File{}
+		f := file{}
 		// set name
 		guid := genGUID()
 		f.smbName = guid

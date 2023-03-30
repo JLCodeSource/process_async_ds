@@ -48,7 +48,7 @@ func TestWorker(t *testing.T) {
 
 func TestCompareHashes(t *testing.T) {
 	t.Run("matching hashes should return true", func(t *testing.T) {
-		var f File
+		var f file
 		var hash [32]byte
 		var b []byte
 
@@ -59,7 +59,7 @@ func TestCompareHashes(t *testing.T) {
 		assert.True(t, f.compareHashes())
 	})
 	t.Run("non-matching hashes should return false", func(t *testing.T) {
-		var f File
+		var f file
 		var hash [32]byte
 		var b []byte
 

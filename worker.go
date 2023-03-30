@@ -19,7 +19,7 @@ func (ap *asyncProcessor) processFiles() {
 	}
 }
 
-func (f *File) compareHashes() bool {
+func (f *file) compareHashes() bool {
 	if f.oldHash != f.hash {
 		return false
 	}

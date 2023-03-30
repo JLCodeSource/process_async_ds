@@ -16,7 +16,7 @@ const (
 	fMoveDryRunFalseLog = "%v: (file.id:%v) Nondryrun executing move"
 )
 
-func (f *File) Move() {
+func (f *file) Move() {
 	e = ap.getEnv()
 	logger := e.logger
 	afs := e.afs
@@ -42,7 +42,7 @@ func (f *File) Move() {
 	}
 }
 
-func newPath(f *File) string {
+func newPath(f *file) string {
 	oldDir, fn := path.Split(f.stagingPath)
 	parts := strings.Split(oldDir, string(os.PathSeparator))
 	lastParts := parts[2:]
