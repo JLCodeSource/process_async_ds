@@ -139,7 +139,7 @@ func (f *file) verifyMBFileNameByFileID() bool {
 		return false
 	}
 
-	filename := f.parseMBFileNameByFileID(out, e.logger)
+	filename := f.parseMBFileNameByFileID(out)
 
 	return f.verifyFileIDName(filename, e.logger)
 }
@@ -169,10 +169,11 @@ func (f *file) verifyMBDatasetByFileID() bool {
 	return f.verifyInDataset(datasetID, e.logger)
 }
 
-func (f *file) parseMBFileNameByFileID(cmdOut string, logger *logrus.Logger) (filename string) {
+func (f *file) parseMBFileNameByFileID(cmdOut string) (filename string) {
+	e = ap.getEnv()
 	line := strings.Split(cmdOut, " ")
 	filename = line[2]
-	logger.Info(fmt.Sprintf(fGbrFileNameByFileIDLog, f.smbName, f.id, f.id, filename))
+	e.logger.Info(fmt.Sprintf(fGbrFileNameByFileIDLog, f.smbName, f.id, f.id, filename))
 
 	return
 }

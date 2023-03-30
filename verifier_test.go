@@ -148,7 +148,6 @@ func TestVerify(t *testing.T) {
 	}
 
 	e.logger, hook = setupLogs()
-
 	ap = NewAsyncProcessor(e, files)
 
 	t.Run("Gen verify", func(t *testing.T) {
@@ -175,7 +174,6 @@ func TestVerifyEnvMatch(t *testing.T) {
 
 	e = new(env)
 	files = &[]file{}
-
 	ap = NewAsyncProcessor(e, files)
 
 	t.Run("returns true if config metadata matches", func(t *testing.T) {
@@ -257,7 +255,6 @@ func TestVerifyIP(t *testing.T) {
 
 	e = new(env)
 	files = &[]file{}
-
 	ap = NewAsyncProcessor(e, files)
 
 	t.Run("returns true if ip is same as the current machine", func(t *testing.T) {
@@ -297,7 +294,6 @@ func TestVerifyTimeLimit(t *testing.T) {
 
 	e = new(env)
 	files = &[]file{}
-
 	ap = NewAsyncProcessor(e, files)
 
 	t.Run("returns true if file.createTime is after time limit", func(t *testing.T) {
@@ -359,7 +355,6 @@ func TestVerifyGBMetadata(t *testing.T) {
 
 	e = new(env)
 	files = &[]file{}
-
 	ap = NewAsyncProcessor(e, files)
 
 	t.Run("returns true if file.datasetID matches DatasetID", func(t *testing.T) {
@@ -425,7 +420,6 @@ func TestVerifyGBMetadata(t *testing.T) {
 func TestGetMBFilenameByFileID(t *testing.T) {
 	e = new(env)
 	files = &[]file{}
-
 	ap = NewAsyncProcessor(e, files)
 	t.Run("should return true if it exists", func(t *testing.T) {
 		f = file{
@@ -476,7 +470,6 @@ func TestGetMBFilenameByFileID(t *testing.T) {
 func TestGetMBDatasetByFileID(t *testing.T) {
 	e = new(env)
 	files = &[]file{}
-
 	ap = NewAsyncProcessor(e, files)
 
 	t.Run("should return the dataset by id if it exists", func(t *testing.T) {
@@ -513,14 +506,18 @@ func TestGetMBDatasetByFileID(t *testing.T) {
 }
 
 func TestParseFileNameByID(t *testing.T) {
+	e = new(env)
+	files = &[]file{}
+	ap = NewAsyncProcessor(e, files)
+
 	t.Run("should parse output and return filename", func(t *testing.T) {
-		testLogger, hook = setupLogs()
 		f = file{
 			smbName:   testSmbName,
 			id:        testFileID,
 			datasetID: testDatasetID,
 		}
-		got := f.parseMBFileNameByFileID(testGbrFileIDDetailOutLog, testLogger)
+		e.logger, hook = setupLogs()
+		got := f.parseMBFileNameByFileID(testGbrFileIDDetailOutLog)
 		want := testSmbName
 		assertCorrectString(t, got, want)
 
