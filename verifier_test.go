@@ -195,7 +195,7 @@ func TestVerifyEnvMatch(t *testing.T) {
 			fanIP:       ips[0],
 		}
 		e.logger, hook = setupLogs()
-		assert.True(t, f.verifyEnvMatch(e.logger))
+		assert.True(t, f.verifyEnvMatch())
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(fEnvMatchLog, f.smbName, f.id, f.stagingPath)
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
@@ -211,8 +211,8 @@ func TestVerifyEnvMatch(t *testing.T) {
 			id:      testFileID,
 			fanIP:   ips[0],
 		}
-		testLogger, hook = setupLogs()
-		assert.False(t, f.verifyEnvMatch(testLogger))
+		e.logger, hook = setupLogs()
+		assert.False(t, f.verifyEnvMatch())
 
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(fIPMatchFalseLog, f.smbName, f.id, f.fanIP, ip)
@@ -234,8 +234,8 @@ func TestVerifyEnvMatch(t *testing.T) {
 			sysIP: ips[0],
 		}
 		ap.setEnv(e)
-		testLogger, hook = setupLogs()
-		assert.False(t, f.verifyEnvMatch(testLogger))
+		e.logger, hook = setupLogs()
+		assert.False(t, f.verifyEnvMatch())
 
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(fCreateTimeBeforeTimeLimitLog,

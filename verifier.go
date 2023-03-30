@@ -40,7 +40,7 @@ const (
 
 func (f *file) verify() bool {
 	e = ap.getEnv()
-	if !f.verifyEnvMatch(e.logger) {
+	if !f.verifyEnvMatch() {
 		return false
 	}
 
@@ -58,17 +58,17 @@ func (f *file) verify() bool {
 }
 
 // verify config metadata
-func (f *file) verifyEnvMatch(logger *logrus.Logger) bool {
+func (f *file) verifyEnvMatch() bool {
 	e = ap.getEnv()
-	if !f.verifyIP(e.sysIP, logger) {
+	if !f.verifyIP(e.sysIP, e.logger) {
 		return false
 	}
 
-	if !f.verifyTimeLimit(e.limit, logger) {
+	if !f.verifyTimeLimit(e.limit, e.logger) {
 		return false
 	}
 
-	logger.Info(fmt.Sprintf(fEnvMatchLog, f.smbName, f.id, f.stagingPath))
+	e.logger.Info(fmt.Sprintf(fEnvMatchLog, f.smbName, f.id, f.stagingPath))
 
 	return true
 }
