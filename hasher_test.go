@@ -30,7 +30,7 @@ func TestHasher(t *testing.T) {
 			}
 			prePost := "pre"
 			sha := sha256.Sum256(content)
-			f.Hasher()
+			f.hasher()
 			assert.Equal(t, sha, f.hash)
 
 			gotLogMsg := hook.LastEntry().Message
@@ -51,7 +51,7 @@ func TestHasher(t *testing.T) {
 		for _, f := range files {
 			e.logger, hook = setupLogs()
 
-			f.Hasher()
+			f.hasher()
 
 			gotLogMsg := hook.Entries[0].Message
 			wantLogMsg := testFsReadFileErr

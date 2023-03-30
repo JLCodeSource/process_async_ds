@@ -11,7 +11,7 @@ const (
 	fHashLog = "%v (file.id:%v) %v-move file.hash: %x"
 )
 
-func (f *file) Hasher() {
+func (f *file) hasher() {
 	var prePost string
 
 	e = ap.getEnv()

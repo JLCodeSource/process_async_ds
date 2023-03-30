@@ -56,7 +56,7 @@ func TestMoveFile(t *testing.T) {
 			e.logger, hook = setupLogs()
 			e.dryrun = false
 
-			f.Move()
+			f.move()
 
 			assert.NotEqual(t, oldPath, newPath)
 			_, err := afs.Stat(newPath)
@@ -92,7 +92,7 @@ func TestMoveFile(t *testing.T) {
 			newPath := newPath(&f) //#nosec - testing code can be insecure
 			dir, _ := path.Split(newPath)
 
-			f.Move()
+			f.move()
 
 			gotLogMsg := hook.LastEntry().Message
 			wantLogMsg := fmt.Sprintf(testFsysDoesNotExistErr, dir[:len(dir)-1])
@@ -114,7 +114,7 @@ func TestMoveFile(t *testing.T) {
 			e.logger, hook = setupLogs()
 			e.dryrun = true
 
-			f.Move()
+			f.move()
 
 			gotLogMsg := hook.LastEntry().Message
 			wantLogMsg := fmt.Sprintf(fMoveDryRunTrueLog, f.smbName, f.id)
@@ -136,7 +136,7 @@ func TestMoveFile(t *testing.T) {
 			e.logger, hook = setupLogs()
 			e.dryrun = false
 
-			f.Move()
+			f.move()
 
 			gotLogMsg := hook.Entries[1].Message
 			wantLogMsg := fmt.Sprintf(fMoveDryRunFalseLog, f.smbName, f.id)

@@ -16,7 +16,7 @@ const (
 	fMoveDryRunFalseLog = "%v: (file.id:%v) Nondryrun executing move"
 )
 
-func (f *file) Move() {
+func (f *file) move() {
 	e = ap.getEnv()
 	logger := e.logger
 	afs := e.afs
