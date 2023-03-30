@@ -49,6 +49,9 @@ var (
 )
 
 func TestParseFile(t *testing.T) {
+	e = new(env)
+	files = &[]file{}
+	ap = NewAsyncProcessor(e, files)
 	t.Run("test parseFile", func(t *testing.T) {
 		parsingTests := []struct {
 			name    string
@@ -72,20 +75,22 @@ func TestParseFile(t *testing.T) {
 
 		for _, tt := range parsingTests {
 			t.Run(tt.name, func(t *testing.T) {
-				testLogger, hook = setupLogs()
 				fs := afero.NewMemMapFs()
-				afs = &afero.Afero{Fs: fs}
+				e.afs = &afero.Afero{Fs: fs}
 				dir, _ := path.Split(testProcessedFilesOut)
 				err := fs.MkdirAll(dir, 0755)
 				if err != nil {
 					t.Fatal(err)
 				}
-				err = afero.WriteFile(afs, testProcessedFilesOut, []byte(tt.content), 0755)
+				err = afero.WriteFile(e.afs, testProcessedFilesOut, []byte(tt.content), 0755)
 				if err != nil {
 					t.Fatal(err)
 				}
 
-				got := parseSourceFile(afs, testProcessedFilesOut, testLogger)
+				e.sourceFile = testProcessedFilesOut
+				e.logger, hook = setupLogs()
+
+				got := ap.parseSourceFile()
 
 				logs := hook.AllEntries()
 
@@ -107,12 +112,15 @@ func TestParseFile(t *testing.T) {
 		patch := monkey.Patch(os.Exit, fakeExit)
 		defer patch.Unpatch()
 
-		testLogger, hook = setupLogs()
 		fs := afero.NewMemMapFs()
 		afs := &afero.Afero{Fs: fs}
 
+		e.afs = afs
+		e.sourceFile = testDoesNotExistFile
+		e.logger, hook = setupLogs()
+
 		panicFunc := func() {
-			parseSourceFile(afs, testDoesNotExistFile, testLogger)
+			ap.parseSourceFile()
 		}
 
 		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
@@ -124,10 +132,13 @@ func TestParseFile(t *testing.T) {
 }
 
 func TestParseLine(t *testing.T) {
+	e = new(env)
+	files = &[]file{}
+	ap = NewAsyncProcessor(e, files)
 	t.Run("verify ParseLine", func(t *testing.T) {
-		testLogger, hook = setupLogs()
+		e.logger, hook = setupLogs()
 		onelineParsed := oneline
-		workingFile := parseLine(onelineParsed, testLogger)
+		workingFile := ap.parseLine(onelineParsed)
 
 		parsingTests := []struct {
 			name string
@@ -177,7 +188,7 @@ func TestParseLine(t *testing.T) {
 				testParseFileLog := fmt.Sprintf(parseFileLog, testID)
 				gotLogMsg := hook.Entries[i].Message
 				wantLogMsg := fmt.Sprintf(tt.log, testParseFileLog, tt.got)
-				assertCorrectString(t, tt.got, tt.want)
+				assert.Equal(t, tt.got, tt.want)
 				assertCorrectString(t, gotLogMsg, wantLogMsg)
 			})
 		}
@@ -186,8 +197,8 @@ func TestParseLine(t *testing.T) {
 	t.Run("it should warn if strconv.ParseInt on dateTime fails", func(t *testing.T) {
 		strconvParseIntErr := fmt.Sprintf(testDateNotIntErr, testOldDate)
 
-		testLogger, hook = setupLogs()
-		parseLine(onelineOldDate, testLogger)
+		e.logger, hook = setupLogs()
+		ap.parseLine(onelineOldDate)
 
 		gotLogMsg := hook.Entries[2].Message
 		err := strconvParseIntErr
@@ -210,8 +221,8 @@ func TestParseLine(t *testing.T) {
 		patch2 := monkey.Patch(time.LoadLocation, fakeLoadLoc)
 		defer patch2.Unpatch()
 
-		testLogger, hook = setupLogs()
-		panicFunc := func() { parseLine(onelineOldDate, testLogger) }
+		e.logger, hook = setupLogs()
+		panicFunc := func() { ap.parseLine(onelineOldDate) }
 
 		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
 
@@ -236,8 +247,8 @@ func TestParseLine(t *testing.T) {
 		patch2 := monkey.Patch(time.ParseInLocation, fakeParseInLoc)
 		defer patch2.Unpatch()
 
-		testLogger, hook = setupLogs()
-		panicFunc := func() { parseLine(onelineOldDate, testLogger) }
+		e.logger, hook = setupLogs()
+		panicFunc := func() { ap.parseLine(onelineOldDate) }
 
 		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
 

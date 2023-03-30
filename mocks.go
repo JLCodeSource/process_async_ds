@@ -22,3 +22,12 @@ func (m mockAsyncProcessor) setFiles() {
 
 func (m mockAsyncProcessor) processFiles() {
 }
+
+func (m mockAsyncProcessor) parseSourceFile() []string {
+	return []string{}
+}
+
+func (m mockAsyncProcessor) parseLine(_ string) file {
+	var f file
+	return f
+}

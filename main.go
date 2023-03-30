@@ -109,6 +109,8 @@ type AsyncProcessor interface {
 	setEnv(*env)
 	setFiles()
 	processFiles()
+	parseSourceFile() []string
+	parseLine(string) file
 }
 
 // asyncProcessor is the async processing instance
@@ -302,10 +304,10 @@ func (ap *asyncProcessor) setFiles() {
 		logger.Fatal(err)
 	}
 
-	lines := parseSourceFile(afs, e.sourceFile, logger)
+	lines := ap.parseSourceFile()
 
 	for _, line := range lines {
-		newFile := parseLine(line, logger)
+		newFile := ap.parseLine(line)
 		newFile.fileInfo, err = afs.Stat(newFile.stagingPath)
 
 		if err != nil {
