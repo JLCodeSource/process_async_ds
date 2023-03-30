@@ -302,7 +302,7 @@ func (ap *asyncProcessor) setFiles() {
 		logger.Fatal(err)
 	}
 
-	lines := parseFile(afs, e.sourceFile, logger)
+	lines := parseSourceFile(afs, e.sourceFile, logger)
 
 	for _, line := range lines {
 		newFile := parseLine(line, logger)

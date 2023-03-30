@@ -85,7 +85,7 @@ func TestParseFile(t *testing.T) {
 					t.Fatal(err)
 				}
 
-				got := parseFile(afs, testProcessedFilesOut, testLogger)
+				got := parseSourceFile(afs, testProcessedFilesOut, testLogger)
 
 				logs := hook.AllEntries()
 
@@ -112,7 +112,7 @@ func TestParseFile(t *testing.T) {
 		afs := &afero.Afero{Fs: fs}
 
 		panicFunc := func() {
-			parseFile(afs, testDoesNotExistFile, testLogger)
+			parseSourceFile(afs, testDoesNotExistFile, testLogger)
 		}
 
 		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)

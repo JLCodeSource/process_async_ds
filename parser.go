@@ -24,7 +24,7 @@ const (
 	easternTime = "America/New_York"
 )
 
-func parseFile(afs afero.Fs, f string, logger *logrus.Logger) []string {
+func parseSourceFile(afs afero.Fs, f string, logger *logrus.Logger) []string {
 	_, err := afs.Stat(f)
 	if err != nil {
 		logger.Fatal(err)
