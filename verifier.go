@@ -162,10 +162,13 @@ func (f *file) verifyMBDatasetByFileID() bool {
 		return false
 	}
 
+	// set f.datasetID
 	f.setMBDatasetByFileID(out)
 
+	// get env datasetID
 	datasetID := e.datasetID
 
+	// Compare f.datasetID & env.datasetID
 	return f.verifyInDataset(datasetID, e.logger)
 }
 
