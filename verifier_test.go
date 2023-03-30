@@ -355,16 +355,21 @@ func TestVerifyGBMetadata(t *testing.T) {
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	defer out.Close()
+
+	e = new(env)
+	files = &[]file{}
+
+	ap = NewAsyncProcessor(e, files)
+
 	t.Run("returns true if file.datasetID matches DatasetID", func(t *testing.T) {
 		_, files := createFSTest(t, 1)
 		e = new(env)
 		e.datasetID = testDatasetID
 		ap.setEnv(e)
 
-		testLogger, hook = setupLogs()
-		assert.True(t, (*files)[0].verifyGBMetadata(testLogger))
+		e.logger, hook = setupLogs()
+		assert.True(t, (*files)[0].verifyGBMetadata())
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(fDatasetMatchTrueLog, (*files)[0].smbName, (*files)[0].id, (*files)[0].datasetID, testDatasetID)
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
@@ -376,8 +381,8 @@ func TestVerifyGBMetadata(t *testing.T) {
 			datasetID: testWrongDataset,
 		}
 
-		testLogger, hook = setupLogs()
-		assert.False(t, f.verifyGBMetadata(testLogger))
+		e.logger, hook = setupLogs()
+		assert.False(t, f.verifyGBMetadata())
 
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(fDatasetMatchFalseLog, f.smbName, f.id, f.datasetID, testDatasetID)
@@ -390,8 +395,8 @@ func TestVerifyGBMetadata(t *testing.T) {
 			id:        testFileID,
 			datasetID: testDatasetID,
 		}
-		testLogger, hook = setupLogs()
-		assert.False(t, f.verifyGBMetadata(testLogger))
+		e.logger, hook = setupLogs()
+		assert.False(t, f.verifyGBMetadata())
 
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(
@@ -405,10 +410,10 @@ func TestVerifyGBMetadata(t *testing.T) {
 			id:        testFileIDInWrongDataset,
 			datasetID: testWrongDataset,
 		}
-		e = new(env)
+
 		e.datasetID = testWrongDataset
-		testLogger, hook = setupLogs()
-		assert.False(t, f.verifyGBMetadata(testLogger))
+		e.logger, hook = setupLogs()
+		assert.False(t, f.verifyGBMetadata())
 
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(
@@ -465,16 +470,21 @@ func TestGetMBFilenameByFileID(t *testing.T) {
 }
 
 func TestGetMBDatasetByFileID(t *testing.T) {
+	e = new(env)
+	files = &[]file{}
+
+	ap = NewAsyncProcessor(e, files)
+
 	t.Run("should return the dataset by id if it exists", func(t *testing.T) {
 		f = file{
 			smbName:   testSmbName,
 			id:        testFileID,
 			datasetID: testDatasetID,
 		}
-		e = new(env)
+
 		e.datasetID = testDatasetID
-		testLogger, hook = setupLogs()
-		ok := f.verifyMBDatasetByFileID(testLogger)
+		e.logger, hook = setupLogs()
+		ok := f.verifyMBDatasetByFileID()
 		assert.True(t, ok)
 
 		gotLogMsg := hook.LastEntry().Message
@@ -488,8 +498,8 @@ func TestGetMBDatasetByFileID(t *testing.T) {
 			smbName: testSmbName,
 			id:      testBadFileID,
 		}
-		testLogger, hook = setupLogs()
-		ok := f.verifyMBDatasetByFileID(testLogger)
+		e.logger, hook = setupLogs()
+		ok := f.verifyMBDatasetByFileID()
 		assert.False(t, ok)
 
 		gotLogMsg := hook.LastEntry().Message

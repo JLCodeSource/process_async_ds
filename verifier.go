@@ -43,7 +43,7 @@ func (f *file) verify() bool {
 		return false
 	}
 
-	if !f.verifyGBMetadata(e.logger) {
+	if !f.verifyGBMetadata() {
 		return false
 	}
 
@@ -105,17 +105,18 @@ func (f *file) verifyTimeLimit() bool {
 }
 
 // Verify GB internal metadata
-func (f *file) verifyGBMetadata(logger *logrus.Logger) bool {
-	ds := getAsyncProcessedDSID(logger)
-	if !f.verifyInDataset(ds, logger) {
+func (f *file) verifyGBMetadata() bool {
+	e = ap.getEnv()
+	ds := getAsyncProcessedDSID(e.logger)
+	if !f.verifyInDataset(ds, e.logger) {
 		return false
 	}
 
-	if !f.verifyMBFileNameByFileID(logger) {
+	if !f.verifyMBFileNameByFileID(e.logger) {
 		return false
 	}
 
-	return f.verifyMBDatasetByFileID(logger)
+	return f.verifyMBDatasetByFileID()
 }
 
 func (f *file) verifyMBFileNameByFileID(logger *logrus.Logger) bool {
@@ -141,29 +142,29 @@ func (f *file) verifyMBFileNameByFileID(logger *logrus.Logger) bool {
 	return f.verifyFileIDName(filename, logger)
 }
 
-func (f *file) verifyMBDatasetByFileID(logger *logrus.Logger) bool {
+func (f *file) verifyMBDatasetByFileID() bool {
 	e = ap.getEnv()
 	id := f.id
 	cmd := exec.Command("/usr/bin/gbr", "file", "ls", "-i", id, "-d")
 	cmdOut, err := cmd.CombinedOutput()
 
 	if err != nil {
-		f.getByIDErrLog(err, logger)
+		f.getByIDErrLog(err, e.logger)
 	}
 
 	out := string(cmdOut)
 	out = cleanGbrOut(out)
 
 	if out == "" {
-		logger.Warn(fmt.Sprintf(fGbrNoFileNameByFileIDLog, f.smbName, id, id))
+		e.logger.Warn(fmt.Sprintf(fGbrNoFileNameByFileIDLog, f.smbName, id, id))
 		return false
 	}
 
-	f.setMBDatasetByFileID(out, logger)
+	f.setMBDatasetByFileID(out, e.logger)
 
 	datasetID := e.datasetID
 
-	return f.verifyInDataset(datasetID, logger)
+	return f.verifyInDataset(datasetID, e.logger)
 }
 
 func (f *file) parseMBFileNameByFileID(cmdOut string, logger *logrus.Logger) (filename string) {
