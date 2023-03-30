@@ -529,14 +529,16 @@ func TestParseFileNameByID(t *testing.T) {
 }
 
 func TestSetFileDatasetByID(t *testing.T) {
+	e = new(env)
+	files = &[]file{}
+	ap = NewAsyncProcessor(e, files)
 	t.Run("should set f.datasetID if it exists", func(t *testing.T) {
-		testLogger, hook = setupLogs()
 		f = file{
 			smbName: testSmbName,
 			id:      testFileID,
 		}
-		testLogger, hook = setupLogs()
-		f.setMBDatasetByFileID(testGbrFileIDDetailOutLog, testLogger)
+		e.logger, hook = setupLogs()
+		f.setMBDatasetByFileID(testGbrFileIDDetailOutLog)
 		got := f.datasetID
 		want := testDatasetID
 		assertCorrectString(t, got, want)
@@ -548,12 +550,12 @@ func TestSetFileDatasetByID(t *testing.T) {
 	})
 
 	t.Run("should return '' if the file does not exist", func(t *testing.T) {
-		testLogger, hook = setupLogs()
 		f = file{
 			smbName: testSmbName,
 			id:      testBadFileID,
 		}
-		got := f.setMBDatasetByFileID("", testLogger)
+		e.logger, hook = setupLogs()
+		got := f.setMBDatasetByFileID("")
 		want := ""
 		assertCorrectString(t, got, want)
 
