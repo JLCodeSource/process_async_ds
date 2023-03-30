@@ -555,7 +555,8 @@ func TestSetFileDatasetByID(t *testing.T) {
 			id:      testBadFileID,
 		}
 		e.logger, hook = setupLogs()
-		got := f.setMBDatasetByFileID("")
+		f.setMBDatasetByFileID("")
+		got := f.datasetID
 		want := ""
 		assertCorrectString(t, got, want)
 

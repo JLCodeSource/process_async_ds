@@ -181,12 +181,12 @@ func (f *file) parseMBFileNameByFileID(cmdOut string) (filename string) {
 	return
 }
 
-func (f *file) setMBDatasetByFileID(cmdOut string) (parentDS string) {
+func (f *file) setMBDatasetByFileID(cmdOut string) {
 	e = ap.getEnv()
 	lines := strings.Split(string(cmdOut), ";")
 	for _, line := range lines {
 		if strings.Contains(line, "parent id") {
-			parentDS = line[len(line)-32:]
+			parentDS := line[len(line)-32:]
 			f.datasetID = parentDS
 			e.logger.Info(fmt.Sprintf(fGbrDatasetByFileIDLog, f.smbName, f.id, f.id, parentDS))
 
@@ -195,8 +195,6 @@ func (f *file) setMBDatasetByFileID(cmdOut string) (parentDS string) {
 	}
 	// Should never happen as caught with previous checks
 	e.logger.Warn(fmt.Sprintf(fGbrNoFileNameByFileIDLog, f.smbName, f.id, f.id))
-
-	return
 }
 
 func (f *file) getByIDErrLog(err error, logger *logrus.Logger) {
