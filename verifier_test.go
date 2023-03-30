@@ -255,6 +255,11 @@ func TestVerifyIP(t *testing.T) {
 	// set incorrect ip
 	testIP := net.ParseIP("192.168.101.1")
 
+	e = new(env)
+	files = &[]file{}
+
+	ap = NewAsyncProcessor(e, files)
+
 	t.Run("returns true if ip is same as the current machine", func(t *testing.T) {
 		f = file{
 			smbName: testName,
@@ -290,22 +295,27 @@ func TestVerifyTimeLimit(t *testing.T) {
 	hours := time.Duration(days * 24)
 	now := time.Now()
 
+	e = new(env)
+	files = &[]file{}
+
+	ap = NewAsyncProcessor(e, files)
+
 	t.Run("returns true if file.createTime is after time limit", func(t *testing.T) {
 		f = file{
 			smbName:    testName,
 			id:         testFileID,
 			createTime: now,
 		}
-		testLogger, hook = setupLogs()
-		limit = now.Add(-((hours) * time.Hour))
-		assert.True(t, f.verifyTimeLimit(limit, testLogger))
+		e.logger, hook = setupLogs()
+		e.limit = now.Add(-((hours) * time.Hour))
+		assert.True(t, f.verifyTimeLimit())
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(
 			fCreateTimeAfterTimeLimitLog,
 			f.smbName,
 			f.id,
 			f.createTime.Round(time.Millisecond),
-			limit.Round(time.Millisecond),
+			e.limit.Round(time.Millisecond),
 		)
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
@@ -316,16 +326,16 @@ func TestVerifyTimeLimit(t *testing.T) {
 			id:         testFileID,
 			createTime: now,
 		}
-		limit = now.Add(24 * time.Hour)
-		testLogger, hook = setupLogs()
-		assert.False(t, f.verifyTimeLimit(limit, testLogger))
+		e.limit = now.Add(24 * time.Hour)
+		e.logger, hook = setupLogs()
+		assert.False(t, f.verifyTimeLimit())
 
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(fCreateTimeBeforeTimeLimitLog,
 			f.smbName,
 			f.id,
 			f.createTime.Round(time.Millisecond),
-			limit.Round(time.Millisecond))
+			e.limit.Round(time.Millisecond))
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})

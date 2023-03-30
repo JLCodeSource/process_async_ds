@@ -63,7 +63,7 @@ func (f *file) verifyEnvMatch() bool {
 		return false
 	}
 
-	if !f.verifyTimeLimit(e.limit, e.logger) {
+	if !f.verifyTimeLimit() {
 		return false
 	}
 
@@ -74,7 +74,6 @@ func (f *file) verifyEnvMatch() bool {
 
 func (f *file) verifyIP() bool {
 	e = ap.getEnv()
-
 	if reflect.DeepEqual(f.fanIP, e.sysIP) {
 		e.logger.Info(fmt.Sprintf(fIPMatchTrueLog, f.smbName, f.id, f.fanIP, e.sysIP))
 	} else {
@@ -84,24 +83,25 @@ func (f *file) verifyIP() bool {
 	return reflect.DeepEqual(f.fanIP, e.sysIP)
 }
 
-func (f *file) verifyTimeLimit(limit time.Time, logger *logrus.Logger) bool {
-	if f.createTime.After(limit) {
-		logger.Info(fmt.Sprintf(
+func (f *file) verifyTimeLimit() bool {
+	e = ap.getEnv()
+	if f.createTime.After(e.limit) {
+		e.logger.Info(fmt.Sprintf(
 			fCreateTimeAfterTimeLimitLog,
 			f.smbName,
 			f.id,
 			f.createTime.Round(time.Millisecond),
-			limit.Round(time.Millisecond)))
+			e.limit.Round(time.Millisecond)))
 	} else {
-		logger.Warn(fmt.Sprintf(
+		e.logger.Warn(fmt.Sprintf(
 			fCreateTimeBeforeTimeLimitLog,
 			f.smbName,
 			f.id,
 			f.createTime.Round(time.Millisecond),
-			limit.Round(time.Millisecond)))
+			e.limit.Round(time.Millisecond)))
 	}
 
-	return f.createTime.After(limit)
+	return f.createTime.After(e.limit)
 }
 
 // Verify GB internal metadata
