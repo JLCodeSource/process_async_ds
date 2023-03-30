@@ -568,8 +568,10 @@ func TestSetFileDatasetByID(t *testing.T) {
 }
 
 func TestGetByIDErrLog(t *testing.T) {
+	e = new(env)
+	files = &[]file{}
+	ap = NewAsyncProcessor(e, files)
 	t.Run("should log err and gbrNoFileNameByID on err", func(t *testing.T) {
-		testLogger, hook = setupLogs()
 		f = file{
 			smbName: testSmbName,
 			id:      testFileID,
@@ -577,10 +579,11 @@ func TestGetByIDErrLog(t *testing.T) {
 		fakeLoggerError := func(args ...interface{}) {
 			panic(testGbrFileIDErrOut)
 		}
-		patch := monkey.Patch(testLogger.Error, fakeLoggerError)
+		patch := monkey.Patch(e.logger.Error, fakeLoggerError)
 		defer patch.Unpatch()
 
-		f.getByIDErrLog(errors.New(testGbrFileIDErrOut), testLogger)
+		e.logger, hook = setupLogs()
+		f.getByIDErrLog(errors.New(testGbrFileIDErrOut))
 
 		gotLogMsgs := hook.Entries
 		wantLogMsg := testGbrFileIDErrOutLog

@@ -127,7 +127,7 @@ func (f *file) verifyMBFileNameByFileID() bool {
 	cmdOut, err := cmd.CombinedOutput()
 
 	if err != nil {
-		f.getByIDErrLog(err, e.logger)
+		f.getByIDErrLog(err)
 		return false
 	}
 
@@ -151,7 +151,7 @@ func (f *file) verifyMBDatasetByFileID() bool {
 	cmdOut, err := cmd.CombinedOutput()
 
 	if err != nil {
-		f.getByIDErrLog(err, e.logger)
+		f.getByIDErrLog(err)
 	}
 
 	out := string(cmdOut)
@@ -197,10 +197,11 @@ func (f *file) setMBDatasetByFileID(cmdOut string) {
 	e.logger.Warn(fmt.Sprintf(fGbrNoFileNameByFileIDLog, f.smbName, f.id, f.id))
 }
 
-func (f *file) getByIDErrLog(err error, logger *logrus.Logger) {
+func (f *file) getByIDErrLog(err error) {
+	e = ap.getEnv()
 	err = errors.New(cleanGbrOut(err.Error()))
-	logger.Warn(err)
-	logger.Warn(fmt.Sprintf(fGbrNoFileNameByFileIDLog, f.smbName, f.id, f.id))
+	e.logger.Warn(err)
+	e.logger.Warn(fmt.Sprintf(fGbrNoFileNameByFileIDLog, f.smbName, f.id, f.id))
 }
 
 func (f *file) verifyInDataset(datasetID string, logger *logrus.Logger) bool {
