@@ -61,3 +61,7 @@ func (f *file) setOldHash(hash [32]byte) {
 func (f *file) setOldStagingPath(stagingPath string) {
 	f.oldStagingPath = stagingPath
 }
+
+func (f *file) setSuccess(success bool) {
+	f.success = success
+}

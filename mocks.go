@@ -58,9 +58,7 @@ type mockFile struct {
 	success        bool
 }
 
-func (mf *mockFile) compareHashes() bool {
-	return true
-}
+// getters
 
 func (mf *mockFile) getID() string {
 	return ""
@@ -109,6 +107,26 @@ func (mf *mockFile) getFileInfo() fs.FileInfo {
 }
 
 func (mf *mockFile) getSuccess() bool {
+	return true
+}
+
+// setters
+
+func (mf *mockFile) setOldHash(hash [32]byte) {
+	mf.oldHash = hash
+}
+
+func (mf *mockFile) setOldStagingPath(stagingPath string) {
+	mf.oldStagingPath = stagingPath
+}
+
+func (mf *mockFile) setSuccess(success bool) {
+	mf.success = success
+}
+
+// methods
+
+func (mf *mockFile) compareHashes() bool {
 	return true
 }
 

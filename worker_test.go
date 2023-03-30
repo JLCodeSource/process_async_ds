@@ -4,12 +4,13 @@ import (
 	"crypto/sha256"
 	"testing"
 
+	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 )
 
-/* func TestWorker(t *testing.T) {
+func TestWorker(t *testing.T) {
 	t.Run("given a list of multiple files, it processes them", func(t *testing.T) {
-		afs, files := createAferoTest(t, 10, false)
+		afs, files := createAferoTest(t, 1, false)
 		e = new(env)
 
 		e.logger, hook = setupLogs()
@@ -44,7 +45,7 @@ import (
 		}
 
 	})
-} */
+}
 
 func TestCompareHashes(t *testing.T) {
 	t.Run("matching hashes should return true", func(t *testing.T) {

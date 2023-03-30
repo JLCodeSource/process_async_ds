@@ -12,7 +12,7 @@ func (ap *asyncProcessor) processFiles() {
 		// log (in Move)
 		(*ap.Files)[i].hasher()
 		if (*ap.Files)[i].compareHashes() {
-			(*ap.Files)[i].getSuccess()
+			(*ap.Files)[i].setSuccess(true)
 			// log
 		} // Add fail & log
 		// log result

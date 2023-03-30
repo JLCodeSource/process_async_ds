@@ -90,6 +90,7 @@ type File interface {
 
 	setOldHash([32]byte)
 	setOldStagingPath(string)
+	setSuccess(bool)
 
 	getByIDErrLog(err error)
 	hasher()
