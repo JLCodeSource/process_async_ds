@@ -190,12 +190,12 @@ func TestNewAsyncProcessor(t *testing.T) {
 		testLogger, _ = setupLogs()
 		e = new(env)
 		e.logger = testLogger
-		files = &[]file{}
+		files = &[]File{}
 		f := file{
 			smbName:     testName,
 			stagingPath: testStagingPath,
 		}
-		*files = append(*files, f)
+		*files = append(*files, &f)
 		ap = NewAsyncProcessor(e, files)
 		ap = mockAsyncProcessor{
 			Env:   e,
@@ -362,7 +362,7 @@ func TestSetSourceFile(t *testing.T) {
 		e.fsys = fstest.MapFS{
 			testPath: {Data: []byte(testContent)},
 		}
-		files := &[]file{}
+		files := &[]File{}
 		NewAsyncProcessor(e, files)
 		e.setSourceFile("", testPath)
 
@@ -381,7 +381,7 @@ func TestSetSourceFile(t *testing.T) {
 			testPath: {Data: []byte(testContent)},
 		}
 		fullpath := string(os.PathSeparator) + testPath
-		files := &[]file{}
+		files := &[]File{}
 		NewAsyncProcessor(e, files)
 		e.setSourceFile("", string(os.PathSeparator)+testPath)
 
@@ -403,7 +403,7 @@ func TestSetSourceFile(t *testing.T) {
 		e.fsys = fstest.MapFS{
 			path: {Data: []byte(testContent)},
 		}
-		files := &[]file{}
+		files := &[]File{}
 		NewAsyncProcessor(e, files)
 		e.setSourceFile(ex, testName)
 
@@ -424,7 +424,7 @@ func TestSetSourceFile(t *testing.T) {
 
 		e.logger, hook = setupLogs()
 		e.fsys = os.DirFS("")
-		files := &[]file{}
+		files := &[]File{}
 		NewAsyncProcessor(e, files)
 
 		panicFunc := func() {
@@ -448,7 +448,7 @@ func TestSetSourceFile(t *testing.T) {
 		e.fsys = fstest.MapFS{
 			testMismatchPath: {Data: []byte(testContent)},
 		}
-		files := &[]file{}
+		files := &[]File{}
 		NewAsyncProcessor(e, files)
 
 		panicFunc := func() {
@@ -464,7 +464,7 @@ func TestSetSourceFile(t *testing.T) {
 }
 
 func TestGetFiles(t *testing.T) {
-	files := &[]file{}
+	files := &[]File{}
 	e = new(env)
 	ap = NewAsyncProcessor(e, files)
 
@@ -482,7 +482,7 @@ func TestSetFiles(t *testing.T) {
 		e.logger, hook = setupLogs()
 
 		afs, want := createAferoTest(t, 10, true)
-		files := &[]file{}
+		files := &[]File{}
 
 		e.afs = afs
 
@@ -494,20 +494,20 @@ func TestSetFiles(t *testing.T) {
 		got := ap.getFiles()
 
 		for i := range *got {
-			assert.Equal(t, want[i].smbName, (*got)[i].smbName)
-			assert.Equal(t, want[i].stagingPath, (*got)[i].stagingPath)
-			assert.Equal(t, want[i].createTime.Unix(), (*got)[i].createTime.Unix())
-			assert.Equal(t, want[i].size, (*got)[i].size)
-			assert.Equal(t, want[i].id, (*got)[i].id)
-			assert.Equal(t, want[i].fanIP, (*got)[i].fanIP)
-			assert.Equal(t, want[i].fileInfo, (*got)[i].fileInfo)
+			assert.Equal(t, want[i].getSmbName(), (*got)[i].getSmbName())
+			assert.Equal(t, want[i].getStagingPath(), (*got)[i].getStagingPath())
+			assert.Equal(t, want[i].getCreateTime().Unix(), (*got)[i].getCreateTime().Unix())
+			assert.Equal(t, want[i].getSize(), (*got)[i].getSize())
+			assert.Equal(t, want[i].getID(), (*got)[i].getID())
+			assert.Equal(t, want[i].getFanIP(), (*got)[i].getFanIP())
+			assert.Equal(t, want[i].getFileInfo(), (*got)[i].getFileInfo())
 		}
 	})
 	t.Run("ap.setFiles should log properly", func(t *testing.T) {
 		e.logger, hook = setupLogs()
 
 		afs, want := createAferoTest(t, 1, true)
-		files := &[]file{}
+		files := &[]File{}
 
 		e.afs = afs
 		ap := NewAsyncProcessor(e, files)
@@ -519,13 +519,13 @@ func TestSetFiles(t *testing.T) {
 
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(fAddedToListLog,
-			want[0].smbName,
-			want[0].id,
-			want[0].stagingPath,
-			want[0].createTime.Unix(),
-			want[0].size,
-			want[0].fanIP,
-			want[0].fileInfo.Name())
+			want[0].getSmbName(),
+			want[0].getID(),
+			want[0].getStagingPath(),
+			want[0].getCreateTime().Unix(),
+			want[0].getSize(),
+			want[0].getFanIP(),
+			want[0].getFileInfo().Name())
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
@@ -538,7 +538,7 @@ func TestSetFiles(t *testing.T) {
 
 		e.logger, hook = setupLogs()
 		afs, _ := createAferoTest(t, 1, true)
-		files := &[]file{}
+		files := &[]File{}
 		ap := NewAsyncProcessor(e, files)
 
 		e.afs = afs
@@ -556,7 +556,7 @@ func TestSetFiles(t *testing.T) {
 }
 
 func TestSetEnv(t *testing.T) {
-	files := &[]file{}
+	files := &[]File{}
 	e = new(env)
 	ap = NewAsyncProcessor(e, files)
 
@@ -583,7 +583,7 @@ func TestSetEnv(t *testing.T) {
 }
 
 func TestSetDatasetID(t *testing.T) {
-	files := &[]file{}
+	files := &[]File{}
 	e = new(env)
 	e.afs = afs
 	ap := NewAsyncProcessor(e, files)
@@ -669,7 +669,7 @@ func TestSetDatasetID(t *testing.T) {
 }
 
 func TestCompareDatasetId(t *testing.T) {
-	files := &[]file{}
+	files := &[]File{}
 	e = new(env)
 	NewAsyncProcessor(e, files)
 	t.Run("Should return true if datasetid & asyncdelds check match & log it", func(t *testing.T) {
@@ -700,7 +700,7 @@ func TestCompareDatasetId(t *testing.T) {
 }
 
 func TestSetTimeLimit(t *testing.T) {
-	files := &[]file{}
+	files := &[]File{}
 	e = new(env)
 	NewAsyncProcessor(e, files)
 	t.Run("zero days", func(t *testing.T) {
@@ -741,7 +741,7 @@ func TestSetTimeLimit(t *testing.T) {
 }
 
 func TestSetDryRun(t *testing.T) {
-	files := &[]file{}
+	files := &[]File{}
 	e = new(env)
 	NewAsyncProcessor(e, files)
 	t.Run("default dry run", func(t *testing.T) {
@@ -781,7 +781,7 @@ func TestSetDryRun(t *testing.T) {
 }
 
 func TestSetTestRun(t *testing.T) {
-	files := &[]file{}
+	files := &[]File{}
 	e = new(env)
 	NewAsyncProcessor(e, files)
 	t.Run("test run", func(t *testing.T) {
@@ -814,7 +814,7 @@ func TestSetTestRun(t *testing.T) {
 
 func TestSetSysIP(t *testing.T) {
 	e = new(env)
-	files = &[]file{}
+	files = &[]File{}
 
 	t.Run("Should set e.sysIP", func(t *testing.T) {
 		e.logger, hook = setupLogs()
@@ -830,7 +830,7 @@ func TestSetSysIP(t *testing.T) {
 }
 
 func TestSetPWD(t *testing.T) {
-	files := &[]file{}
+	files := &[]File{}
 	e = new(env)
 	NewAsyncProcessor(e, files)
 	t.Run("setPWD should shift execution to root from current path", func(t *testing.T) {

@@ -29,12 +29,12 @@ func TestNewPath(t *testing.T) {
 
 	t.Run("should return path of xxx.processed", func(t *testing.T) {
 		for _, f := range *files {
-			oldDir, fn := path.Split(f.stagingPath)
+			oldDir, fn := path.Split(f.getStagingPath())
 			parts := strings.Split(oldDir, string(os.PathSeparator))
 			lastParts := parts[2:]
 			firstParts := parts[:2]
 
-			got := newPath(&f) //#nosec - testing code can be insecure
+			got := newPath(f) //#nosec - testing code can be insecure
 			fp := strings.Join(firstParts, string(os.PathSeparator))
 			lp := strings.Join(lastParts, string(os.PathSeparator))
 			want := fp + ".processed" + string(os.PathSeparator) + lp + fn
@@ -50,8 +50,8 @@ func TestMoveFile(t *testing.T) {
 	ap = NewAsyncProcessor(e, &files)
 	t.Run("should move file to new path & log it", func(t *testing.T) {
 		for _, f := range files {
-			oldPath := f.stagingPath
-			newPath := newPath(&f) //#nosec - testing code can be insecure
+			oldPath := f.getStagingPath()
+			newPath := newPath(f) //#nosec - testing code can be insecure
 
 			e.logger, hook = setupLogs()
 			e.dryrun = false
@@ -64,12 +64,12 @@ func TestMoveFile(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			assert.Equal(t, f.stagingPath, newPath)
+			assert.Equal(t, f.getStagingPath(), newPath)
 
 			gotLogMsg := hook.Entries[0].Message
 			wantLogMsg := fmt.Sprintf(fMoveFileLog,
-				f.smbName,
-				f.id,
+				f.getSmbName(),
+				f.getID(),
 				oldPath,
 				newPath)
 
@@ -81,7 +81,7 @@ func TestMoveFile(t *testing.T) {
 		for _, f := range files {
 			fs := afero.NewMemMapFs()
 			afs := &afero.Afero{Fs: fs}
-			err := afero.WriteFile(afs, f.stagingPath, []byte{}, 0755)
+			err := afero.WriteFile(afs, f.getStagingPath(), []byte{}, 0755)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -89,7 +89,7 @@ func TestMoveFile(t *testing.T) {
 			e.afs = afs
 			e.logger, hook = setupLogs()
 
-			newPath := newPath(&f) //#nosec - testing code can be insecure
+			newPath := newPath(f) //#nosec - testing code can be insecure
 			dir, _ := path.Split(newPath)
 
 			f.move()
@@ -105,7 +105,7 @@ func TestMoveFile(t *testing.T) {
 		for _, f := range files {
 			fs := afero.NewMemMapFs()
 			afs := &afero.Afero{Fs: fs}
-			err := afero.WriteFile(afs, f.stagingPath, []byte{}, 0755)
+			err := afero.WriteFile(afs, f.getStagingPath(), []byte{}, 0755)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -117,7 +117,7 @@ func TestMoveFile(t *testing.T) {
 			f.move()
 
 			gotLogMsg := hook.LastEntry().Message
-			wantLogMsg := fmt.Sprintf(fMoveDryRunTrueLog, f.smbName, f.id)
+			wantLogMsg := fmt.Sprintf(fMoveDryRunTrueLog, f.getSmbName(), f.getID())
 
 			assertCorrectString(t, gotLogMsg, wantLogMsg)
 		}
@@ -127,7 +127,7 @@ func TestMoveFile(t *testing.T) {
 		for _, f := range files {
 			fs := afero.NewMemMapFs()
 			afs := &afero.Afero{Fs: fs}
-			err := afero.WriteFile(afs, f.stagingPath, []byte{}, 0755)
+			err := afero.WriteFile(afs, f.getStagingPath(), []byte{}, 0755)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -139,7 +139,7 @@ func TestMoveFile(t *testing.T) {
 			f.move()
 
 			gotLogMsg := hook.Entries[1].Message
-			wantLogMsg := fmt.Sprintf(fMoveDryRunFalseLog, f.smbName, f.id)
+			wantLogMsg := fmt.Sprintf(fMoveDryRunFalseLog, f.getSmbName(), f.getID())
 
 			assertCorrectString(t, gotLogMsg, wantLogMsg)
 		}
@@ -182,7 +182,7 @@ func TestWrapAferoMkdirAll(t *testing.T) {
 	})
 }
 
-func createAferoTest(t *testing.T, numFiles int, createTestFile bool) (afero.Fs, []file) {
+func createAferoTest(t *testing.T, numFiles int, createTestFile bool) (afero.Fs, []File) {
 	// createTestFile
 	var outSourceFile afero.File
 
@@ -219,7 +219,7 @@ func createAferoTest(t *testing.T, numFiles int, createTestFile bool) (afero.Fs,
 		}
 	}
 
-	var files []file
+	var files []File
 
 	var dirs = []string{}
 
@@ -235,7 +235,7 @@ func createAferoTest(t *testing.T, numFiles int, createTestFile bool) (afero.Fs,
 
 	// Create Files
 	for i := 0; i < numFiles; i++ {
-		f := file{}
+		f := &file{}
 		// set name
 		guid := genGUID()
 		f.smbName = guid
