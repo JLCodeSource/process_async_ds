@@ -71,62 +71,6 @@ var (
 	testIntegrationTestSetup AsyncProcessor
 )
 
-// File interface is the interface for File
-type File interface {
-	compareHashes() bool
-
-	getID() string
-	getSmbName() string
-	getCreateTime() time.Time
-	getSize() int64
-	getDatasetID() string
-	getFanIP() net.IP
-	getStagingPath() string
-	getOldStagingPath() string
-	getHash() [32]byte
-	getOldHash() [32]byte
-	getFileInfo() fs.FileInfo
-	getSuccess() bool
-
-	setOldHash([32]byte)
-	setOldStagingPath(string)
-	setSuccess(bool)
-
-	getByIDErrLog(err error)
-	hasher()
-	move()
-	parseMBFileNameByFileID(cmdOut string) (filename string)
-	setMBDatasetByFileID(cmdOut string)
-	verify() bool
-	verifyCreateTime(t time.Time) bool
-	verifyEnvMatch() bool
-	verifyFileIDName(fileName string) bool
-	verifyFileSize(size int64) bool
-	verifyGBMetadata() bool
-	verifyIP() bool
-	verifyInDataset(datasetID string) bool
-	verifyMBDatasetByFileID() bool
-	verifyMBFileNameByFileID() bool
-	verifyStat() bool
-	verifyTimeLimit() bool
-}
-
-// file type is a struct holding file metadata
-type file struct {
-	id             string
-	smbName        string
-	createTime     time.Time
-	size           int64
-	datasetID      string
-	fanIP          net.IP
-	stagingPath    string
-	oldStagingPath string
-	hash           [32]byte
-	oldHash        [32]byte
-	fileInfo       fs.FileInfo
-	success        bool
-}
-
 // env type holds config and environment settings
 type env struct {
 	logger  *logrus.Logger
