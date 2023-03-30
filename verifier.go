@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
-	"net"
 	"os/exec"
 	"reflect"
 	"strings"
@@ -60,7 +59,7 @@ func (f *file) verify() bool {
 // verify config metadata
 func (f *file) verifyEnvMatch() bool {
 	e = ap.getEnv()
-	if !f.verifyIP(e.sysIP, e.logger) {
+	if !f.verifyIP() {
 		return false
 	}
 
@@ -73,14 +72,16 @@ func (f *file) verifyEnvMatch() bool {
 	return true
 }
 
-func (f *file) verifyIP(ip net.IP, logger *logrus.Logger) bool {
-	if reflect.DeepEqual(f.fanIP, ip) {
-		logger.Info(fmt.Sprintf(fIPMatchTrueLog, f.smbName, f.id, f.fanIP, ip))
+func (f *file) verifyIP() bool {
+	e = ap.getEnv()
+
+	if reflect.DeepEqual(f.fanIP, e.sysIP) {
+		e.logger.Info(fmt.Sprintf(fIPMatchTrueLog, f.smbName, f.id, f.fanIP, e.sysIP))
 	} else {
-		logger.Warn(fmt.Sprintf(fIPMatchFalseLog, f.smbName, f.id, f.fanIP, ip))
+		e.logger.Warn(fmt.Sprintf(fIPMatchFalseLog, f.smbName, f.id, f.fanIP, e.sysIP))
 	}
 
-	return reflect.DeepEqual(f.fanIP, ip)
+	return reflect.DeepEqual(f.fanIP, e.sysIP)
 }
 
 func (f *file) verifyTimeLimit(limit time.Time, logger *logrus.Logger) bool {

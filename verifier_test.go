@@ -253,7 +253,7 @@ func TestVerifyIP(t *testing.T) {
 	hostname, _ := os.Hostname()
 	ips, _ := net.LookupIP(hostname)
 	// set incorrect ip
-	ip := net.ParseIP("192.168.101.1")
+	testIP := net.ParseIP("192.168.101.1")
 
 	t.Run("returns true if ip is same as the current machine", func(t *testing.T) {
 		f = file{
@@ -261,8 +261,9 @@ func TestVerifyIP(t *testing.T) {
 			id:      testFileID,
 			fanIP:   ips[0],
 		}
-		testLogger, hook = setupLogs()
-		assert.True(t, f.verifyIP(ips[0], testLogger))
+		e.logger, hook = setupLogs()
+		e.sysIP = ips[0]
+		assert.True(t, f.verifyIP())
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(fIPMatchTrueLog, f.smbName, f.id, f.fanIP, ips[0])
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
@@ -273,11 +274,12 @@ func TestVerifyIP(t *testing.T) {
 			id:      testFileID,
 			fanIP:   ips[0],
 		}
-		testLogger, hook = setupLogs()
-		assert.False(t, f.verifyIP(ip, testLogger))
+		e.logger, hook = setupLogs()
+		e.sysIP = testIP
+		assert.False(t, f.verifyIP())
 
 		gotLogMsg := hook.LastEntry().Message
-		wantLogMsg := fmt.Sprintf(fIPMatchFalseLog, f.smbName, f.id, f.fanIP, ip)
+		wantLogMsg := fmt.Sprintf(fIPMatchFalseLog, f.smbName, f.id, f.fanIP, testIP)
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
