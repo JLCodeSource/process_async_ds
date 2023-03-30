@@ -147,13 +147,13 @@ func TestVerify(t *testing.T) {
 		datasetID: testDatasetID,
 	}
 
-	testLogger, hook = setupLogs()
+	e.logger, hook = setupLogs()
 
 	ap = NewAsyncProcessor(e, files)
 
 	t.Run("Gen verify", func(t *testing.T) {
 		for _, f := range *files {
-			ok := f.verify(testLogger)
+			ok := f.verify()
 			assert.True(t, ok)
 
 			gotLogMsg := hook.LastEntry().Message

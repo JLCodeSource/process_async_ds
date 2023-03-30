@@ -38,20 +38,21 @@ const (
 
 // verify all
 
-func (f *file) verify(logger *logrus.Logger) bool {
-	if !f.verifyEnvMatch(logger) {
+func (f *file) verify() bool {
+	e = ap.getEnv()
+	if !f.verifyEnvMatch(e.logger) {
 		return false
 	}
 
-	if !f.verifyGBMetadata(logger) {
+	if !f.verifyGBMetadata(e.logger) {
 		return false
 	}
 
-	if !f.verifyStat(e.fsys, logger) {
+	if !f.verifyStat(e.fsys, e.logger) {
 		return false
 	}
 
-	logger.Info(fmt.Sprintf(fVerifiedLog, f.smbName, f.id))
+	e.logger.Info(fmt.Sprintf(fVerifiedLog, f.smbName, f.id))
 
 	return true
 }
