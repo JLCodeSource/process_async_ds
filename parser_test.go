@@ -138,7 +138,7 @@ func TestParseLine(t *testing.T) {
 	t.Run("verify ParseLine", func(t *testing.T) {
 		e.logger, hook = setupLogs()
 		onelineParsed := oneline
-		workingFile := ap.parseLine(onelineParsed)
+		workingFile := parseLine(onelineParsed, e)
 
 		parsingTests := []struct {
 			name string
@@ -198,7 +198,7 @@ func TestParseLine(t *testing.T) {
 		strconvParseIntErr := fmt.Sprintf(testDateNotIntErr, testOldDate)
 
 		e.logger, hook = setupLogs()
-		ap.parseLine(onelineOldDate)
+		parseLine(onelineOldDate, e)
 
 		gotLogMsg := hook.Entries[2].Message
 		err := strconvParseIntErr
@@ -222,7 +222,7 @@ func TestParseLine(t *testing.T) {
 		defer patch2.Unpatch()
 
 		e.logger, hook = setupLogs()
-		panicFunc := func() { ap.parseLine(onelineOldDate) }
+		panicFunc := func() { parseLine(onelineOldDate, e) }
 
 		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
 
@@ -248,7 +248,7 @@ func TestParseLine(t *testing.T) {
 		defer patch2.Unpatch()
 
 		e.logger, hook = setupLogs()
-		panicFunc := func() { ap.parseLine(onelineOldDate) }
+		panicFunc := func() { parseLine(onelineOldDate, e) }
 
 		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
 

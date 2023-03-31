@@ -94,7 +94,7 @@ type AsyncProcessor interface {
 	setFiles()
 	processFiles()
 	parseSourceFile() []string
-	parseLine(string) file
+	//parseLine(string) file
 }
 
 // asyncProcessor is the async processing instance
@@ -291,7 +291,7 @@ func (ap *asyncProcessor) setFiles() {
 	lines := ap.parseSourceFile()
 
 	for _, line := range lines {
-		newFile := ap.parseLine(line)
+		newFile := parseLine(line, e)
 		newFile.fileInfo, err = afs.Stat(newFile.stagingPath)
 
 		if err != nil {

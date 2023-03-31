@@ -57,10 +57,8 @@ func (ap *asyncProcessor) parseSourceFile() []string {
 	return lines
 }
 
-func (ap *asyncProcessor) parseLine(line string) file {
+func parseLine(line string, e *env) file {
 	var dateTime time.Time
-
-	e = ap.Env
 
 	fileMetadata := strings.SplitAfter(line, "|")
 	// len-1 because the last split is empty
