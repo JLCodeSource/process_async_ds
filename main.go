@@ -93,7 +93,7 @@ type AsyncProcessor interface {
 	setEnv(*env)
 	setFiles()
 	processFiles()
-	parseSourceFile() []string
+	//parseSourceFile() []string
 	//parseLine(string) file
 }
 
@@ -288,7 +288,7 @@ func (ap *asyncProcessor) setFiles() {
 		logger.Fatal(err)
 	}
 
-	lines := ap.parseSourceFile()
+	lines := parseSourceFile(e)
 
 	for _, line := range lines {
 		newFile := parseLine(line, e)

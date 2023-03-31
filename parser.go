@@ -21,8 +21,7 @@ const (
 	easternTime = "America/New_York"
 )
 
-func (ap *asyncProcessor) parseSourceFile() []string {
-	e = ap.Env
+func parseSourceFile(e *env) []string {
 	afs = e.afs
 	sf := e.sourceFile
 	logger := e.logger

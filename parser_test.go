@@ -90,7 +90,7 @@ func TestParseFile(t *testing.T) {
 				e.sourceFile = testProcessedFilesOut
 				e.logger, hook = setupLogs()
 
-				got := ap.parseSourceFile()
+				got := parseSourceFile(e)
 
 				logs := hook.AllEntries()
 
@@ -120,7 +120,7 @@ func TestParseFile(t *testing.T) {
 		e.logger, hook = setupLogs()
 
 		panicFunc := func() {
-			ap.parseSourceFile()
+			parseSourceFile(e)
 		}
 
 		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
