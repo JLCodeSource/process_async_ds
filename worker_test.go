@@ -10,8 +10,8 @@ import (
 )
 
 func TestWorker(t *testing.T) {
-	t.Run("given a list of multiple files, it processes them", func(t *testing.T) {
-		afs, files := createAferoTest(t, 1, false)
+	t.Run("given a file, it processes it", func(t *testing.T) {
+		afs, files := createAferoTest(t, 10, false)
 		e = new(env)
 
 		e.logger, hook = setupLogs()
@@ -42,26 +42,28 @@ func TestWorker(t *testing.T) {
 			assert.Equal(t, oldPaths[i], files[i].oldStagingPath)
 			assert.Equal(t, oldHashes[i], string(files[i].hash[:]))
 			assert.True(t, files[i].success)
-
-			logs := hook.Entries
-
-			gotLogMsg := logs[1].Message
-			wantLogMsg := fmt.Sprintf(adSetOldHashLog, files[i].smbName, files[i].id, files[i].hash)
-			assertCorrectString(t, gotLogMsg, wantLogMsg)
-
-			gotLogMsg = logs[2].Message
-			wantLogMsg = fmt.Sprintf(adSetOldStagingPathLog, files[i].smbName, files[i].id, files[i].oldStagingPath)
-			assertCorrectString(t, gotLogMsg, wantLogMsg)
-
-			gotLogMsg = logs[7].Message
-			wantLogMsg = fmt.Sprintf(adSetSuccessLog, files[i].smbName, files[i].id, true)
-			assertCorrectString(t, gotLogMsg, wantLogMsg)
-
-			gotLogMsg = logs[8].Message
-			wantLogMsg = fmt.Sprintf(adReadyForProcessingLog, files[i].smbName, files[i].id, files[i].stagingPath)
-			assertCorrectString(t, gotLogMsg, wantLogMsg)
 		}
+
+		// Confirm first logs correct
+		logs := hook.Entries
+
+		gotLogMsg := logs[1].Message
+		wantLogMsg := fmt.Sprintf(adSetOldHashLog, files[0].smbName, files[0].id, files[0].hash)
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
+
+		gotLogMsg = logs[2].Message
+		wantLogMsg = fmt.Sprintf(adSetOldStagingPathLog, files[0].smbName, files[0].id, files[0].oldStagingPath)
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
+
+		gotLogMsg = logs[7].Message
+		wantLogMsg = fmt.Sprintf(adSetSuccessLog, files[0].smbName, files[0].id, true)
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
+
+		gotLogMsg = logs[8].Message
+		wantLogMsg = fmt.Sprintf(adReadyForProcessingLog, files[0].smbName, files[0].id, files[0].stagingPath)
+		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
+
 }
 
 func TestCompareHashes(t *testing.T) {
