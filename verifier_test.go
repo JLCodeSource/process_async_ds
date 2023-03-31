@@ -156,7 +156,7 @@ func TestVerify(t *testing.T) {
 			assert.True(t, ok)
 
 			gotLogMsg := hook.LastEntry().Message
-			wantLogMsg := fmt.Sprintf(fVerifiedLog, f.getSmbName(), f.getID())
+			wantLogMsg := fmt.Sprintf(fVerifiedLog, f.smbName, f.id)
 			assertCorrectString(t, gotLogMsg, wantLogMsg)
 		}
 	})
@@ -368,9 +368,9 @@ func TestVerifyGBMetadata(t *testing.T) {
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(
 			fDatasetMatchTrueLog,
-			files[0].getSmbName(),
-			files[0].getID(),
-			files[0].getDatasetID(),
+			files[0].smbName,
+			files[0].id,
+			files[0].datasetID,
 			testDatasetID)
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})

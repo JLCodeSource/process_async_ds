@@ -5,15 +5,15 @@ func (ap *asyncProcessor) processFiles() {
 
 	for i := range ap.files {
 		ap.files[i].hasher()
-		ap.files[i].setOldHash(ap.files[i].getHash())
+		ap.files[i].oldHash = ap.files[i].hash
 		// log
-		ap.files[i].setOldStagingPath(ap.files[i].getStagingPath())
+		ap.files[i].oldStagingPath = ap.files[i].stagingPath
 		// log
 		ap.files[i].move()
 		// log (in Move)
 		ap.files[i].hasher()
 		if ap.files[i].compareHashes() {
-			ap.files[i].setSuccess(true)
+			ap.files[i].success = true
 			// log
 		} // Add fail & log
 		// log result

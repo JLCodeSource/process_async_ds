@@ -24,17 +24,17 @@ func TestHasher(t *testing.T) {
 
 		for _, f := range files {
 			e.logger, hook = setupLogs()
-			content, err := afero.ReadFile(afs, f.getStagingPath())
+			content, err := afero.ReadFile(afs, f.stagingPath)
 			if err != nil {
 				t.Fatal(err)
 			}
 			prePost := "pre"
 			sha := sha256.Sum256(content)
 			f.hasher()
-			assert.Equal(t, sha, f.getHash())
+			assert.Equal(t, sha, f.hash)
 
 			gotLogMsg := hook.LastEntry().Message
-			wantLogMsg := fmt.Sprintf(fHashLog, f.getSmbName(), f.getID(), prePost, f.getHash())
+			wantLogMsg := fmt.Sprintf(fHashLog, f.smbName, f.id, prePost, f.hash)
 			assertCorrectString(t, gotLogMsg, wantLogMsg)
 		}
 	})

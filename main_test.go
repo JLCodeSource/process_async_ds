@@ -495,13 +495,13 @@ func TestSetFiles(t *testing.T) {
 		got := ap.getFiles()
 
 		for i := range got {
-			assert.Equal(t, want[i].getSmbName(), got[i].getSmbName())
-			assert.Equal(t, want[i].getStagingPath(), got[i].getStagingPath())
-			assert.Equal(t, want[i].getCreateTime().Unix(), got[i].getCreateTime().Unix())
-			assert.Equal(t, want[i].getSize(), got[i].getSize())
-			assert.Equal(t, want[i].getID(), got[i].getID())
-			assert.Equal(t, want[i].getFanIP(), got[i].getFanIP())
-			assert.Equal(t, want[i].getFileInfo(), got[i].getFileInfo())
+			assert.Equal(t, want[i].smbName, got[i].smbName)
+			assert.Equal(t, want[i].stagingPath, got[i].stagingPath)
+			assert.Equal(t, want[i].createTime.Unix(), got[i].createTime.Unix())
+			assert.Equal(t, want[i].size, got[i].size)
+			assert.Equal(t, want[i].id, got[i].id)
+			assert.Equal(t, want[i].fanIP, got[i].fanIP)
+			assert.Equal(t, want[i].fileInfo, got[i].fileInfo)
 		}
 	})
 	t.Run("ap.setFiles should log properly", func(t *testing.T) {
@@ -520,13 +520,13 @@ func TestSetFiles(t *testing.T) {
 
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(fAddedToListLog,
-			want[0].getSmbName(),
-			want[0].getID(),
-			want[0].getStagingPath(),
-			want[0].getCreateTime().Unix(),
-			want[0].getSize(),
-			want[0].getFanIP(),
-			want[0].getFileInfo().Name())
+			want[0].smbName,
+			want[0].id,
+			want[0].stagingPath,
+			want[0].createTime.Unix(),
+			want[0].size,
+			want[0].fanIP,
+			want[0].fileInfo.Name())
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})

@@ -22,9 +22,9 @@ func TestWorker(t *testing.T) {
 		var oldHashes []string
 
 		for i := range files {
-			oldPaths = append(oldPaths, files[i].getStagingPath())
+			oldPaths = append(oldPaths, files[i].stagingPath)
 			newPaths = append(newPaths, newPath(files[i]))
-			content, err := afero.ReadFile(afs, files[i].getStagingPath())
+			content, err := afero.ReadFile(afs, files[i].stagingPath)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -37,11 +37,11 @@ func TestWorker(t *testing.T) {
 
 		for i := range oldPaths {
 			assert.NotEqual(t, oldPaths[i], newPaths[i])
-			assert.Equal(t, newPaths[i], files[i].getStagingPath())
-			assert.Equal(t, oldPaths[i], files[i].getOldStagingPath())
-			hash := files[i].getHash()
+			assert.Equal(t, newPaths[i], files[i].stagingPath)
+			assert.Equal(t, oldPaths[i], files[i].oldStagingPath)
+			hash := files[i].hash
 			assert.Equal(t, oldHashes[i], string(hash[:]))
-			assert.True(t, files[i].getSuccess())
+			assert.True(t, files[i].success)
 		}
 
 	})

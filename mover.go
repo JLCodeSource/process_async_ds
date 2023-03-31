@@ -43,7 +43,7 @@ func (f *file) move() {
 }
 
 func newPath(f file) string {
-	oldDir, fn := path.Split(f.getStagingPath())
+	oldDir, fn := path.Split(f.stagingPath)
 	parts := strings.Split(oldDir, string(os.PathSeparator))
 	lastParts := parts[2:]
 	firstParts := parts[:2]
