@@ -65,7 +65,7 @@ var (
 	ap         AsyncProcessor
 	e          *env
 	afs        afero.Fs
-	files      *[]File
+	files      []file
 
 	// testIntegrationTestSetup
 	testIntegrationTestSetup AsyncProcessor
@@ -89,7 +89,7 @@ type env struct {
 // AsyncProcessor interface is the interface for AD
 type AsyncProcessor interface {
 	getEnv() *env
-	getFiles() *[]File
+	getFiles() []file
 	setEnv(*env)
 	setFiles()
 	processFiles()
@@ -99,15 +99,15 @@ type AsyncProcessor interface {
 
 // asyncProcessor is the async processing instance
 type asyncProcessor struct {
-	Env   *env
-	Files *[]File
+	env   *env
+	files []file
 }
 
 // NewAsyncProcessor returns a pointer to an AsyncProcessor
-func NewAsyncProcessor(Env *env, Files *[]File) AsyncProcessor {
+func NewAsyncProcessor(env *env, files []file) AsyncProcessor {
 	return &asyncProcessor{
-		Env:   Env,
-		Files: Files,
+		env:   env,
+		files: files,
 	}
 }
 
@@ -267,19 +267,19 @@ func (e *env) setPWD(ex string) string {
 }
 
 func (ap *asyncProcessor) getEnv() *env {
-	return ap.Env
+	return ap.env
 }
 
-func (ap *asyncProcessor) getFiles() *[]File {
-	return ap.Files
+func (ap *asyncProcessor) getFiles() []file {
+	return ap.files
 }
 
 func (ap *asyncProcessor) setEnv(env *env) {
-	ap.Env = env
+	ap.env = env
 }
 
 func (ap *asyncProcessor) setFiles() {
-	e = ap.Env
+	e = ap.env
 	afs := e.afs
 	logger := e.logger
 
@@ -300,7 +300,7 @@ func (ap *asyncProcessor) setFiles() {
 			continue
 		}
 
-		*ap.Files = append(*ap.Files, &newFile)
+		ap.files = append(ap.files, newFile)
 		logger.Info(fmt.Sprintf(fAddedToListLog,
 			newFile.smbName,
 			newFile.id,

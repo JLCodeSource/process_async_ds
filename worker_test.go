@@ -15,7 +15,7 @@ func TestWorker(t *testing.T) {
 
 		e.logger, hook = setupLogs()
 		e.afs = afs
-		ap = NewAsyncProcessor(e, &files)
+		ap = NewAsyncProcessor(e, files)
 
 		var oldPaths []string
 		var newPaths []string

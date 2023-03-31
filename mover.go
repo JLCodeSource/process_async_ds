@@ -21,7 +21,7 @@ func (f *file) move() {
 	logger := e.logger
 	afs := e.afs
 	oldLocation := f.stagingPath
-	newLocation := newPath(f)
+	newLocation := newPath(*f)
 	logger.Info(fmt.Sprintf(fMoveFileLog, f.smbName, f.id, oldLocation, newLocation))
 
 	if e.dryrun {
@@ -42,7 +42,7 @@ func (f *file) move() {
 	}
 }
 
-func newPath(f File) string {
+func newPath(f file) string {
 	oldDir, fn := path.Split(f.getStagingPath())
 	parts := strings.Split(oldDir, string(os.PathSeparator))
 	lastParts := parts[2:]

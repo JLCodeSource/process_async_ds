@@ -10,16 +10,16 @@ import (
 // mockAsyncProcessor
 
 type mockAsyncProcessor struct {
-	Env   *env
-	Files *[]File
+	env   *env
+	files []file
 }
 
-func (m mockAsyncProcessor) getFiles() *[]File {
-	return m.Files
+func (m mockAsyncProcessor) getFiles() []file {
+	return m.files
 }
 
 func (m mockAsyncProcessor) getEnv() *env {
-	return m.Env
+	return m.env
 }
 
 func (m mockAsyncProcessor) setEnv(_ *env) {

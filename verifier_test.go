@@ -134,7 +134,7 @@ func TestVerify(t *testing.T) {
 			ModTime: now},
 	}
 
-	var files *[]File
+	var files []file
 
 	fsys, files = createFSTest(t, 10)
 
@@ -151,7 +151,7 @@ func TestVerify(t *testing.T) {
 	ap = NewAsyncProcessor(e, files)
 
 	t.Run("Gen verify", func(t *testing.T) {
-		for _, f := range *files {
+		for _, f := range files {
 			ok := f.verify()
 			assert.True(t, ok)
 
@@ -173,7 +173,7 @@ func TestVerifyEnvMatch(t *testing.T) {
 	now = time.Now()
 
 	e = new(env)
-	files = &[]File{}
+	files = []file{}
 	ap = NewAsyncProcessor(e, files)
 
 	t.Run("returns true if config metadata matches", func(t *testing.T) {
@@ -254,7 +254,7 @@ func TestVerifyIP(t *testing.T) {
 	testIP := net.ParseIP("192.168.101.1")
 
 	e = new(env)
-	files = &[]File{}
+	files = []file{}
 	ap = NewAsyncProcessor(e, files)
 
 	t.Run("returns true if ip is same as the current machine", func(t *testing.T) {
@@ -293,7 +293,7 @@ func TestVerifyTimeLimit(t *testing.T) {
 	now := time.Now()
 
 	e = new(env)
-	files = &[]File{}
+	files = []file{}
 	ap = NewAsyncProcessor(e, files)
 
 	t.Run("returns true if file.createTime is after time limit", func(t *testing.T) {
@@ -354,7 +354,7 @@ func TestVerifyGBMetadata(t *testing.T) {
 	defer out.Close()
 
 	e = new(env)
-	files = &[]File{}
+	files = []file{}
 	ap = NewAsyncProcessor(e, files)
 
 	t.Run("returns true if file.datasetID matches DatasetID", func(t *testing.T) {
@@ -364,13 +364,13 @@ func TestVerifyGBMetadata(t *testing.T) {
 		ap.setEnv(e)
 
 		e.logger, hook = setupLogs()
-		assert.True(t, (*files)[0].verifyGBMetadata())
+		assert.True(t, files[0].verifyGBMetadata())
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(
 			fDatasetMatchTrueLog,
-			(*files)[0].getSmbName(),
-			(*files)[0].getID(),
-			(*files)[0].getDatasetID(),
+			files[0].getSmbName(),
+			files[0].getID(),
+			files[0].getDatasetID(),
 			testDatasetID)
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
@@ -424,7 +424,7 @@ func TestVerifyGBMetadata(t *testing.T) {
 
 func TestGetMBFilenameByFileID(t *testing.T) {
 	e = new(env)
-	files = &[]File{}
+	files = []file{}
 	ap = NewAsyncProcessor(e, files)
 	t.Run("should return true if it exists", func(t *testing.T) {
 		f = file{
@@ -474,7 +474,7 @@ func TestGetMBFilenameByFileID(t *testing.T) {
 
 func TestGetMBDatasetByFileID(t *testing.T) {
 	e = new(env)
-	files = &[]File{}
+	files = []file{}
 	ap = NewAsyncProcessor(e, files)
 
 	t.Run("should return the dataset by id if it exists", func(t *testing.T) {
@@ -512,7 +512,7 @@ func TestGetMBDatasetByFileID(t *testing.T) {
 
 func TestParseFileNameByID(t *testing.T) {
 	e = new(env)
-	files = &[]File{}
+	files = []file{}
 	ap = NewAsyncProcessor(e, files)
 
 	t.Run("should parse output and return filename", func(t *testing.T) {
@@ -535,7 +535,7 @@ func TestParseFileNameByID(t *testing.T) {
 
 func TestSetFileDatasetByID(t *testing.T) {
 	e = new(env)
-	files = &[]File{}
+	files = []file{}
 	ap = NewAsyncProcessor(e, files)
 	t.Run("should set f.datasetID if it exists", func(t *testing.T) {
 		f = file{
@@ -574,7 +574,7 @@ func TestSetFileDatasetByID(t *testing.T) {
 
 func TestGetByIDErrLog(t *testing.T) {
 	e = new(env)
-	files = &[]File{}
+	files = []file{}
 	ap = NewAsyncProcessor(e, files)
 	t.Run("should log err and gbrNoFileNameByID on err", func(t *testing.T) {
 		f = file{
@@ -602,7 +602,7 @@ func TestGetByIDErrLog(t *testing.T) {
 
 func TestVerifyInProcessedDataset(t *testing.T) {
 	e = new(env)
-	files = &[]File{}
+	files = []file{}
 	ap = NewAsyncProcessor(e, files)
 	t.Run("returns true if file.datasetID matches asyncProcessedDatasetID", func(t *testing.T) {
 		f = file{
@@ -634,7 +634,7 @@ func TestVerifyInProcessedDataset(t *testing.T) {
 
 func TestVerifyStat(t *testing.T) {
 	e = new(env)
-	files = &[]File{}
+	files = []file{}
 	ap = NewAsyncProcessor(e, files)
 	t.Run("returns true if file matches", func(t *testing.T) {
 		fsys = fstest.MapFS{
@@ -740,7 +740,7 @@ func TestVerifyStat(t *testing.T) {
 
 func TestVerifyFileSize(t *testing.T) {
 	e = new(env)
-	files = &[]File{}
+	files = []file{}
 	ap = NewAsyncProcessor(e, files)
 	t.Run("returns true if file.size matches comparator", func(t *testing.T) {
 		fsys = fstest.MapFS{
@@ -790,7 +790,7 @@ func TestVerifyFileSize(t *testing.T) {
 
 func TestVerifyFileCreateTime(t *testing.T) {
 	e = new(env)
-	files = &[]File{}
+	files = []file{}
 	ap = NewAsyncProcessor(e, files)
 	t.Run("returns true if file.createTime matches comparator", func(t *testing.T) {
 		fsys = fstest.MapFS{}
@@ -860,7 +860,7 @@ func TestVerifyFileCreateTime(t *testing.T) {
 
 func TestVerifyFileIDName(t *testing.T) {
 	e = new(env)
-	files = &[]File{}
+	files = []file{}
 	ap = NewAsyncProcessor(e, files)
 	t.Run("returns true if file.smbname matches file.id filename", func(t *testing.T) {
 		f = file{
@@ -890,7 +890,7 @@ func TestVerifyFileIDName(t *testing.T) {
 	})
 }
 
-func createFSTest(t *testing.T, numFiles int) (fstest.MapFS, *[]File) {
+func createFSTest(t *testing.T, numFiles int) (fstest.MapFS, []file) {
 	// Create gbrList file
 	var list string
 
@@ -913,7 +913,7 @@ func createFSTest(t *testing.T, numFiles int) (fstest.MapFS, *[]File) {
 
 	fsys = fstest.MapFS{}
 
-	var files []File
+	var files []file
 
 	var dirs = []string{}
 
@@ -926,7 +926,7 @@ func createFSTest(t *testing.T, numFiles int) (fstest.MapFS, *[]File) {
 	}
 
 	for i := 0; i < numFiles; i++ {
-		f := &file{}
+		f := file{}
 		// set name
 		guid := genGUID()
 		f.smbName = guid
@@ -974,7 +974,7 @@ func createFSTest(t *testing.T, numFiles int) (fstest.MapFS, *[]File) {
 		}
 	}
 
-	return fsys, &files
+	return fsys, files
 }
 
 func genRandom(i int64, s string) (random []byte) {

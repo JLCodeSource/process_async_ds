@@ -28,7 +28,7 @@ func TestNewPath(t *testing.T) {
 	fsys, files = createFSTest(t, 10)
 
 	t.Run("should return path of xxx.processed", func(t *testing.T) {
-		for _, f := range *files {
+		for _, f := range files {
 			oldDir, fn := path.Split(f.getStagingPath())
 			parts := strings.Split(oldDir, string(os.PathSeparator))
 			lastParts := parts[2:]
@@ -47,7 +47,7 @@ func TestMoveFile(t *testing.T) {
 	afs, files := createAferoTest(t, 10, false)
 	e = new(env)
 	e.afs = afs
-	ap = NewAsyncProcessor(e, &files)
+	ap = NewAsyncProcessor(e, files)
 	t.Run("should move file to new path & log it", func(t *testing.T) {
 		for _, f := range files {
 			oldPath := f.getStagingPath()
@@ -182,7 +182,7 @@ func TestWrapAferoMkdirAll(t *testing.T) {
 	})
 }
 
-func createAferoTest(t *testing.T, numFiles int, createTestFile bool) (afero.Fs, []File) {
+func createAferoTest(t *testing.T, numFiles int, createTestFile bool) (afero.Fs, []file) {
 	// createTestFile
 	var outSourceFile afero.File
 
@@ -219,7 +219,7 @@ func createAferoTest(t *testing.T, numFiles int, createTestFile bool) (afero.Fs,
 		}
 	}
 
-	var files []File
+	var files []file
 
 	var dirs = []string{}
 
@@ -235,7 +235,7 @@ func createAferoTest(t *testing.T, numFiles int, createTestFile bool) (afero.Fs,
 
 	// Create Files
 	for i := 0; i < numFiles; i++ {
-		f := &file{}
+		f := file{}
 		// set name
 		guid := genGUID()
 		f.smbName = guid

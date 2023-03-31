@@ -1,18 +1,19 @@
 package main
 
 func (ap *asyncProcessor) processFiles() {
-	e = ap.getEnv()
-	for i := range *ap.Files {
-		(*ap.Files)[i].hasher()
-		(*ap.Files)[i].setOldHash((*ap.Files)[i].getHash())
+	e = ap.env
+
+	for i := range ap.files {
+		ap.files[i].hasher()
+		ap.files[i].setOldHash(ap.files[i].getHash())
 		// log
-		(*ap.Files)[i].setOldStagingPath((*ap.Files)[i].getStagingPath())
+		ap.files[i].setOldStagingPath(ap.files[i].getStagingPath())
 		// log
-		(*ap.Files)[i].move()
+		ap.files[i].move()
 		// log (in Move)
-		(*ap.Files)[i].hasher()
-		if (*ap.Files)[i].compareHashes() {
-			(*ap.Files)[i].setSuccess(true)
+		ap.files[i].hasher()
+		if ap.files[i].compareHashes() {
+			ap.files[i].setSuccess(true)
 			// log
 		} // Add fail & log
 		// log result
