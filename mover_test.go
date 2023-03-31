@@ -48,6 +48,7 @@ func TestMoveFile(t *testing.T) {
 	e = new(env)
 	e.afs = afs
 	ap = NewAsyncProcessor(e, files)
+
 	t.Run("should move file to new path & log it", func(t *testing.T) {
 		for _, f := range files {
 			oldPath := f.stagingPath

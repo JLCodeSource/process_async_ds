@@ -21,20 +21,18 @@ func (ap *asyncProcessor) processFiles() {
 		ap.files[i].move()
 		// log (in Move)
 		ap.files[i].hasher()
+
 		if ap.files[i].compareHashes() {
 			ap.files[i].success = true
 		} else {
 			ap.files[i].success = false
 		}
+
 		e.logger.Info(fmt.Sprintf(adSetSuccessLog, ap.files[i].smbName, ap.files[i].id, ap.files[i].success))
 		e.logger.Info(fmt.Sprintf(adReadyForProcessingLog, ap.files[i].smbName, ap.files[i].id, ap.files[i].stagingPath))
 	}
 }
 
 func (f *file) compareHashes() bool {
-	if f.oldHash != f.hash {
-		return false
-	}
-
-	return true
+	return f.oldHash == f.hash
 }

@@ -52,6 +52,7 @@ func TestParseFile(t *testing.T) {
 	e = new(env)
 	files = []file{}
 	ap = NewAsyncProcessor(e, files)
+
 	t.Run("test parseFile", func(t *testing.T) {
 		parsingTests := []struct {
 			name    string
@@ -135,6 +136,7 @@ func TestParseLine(t *testing.T) {
 	e = new(env)
 	files = []file{}
 	ap = NewAsyncProcessor(e, files)
+
 	t.Run("verify ParseLine", func(t *testing.T) {
 		e.logger, hook = setupLogs()
 		onelineParsed := oneline

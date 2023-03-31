@@ -63,16 +63,14 @@ func TestWorker(t *testing.T) {
 		wantLogMsg = fmt.Sprintf(adReadyForProcessingLog, files[0].smbName, files[0].id, files[0].stagingPath)
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
-
 }
 
 func TestCompareHashes(t *testing.T) {
 	t.Run("matching hashes should return true", func(t *testing.T) {
 		var f file
 		var hash [32]byte
-		var b []byte
 
-		b = []byte("test")
+		b := []byte("test")
 		hash = sha256.Sum256(b)
 		f.hash = hash
 		f.oldHash = hash

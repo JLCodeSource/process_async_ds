@@ -426,6 +426,7 @@ func TestGetMBFilenameByFileID(t *testing.T) {
 	e = new(env)
 	files = []file{}
 	ap = NewAsyncProcessor(e, files)
+
 	t.Run("should return true if it exists", func(t *testing.T) {
 		f = file{
 			smbName: testSmbName,
@@ -537,6 +538,7 @@ func TestSetFileDatasetByID(t *testing.T) {
 	e = new(env)
 	files = []file{}
 	ap = NewAsyncProcessor(e, files)
+
 	t.Run("should set f.datasetID if it exists", func(t *testing.T) {
 		f = file{
 			smbName: testSmbName,
@@ -576,6 +578,7 @@ func TestGetByIDErrLog(t *testing.T) {
 	e = new(env)
 	files = []file{}
 	ap = NewAsyncProcessor(e, files)
+
 	t.Run("should log err and gbrNoFileNameByID on err", func(t *testing.T) {
 		f = file{
 			smbName: testSmbName,
@@ -604,6 +607,7 @@ func TestVerifyInProcessedDataset(t *testing.T) {
 	e = new(env)
 	files = []file{}
 	ap = NewAsyncProcessor(e, files)
+
 	t.Run("returns true if file.datasetID matches asyncProcessedDatasetID", func(t *testing.T) {
 		f = file{
 			smbName:   testName,
@@ -636,6 +640,7 @@ func TestVerifyStat(t *testing.T) {
 	e = new(env)
 	files = []file{}
 	ap = NewAsyncProcessor(e, files)
+
 	t.Run("returns true if file matches", func(t *testing.T) {
 		fsys = fstest.MapFS{
 			testPath: {Data: []byte(testContent)},
@@ -742,6 +747,7 @@ func TestVerifyFileSize(t *testing.T) {
 	e = new(env)
 	files = []file{}
 	ap = NewAsyncProcessor(e, files)
+
 	t.Run("returns true if file.size matches comparator", func(t *testing.T) {
 		fsys = fstest.MapFS{
 			testPath: {Data: []byte(testContent)},
@@ -792,6 +798,7 @@ func TestVerifyFileCreateTime(t *testing.T) {
 	e = new(env)
 	files = []file{}
 	ap = NewAsyncProcessor(e, files)
+
 	t.Run("returns true if file.createTime matches comparator", func(t *testing.T) {
 		fsys = fstest.MapFS{}
 		now := time.Now()
@@ -862,6 +869,7 @@ func TestVerifyFileIDName(t *testing.T) {
 	e = new(env)
 	files = []file{}
 	ap = NewAsyncProcessor(e, files)
+
 	t.Run("returns true if file.smbname matches file.id filename", func(t *testing.T) {
 		f = file{
 			smbName: testName,

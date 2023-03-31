@@ -37,6 +37,7 @@ const (
 
 func (f *file) verify() bool {
 	e = ap.getEnv()
+
 	if !f.verifyEnvMatch() {
 		return false
 	}
@@ -57,6 +58,7 @@ func (f *file) verify() bool {
 // verify config metadata
 func (f *file) verifyEnvMatch() bool {
 	e = ap.getEnv()
+
 	if !f.verifyIP() {
 		return false
 	}
@@ -72,6 +74,7 @@ func (f *file) verifyEnvMatch() bool {
 
 func (f *file) verifyIP() bool {
 	e = ap.getEnv()
+
 	if reflect.DeepEqual(f.fanIP, e.sysIP) {
 		e.logger.Info(fmt.Sprintf(fIPMatchTrueLog, f.smbName, f.id, f.fanIP, e.sysIP))
 	} else {
@@ -106,6 +109,7 @@ func (f *file) verifyTimeLimit() bool {
 func (f *file) verifyGBMetadata() bool {
 	e = ap.getEnv()
 	ds := getAsyncProcessedDSID(e.logger)
+
 	if !f.verifyInDataset(ds) {
 		return false
 	}
@@ -182,6 +186,7 @@ func (f *file) parseMBFileNameByFileID(cmdOut string) (filename string) {
 func (f *file) setMBDatasetByFileID(cmdOut string) {
 	e = ap.getEnv()
 	lines := strings.Split(string(cmdOut), ";")
+
 	for _, line := range lines {
 		if strings.Contains(line, "parent id") {
 			parentDS := line[len(line)-32:]
@@ -230,6 +235,7 @@ func (f *file) verifyFileIDName(fileName string) bool {
 func (f *file) verifyStat() bool {
 	e = ap.getEnv()
 	fileInfo, err := fs.Stat(e.fsys, f.stagingPath)
+
 	if err != nil {
 		e.logger.Warn(fmt.Sprintf(fExistsFalseLog, f.smbName, f.id, f.stagingPath))
 		return false
