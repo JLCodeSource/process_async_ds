@@ -2,6 +2,7 @@ package main
 
 import (
 	"crypto/sha256"
+	"fmt"
 	"testing"
 
 	"github.com/spf13/afero"
@@ -35,15 +36,31 @@ func TestWorker(t *testing.T) {
 
 		ap.processFiles()
 
-		for i := range oldPaths {
+		for i := 0; i < len(oldPaths); i++ {
 			assert.NotEqual(t, oldPaths[i], newPaths[i])
 			assert.Equal(t, newPaths[i], files[i].stagingPath)
 			assert.Equal(t, oldPaths[i], files[i].oldStagingPath)
-			hash := files[i].hash
-			assert.Equal(t, oldHashes[i], string(hash[:]))
+			assert.Equal(t, oldHashes[i], string(files[i].hash[:]))
 			assert.True(t, files[i].success)
-		}
 
+			logs := hook.Entries
+
+			gotLogMsg := logs[1].Message
+			wantLogMsg := fmt.Sprintf(adSetOldHashLog, files[i].smbName, files[i].id, files[i].hash)
+			assertCorrectString(t, gotLogMsg, wantLogMsg)
+
+			gotLogMsg = logs[2].Message
+			wantLogMsg = fmt.Sprintf(adSetOldStagingPathLog, files[i].smbName, files[i].id, files[i].oldStagingPath)
+			assertCorrectString(t, gotLogMsg, wantLogMsg)
+
+			gotLogMsg = logs[7].Message
+			wantLogMsg = fmt.Sprintf(adSetSuccessLog, files[i].smbName, files[i].id, true)
+			assertCorrectString(t, gotLogMsg, wantLogMsg)
+
+			gotLogMsg = logs[8].Message
+			wantLogMsg = fmt.Sprintf(adReadyForProcessingLog, files[i].smbName, files[i].id, files[i].stagingPath)
+			assertCorrectString(t, gotLogMsg, wantLogMsg)
+		}
 	})
 }
 
