@@ -357,6 +357,8 @@ func main() {
 	e.verifyDataset()
 
 	ap.setFiles()
+
+	ap.processFiles()
 }
 
 func wrapOs(logger *logrus.Logger, wrapped string, f func() (string, error)) string {
