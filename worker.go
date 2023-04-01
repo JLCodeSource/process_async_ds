@@ -22,6 +22,7 @@ func (ap *asyncProcessor) processFiles() {
 			e.logger.Warn(fmt.Sprintf(adHasherErrLog, ap.files[i].smbName, ap.files[i].id, err))
 			continue
 		}
+
 		ap.files[i].oldHash = ap.files[i].hash
 		e.logger.Info(fmt.Sprintf(adSetOldHashLog, ap.files[i].smbName, ap.files[i].id, ap.files[i].hash))
 		ap.files[i].oldStagingPath = ap.files[i].stagingPath
@@ -44,6 +45,7 @@ func (ap *asyncProcessor) processFiles() {
 			e.logger.Fatal(fmt.Sprintf(
 				adCompareHashesNoMatchLog, ap.files[i].smbName, ap.files[i].id, ap.files[i].oldHash, ap.files[i].hash))
 		}
+
 		e.logger.Info(fmt.Sprintf(adSetSuccessLog, ap.files[i].smbName, ap.files[i].id, ap.files[i].success))
 		e.logger.Info(fmt.Sprintf(adReadyForProcessingLog, ap.files[i].smbName, ap.files[i].id, ap.files[i].stagingPath))
 	}
