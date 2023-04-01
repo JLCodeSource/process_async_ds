@@ -51,7 +51,7 @@ const (
 	timelimitArgTxt   = "days"
 	timelimitArgHelp  = "number of days ago (default 0)"
 	dryrunArgTxt      = "dryrun"
-	dryrunArgHelp     = "execute as dry run (default true)"
+	dryrunArgHelp     = "execute as dry run"
 	testrunArgTxt     = "test"
 	testrunArgHelp    = "execute with test fs (default false)"
 )
