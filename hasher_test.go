@@ -16,11 +16,11 @@ const (
 )
 
 func TestHasher(t *testing.T) {
+	e = new(env)
+	afs, files := createAferoTest(t, 1, false)
+	e.afs = afs
+	ap = NewAsyncProcessor(e, files)
 	t.Run("should return the hash of 'pre'file & log it", func(t *testing.T) {
-		e = new(env)
-		afs, files := createAferoTest(t, 1, false)
-		e.afs = afs
-		ap = NewAsyncProcessor(e, files)
 
 		for _, f := range files {
 			e.logger, hook = setupLogs()
