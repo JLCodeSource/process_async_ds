@@ -198,7 +198,7 @@ func createAferoTest(t *testing.T, numFiles int, createTestFile bool) (afero.Fs,
 	list = fmt.Sprintf(gbrList, dir)
 
 	if _, err := os.Stat(list); errors.Is(err, os.ErrNotExist) {
-		fmt.Printf("gbrList:%v does not exist", list)
+		fmt.Printf("Info: gbrList:%v does not exist; skipping truncate", list)
 	} else {
 		if err := os.Truncate(list, 0); err != nil {
 			t.Errorf("Failed to truncate: %v", err)
