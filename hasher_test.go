@@ -21,7 +21,6 @@ func TestHasher(t *testing.T) {
 	e.afs = afs
 	ap = NewAsyncProcessor(e, files)
 	t.Run("should return the hash of 'pre'file & log it", func(t *testing.T) {
-
 		for _, f := range files {
 			e.logger, hook = setupLogs()
 			content, err := afero.ReadFile(afs, f.stagingPath)
