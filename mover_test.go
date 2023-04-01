@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"math/rand"
@@ -196,8 +197,12 @@ func createAferoTest(t *testing.T, numFiles int, createTestFile bool) (afero.Fs,
 
 	list = fmt.Sprintf(gbrList, dir)
 
-	if err := os.Truncate(list, 0); err != nil {
-		t.Errorf("Failed to truncate: %v", err)
+	if _, err := os.Stat(list); errors.Is(err, os.ErrNotExist) {
+		fmt.Printf("gbrList:%v does not exist", list)
+	} else {
+		if err := os.Truncate(list, 0); err != nil {
+			t.Errorf("Failed to truncate: %v", err)
+		}
 	}
 
 	out, err := os.OpenFile(list, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
