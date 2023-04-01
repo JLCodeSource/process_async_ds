@@ -16,9 +16,12 @@ const (
 	fMoveDryRunFalseLog = "%v: (file.id:%v) Nondryrun executing move"
 )
 
-func (f *File) Move(afsys afero.Fs, logger *logrus.Logger) {
+func (f *file) move() {
+	e = ap.getEnv()
+	logger := e.logger
+	afs := e.afs
 	oldLocation := f.stagingPath
-	newLocation := newPath(f)
+	newLocation := newPath(*f)
 	logger.Info(fmt.Sprintf(fMoveFileLog, f.smbName, f.id, oldLocation, newLocation))
 
 	if e.dryrun {
@@ -26,12 +29,12 @@ func (f *File) Move(afsys afero.Fs, logger *logrus.Logger) {
 	} else {
 		logger.Warn(fmt.Sprintf(fMoveDryRunFalseLog, f.smbName, f.id))
 		dir, _ := path.Split(newLocation)
-		_, err := afsys.Stat(dir)
+		_, err := afs.Stat(dir)
 		if err != nil {
 			logger.Warn(err)
-			wrapAferoMkdirAll(afsys, dir, logger)
+			wrapAferoMkdirAll(afs, dir, logger)
 		}
-		err = afsys.Rename(oldLocation, newLocation)
+		err = afs.Rename(oldLocation, newLocation)
 		if err != nil {
 			logger.Fatal(err)
 		}
@@ -39,7 +42,7 @@ func (f *File) Move(afsys afero.Fs, logger *logrus.Logger) {
 	}
 }
 
-func newPath(f *File) string {
+func newPath(f file) string {
 	oldDir, fn := path.Split(f.stagingPath)
 	parts := strings.Split(oldDir, string(os.PathSeparator))
 	lastParts := parts[2:]

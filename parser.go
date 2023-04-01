@@ -7,9 +7,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/sirupsen/logrus"
-	"github.com/spf13/afero"
 )
 
 const (
@@ -24,15 +21,19 @@ const (
 	easternTime = "America/New_York"
 )
 
-func parseFile(afs afero.Fs, f string, logger *logrus.Logger) []string {
-	_, err := afs.Stat(f)
+func parseSourceFile(e *env) []string {
+	afs = e.afs
+	sf := e.sourceFile
+	logger := e.logger
+
+	_, err := afs.Stat(sf)
 	if err != nil {
-		logger.Fatal(err)
+		e.logger.Fatal(err)
 	}
 
-	file, err := afs.Open(f)
+	file, err := afs.Open(sf)
 	if err != nil {
-		logger.Fatal(err)
+		e.logger.Fatal(err)
 	}
 
 	//defer file.Close()
@@ -55,7 +56,7 @@ func parseFile(afs afero.Fs, f string, logger *logrus.Logger) []string {
 	return lines
 }
 
-func parseLine(line string, logger *logrus.Logger) File {
+func parseLine(line string, e *env) file {
 	var dateTime time.Time
 
 	fileMetadata := strings.SplitAfter(line, "|")
@@ -69,44 +70,44 @@ func parseLine(line string, logger *logrus.Logger) File {
 
 	smbName := fileMetadata[0]
 
-	logger.Info(fmt.Sprintf(smbNameLog, processing, smbName))
+	e.logger.Info(fmt.Sprintf(smbNameLog, processing, smbName))
 
 	stagingPath := fileMetadata[1]
 
-	logger.Info(fmt.Sprintf(stagingPathLog, processing, stagingPath))
+	e.logger.Info(fmt.Sprintf(stagingPathLog, processing, stagingPath))
 
 	dateTimeString := fileMetadata[2]
 	dateTimeInt, err := strconv.ParseInt(dateTimeString, 10, 64)
 
 	if err != nil {
-		logger.Warn(err)
+		e.logger.Warn(err)
 		loc, err := time.LoadLocation(easternTime)
 
 		if err != nil {
-			logger.Fatal(err)
+			e.logger.Fatal(err)
 		}
 
 		dateTime, err = time.ParseInLocation(time.UnixDate, dateTimeString, loc)
 		if err != nil {
-			logger.Fatal(err)
+			e.logger.Fatal(err)
 		}
 	} else {
 		dateTime = time.Unix(dateTimeInt, 0)
 	}
 
-	logger.Info(fmt.Sprintf(createTimeLog, processing, dateTime.UTC()))
+	e.logger.Info(fmt.Sprintf(createTimeLog, processing, dateTime.UTC()))
 
 	sizeStr := fileMetadata[3]
-	logger.Info(fmt.Sprintf(sizeLog, processing, sizeStr))
+	e.logger.Info(fmt.Sprintf(sizeLog, processing, sizeStr))
 	// Set above
-	logger.Info(fmt.Sprintf(idLog, processing, id))
+	e.logger.Info(fmt.Sprintf(idLog, processing, id))
 
 	fanIP := net.ParseIP(fileMetadata[5])
-	logger.Info(fmt.Sprintf(fanIPLog, processing, fanIP))
+	e.logger.Info(fmt.Sprintf(fanIPLog, processing, fanIP))
 
 	size, _ := strconv.ParseInt(sizeStr, 10, 64)
 
-	file := File{
+	file := file{
 		smbName:     smbName,
 		stagingPath: stagingPath,
 		createTime:  dateTime,

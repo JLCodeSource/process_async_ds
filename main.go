@@ -65,24 +65,11 @@ var (
 	ap         AsyncProcessor
 	e          *env
 	afs        afero.Fs
-	files      *[]File
+	files      []file
 
 	// testIntegrationTestSetup
 	testIntegrationTestSetup AsyncProcessor
 )
-
-// File type is a struct which holds its relevant metadata
-type File struct {
-	smbName     string
-	stagingPath string
-	createTime  time.Time
-	size        int64
-	id          string
-	fanIP       net.IP
-	datasetID   string
-	fileInfo    fs.FileInfo
-	hash        [32]byte
-}
 
 // env type holds config and environment settings
 type env struct {
@@ -102,22 +89,25 @@ type env struct {
 // AsyncProcessor interface is the interface for AD
 type AsyncProcessor interface {
 	getEnv() *env
-	getFiles() *[]File
+	getFiles() []file
 	setEnv(*env)
 	setFiles()
+	processFiles()
+	//parseSourceFile() []string
+	//parseLine(string) file
 }
 
 // asyncProcessor is the async processing instance
 type asyncProcessor struct {
-	Env   *env
-	Files *[]File
+	env   *env
+	files []file
 }
 
 // NewAsyncProcessor returns a pointer to an AsyncProcessor
-func NewAsyncProcessor(Env *env, Files *[]File) AsyncProcessor {
+func NewAsyncProcessor(env *env, files []file) AsyncProcessor {
 	return &asyncProcessor{
-		Env:   Env,
-		Files: Files,
+		env:   env,
+		files: files,
 	}
 }
 
@@ -152,7 +142,6 @@ func (e *env) setSourceFile(ex string, f string) {
 	}
 
 	_, err := fs.Stat(filesystem, pth)
-
 	if err != nil {
 		e.logger.Fatal(err.Error())
 	}
@@ -278,19 +267,19 @@ func (e *env) setPWD(ex string) string {
 }
 
 func (ap *asyncProcessor) getEnv() *env {
-	return ap.Env
+	return ap.env
 }
 
-func (ap *asyncProcessor) getFiles() *[]File {
-	return ap.Files
+func (ap *asyncProcessor) getFiles() []file {
+	return ap.files
 }
 
 func (ap *asyncProcessor) setEnv(env *env) {
-	ap.Env = env
+	ap.env = env
 }
 
 func (ap *asyncProcessor) setFiles() {
-	e = ap.Env
+	e = ap.env
 	afs := e.afs
 	logger := e.logger
 
@@ -299,10 +288,10 @@ func (ap *asyncProcessor) setFiles() {
 		logger.Fatal(err)
 	}
 
-	lines := parseFile(afs, e.sourceFile, logger)
+	lines := parseSourceFile(e)
 
 	for _, line := range lines {
-		newFile := parseLine(line, logger)
+		newFile := parseLine(line, e)
 		newFile.fileInfo, err = afs.Stat(newFile.stagingPath)
 
 		if err != nil {
@@ -311,7 +300,7 @@ func (ap *asyncProcessor) setFiles() {
 			continue
 		}
 
-		*ap.Files = append(*ap.Files, newFile)
+		ap.files = append(ap.files, newFile)
 		logger.Info(fmt.Sprintf(fAddedToListLog,
 			newFile.smbName,
 			newFile.id,
@@ -324,20 +313,19 @@ func (ap *asyncProcessor) setFiles() {
 }
 
 func init() {
+	// Get pointer to new Env
+	e = new(env)
+
 	log.Init()
-	log.GetLogger()
+
+	// Set logger
+	e.logger = log.GetLogger()
 
 	flag.StringVar(&sourceFile, sourceFileArgTxt, "", sourceFileArgHelp)
 	flag.StringVar(&datasetID, datasetIDArgTxt, "", datasetIDArgHelp)
 	flag.Int64Var(&numDays, timelimitArgTxt, 0, timelimitArgHelp)
 	flag.BoolVar(&dryrun, dryrunArgTxt, true, dryrunArgHelp)
 	flag.BoolVar(&testrun, testrunArgTxt, false, testrunArgHelp)
-
-	// Get pointer to new Env
-	e = new(env)
-
-	// Set logger
-	e.logger = log.GetLogger()
 
 	// Get executable path
 	e.exePath = wrapOs(e.logger, osExecutableLog, os.Executable)
@@ -369,6 +357,8 @@ func main() {
 	e.verifyDataset()
 
 	ap.setFiles()
+
+	ap.processFiles()
 }
 
 func wrapOs(logger *logrus.Logger, wrapped string, f func() (string, error)) string {

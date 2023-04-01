@@ -4,11 +4,10 @@ import (
 	"crypto/sha256"
 	"errors"
 	"fmt"
-	"io/fs"
 	"testing"
-	"testing/fstest"
 
 	"bou.ke/monkey"
+	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -17,38 +16,42 @@ const (
 )
 
 func TestHasher(t *testing.T) {
-	var files *[]File
+	e = new(env)
+	afs, files := createAferoTest(t, 10, false)
+	e.afs = afs
+	ap = NewAsyncProcessor(e, files)
 
-	fsys = fstest.MapFS{}
-
-	t.Run("should return the hash of the file & log it", func(t *testing.T) {
-		fsys, files = createFSTest(t, 10)
-		for _, f := range *files {
-			testLogger, hook = setupLogs()
-
-			content, _ := fs.ReadFile(fsys, f.stagingPath)
+	t.Run("should return the hash of 'pre'file & log it", func(t *testing.T) {
+		for _, f := range files {
+			e.logger, hook = setupLogs()
+			content, err := afero.ReadFile(afs, f.stagingPath)
+			if err != nil {
+				t.Fatal(err)
+			}
+			prePost := "pre"
 			sha := sha256.Sum256(content)
-			f.hasher(fsys, testLogger)
+			err = f.hasher()
+			assert.Nil(t, err)
 			assert.Equal(t, sha, f.hash)
 
 			gotLogMsg := hook.LastEntry().Message
-			wantLogMsg := fmt.Sprintf(fHashLog, f.smbName, f.id, f.hash)
+			wantLogMsg := fmt.Sprintf(fHashLog, f.smbName, f.id, prePost, f.hash)
 			assertCorrectString(t, gotLogMsg, wantLogMsg)
 		}
 	})
 	t.Run("should log an error on failure to hash", func(t *testing.T) {
-		fakeFsReadFile := func(fsys fs.FS, name string) ([]byte, error) {
+		fakeFsReadFile := func(afs afero.Fs, name string) ([]byte, error) {
 			err := errors.New(testFsReadFileErr)
 			return nil, err
 		}
-		patch := monkey.Patch(fs.ReadFile, fakeFsReadFile)
+		patch := monkey.Patch(afero.ReadFile, fakeFsReadFile)
 		defer patch.Unpatch()
 
-		fsys, files = createFSTest(t, 10)
-		for _, f := range *files {
-			testLogger, hook = setupLogs()
+		for _, f := range files {
+			e.logger, hook = setupLogs()
 
-			f.hasher(fsys, testLogger)
+			err := f.hasher()
+			assert.Error(t, err)
 
 			gotLogMsg := hook.Entries[0].Message
 			wantLogMsg := testFsReadFileErr

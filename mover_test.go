@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"math/rand"
@@ -28,13 +29,13 @@ func TestNewPath(t *testing.T) {
 	fsys, files = createFSTest(t, 10)
 
 	t.Run("should return path of xxx.processed", func(t *testing.T) {
-		for _, f := range *files {
+		for _, f := range files {
 			oldDir, fn := path.Split(f.stagingPath)
 			parts := strings.Split(oldDir, string(os.PathSeparator))
 			lastParts := parts[2:]
 			firstParts := parts[:2]
 
-			got := newPath(&f) //#nosec - testing code can be insecure
+			got := newPath(f) //#nosec - testing code can be insecure
 			fp := strings.Join(firstParts, string(os.PathSeparator))
 			lp := strings.Join(lastParts, string(os.PathSeparator))
 			want := fp + ".processed" + string(os.PathSeparator) + lp + fn
@@ -44,23 +45,28 @@ func TestNewPath(t *testing.T) {
 }
 
 func TestMoveFile(t *testing.T) {
-	appFs, files := createAferoTest(t, 10, false)
+	afs, files := createAferoTest(t, 10, false)
+	e = new(env)
+	e.afs = afs
+	ap = NewAsyncProcessor(e, files)
+
 	t.Run("should move file to new path & log it", func(t *testing.T) {
 		for _, f := range files {
-			testLogger, hook = setupLogs()
 			oldPath := f.stagingPath
-			newPath := newPath(&f) //#nosec - testing code can be insecure
-			e = &env{
-				dryrun: false,
-			}
-			f.Move(appFs, testLogger)
+			newPath := newPath(f) //#nosec - testing code can be insecure
+
+			e.logger, hook = setupLogs()
+			e.dryrun = false
+
+			f.move()
+
 			assert.NotEqual(t, oldPath, newPath)
-			_, err := appFs.Stat(newPath)
+			_, err := afs.Stat(newPath)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			assertCorrectString(t, f.stagingPath, newPath)
+			assert.Equal(t, f.stagingPath, newPath)
 
 			gotLogMsg := hook.Entries[0].Message
 			wantLogMsg := fmt.Sprintf(fMoveFileLog,
@@ -81,12 +87,14 @@ func TestMoveFile(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			testLogger, hook = setupLogs()
 
-			newPath := newPath(&f) //#nosec - testing code can be insecure
+			e.afs = afs
+			e.logger, hook = setupLogs()
+
+			newPath := newPath(f) //#nosec - testing code can be insecure
 			dir, _ := path.Split(newPath)
 
-			f.Move(fs, testLogger)
+			f.move()
 
 			gotLogMsg := hook.LastEntry().Message
 			wantLogMsg := fmt.Sprintf(testFsysDoesNotExistErr, dir[:len(dir)-1])
@@ -103,13 +111,12 @@ func TestMoveFile(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			testLogger, hook = setupLogs()
 
-			e = &env{
-				dryrun: true,
-			}
+			e.afs = afs
+			e.logger, hook = setupLogs()
+			e.dryrun = true
 
-			f.Move(fs, testLogger)
+			f.move()
 
 			gotLogMsg := hook.LastEntry().Message
 			wantLogMsg := fmt.Sprintf(fMoveDryRunTrueLog, f.smbName, f.id)
@@ -126,13 +133,12 @@ func TestMoveFile(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			testLogger, hook = setupLogs()
 
-			e = &env{
-				dryrun: false,
-			}
+			e.afs = afs
+			e.logger, hook = setupLogs()
+			e.dryrun = false
 
-			f.Move(fs, testLogger)
+			f.move()
 
 			gotLogMsg := hook.Entries[1].Message
 			wantLogMsg := fmt.Sprintf(fMoveDryRunFalseLog, f.smbName, f.id)
@@ -178,7 +184,7 @@ func TestWrapAferoMkdirAll(t *testing.T) {
 	})
 }
 
-func createAferoTest(t *testing.T, numFiles int, createTestFile bool) (afero.Fs, []File) {
+func createAferoTest(t *testing.T, numFiles int, createTestFile bool) (afero.Fs, []file) {
 	// createTestFile
 	var outSourceFile afero.File
 
@@ -191,8 +197,12 @@ func createAferoTest(t *testing.T, numFiles int, createTestFile bool) (afero.Fs,
 
 	list = fmt.Sprintf(gbrList, dir)
 
-	if err := os.Truncate(list, 0); err != nil {
-		t.Errorf("Failed to truncate: %v", err)
+	if _, err := os.Stat(list); errors.Is(err, os.ErrNotExist) {
+		fmt.Printf("Info: gbrList:%v does not exist; skipping truncate", list)
+	} else {
+		if err := os.Truncate(list, 0); err != nil {
+			t.Errorf("Failed to truncate: %v", err)
+		}
 	}
 
 	out, err := os.OpenFile(list, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
@@ -215,7 +225,7 @@ func createAferoTest(t *testing.T, numFiles int, createTestFile bool) (afero.Fs,
 		}
 	}
 
-	var files []File
+	var files []file
 
 	var dirs = []string{}
 
@@ -231,7 +241,7 @@ func createAferoTest(t *testing.T, numFiles int, createTestFile bool) (afero.Fs,
 
 	// Create Files
 	for i := 0; i < numFiles; i++ {
-		f := File{}
+		f := file{}
 		// set name
 		guid := genGUID()
 		f.smbName = guid

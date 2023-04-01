@@ -134,7 +134,7 @@ func TestVerify(t *testing.T) {
 			ModTime: now},
 	}
 
-	var files *[]File
+	var files []file
 
 	fsys, files = createFSTest(t, 10)
 
@@ -147,13 +147,12 @@ func TestVerify(t *testing.T) {
 		datasetID: testDatasetID,
 	}
 
-	testLogger, hook = setupLogs()
-
+	e.logger, hook = setupLogs()
 	ap = NewAsyncProcessor(e, files)
 
 	t.Run("Gen verify", func(t *testing.T) {
-		for _, f := range *files {
-			ok := f.verify(testLogger)
+		for _, f := range files {
+			ok := f.verify()
 			assert.True(t, ok)
 
 			gotLogMsg := hook.LastEntry().Message
@@ -174,8 +173,7 @@ func TestVerifyEnvMatch(t *testing.T) {
 	now = time.Now()
 
 	e = new(env)
-	files = &[]File{}
-
+	files = []file{}
 	ap = NewAsyncProcessor(e, files)
 
 	t.Run("returns true if config metadata matches", func(t *testing.T) {
@@ -187,7 +185,7 @@ func TestVerifyEnvMatch(t *testing.T) {
 		}
 		ap.setEnv(e)
 
-		file = File{
+		f = file{
 			smbName:     testName,
 			id:          testFileID,
 			createTime:  now,
@@ -195,9 +193,9 @@ func TestVerifyEnvMatch(t *testing.T) {
 			fanIP:       ips[0],
 		}
 		e.logger, hook = setupLogs()
-		assert.True(t, file.verifyEnvMatch(e.logger))
+		assert.True(t, f.verifyEnvMatch())
 		gotLogMsg := hook.LastEntry().Message
-		wantLogMsg := fmt.Sprintf(fEnvMatchLog, file.smbName, file.id, file.stagingPath)
+		wantLogMsg := fmt.Sprintf(fEnvMatchLog, f.smbName, f.id, f.stagingPath)
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
 	t.Run("returns false if ip is not the same as the current machine", func(t *testing.T) {
@@ -206,22 +204,22 @@ func TestVerifyEnvMatch(t *testing.T) {
 			sysIP: ip,
 		}
 		ap.setEnv(e)
-		file = File{
+		f = file{
 			smbName: testName,
 			id:      testFileID,
 			fanIP:   ips[0],
 		}
-		testLogger, hook = setupLogs()
-		assert.False(t, file.verifyEnvMatch(testLogger))
+		e.logger, hook = setupLogs()
+		assert.False(t, f.verifyEnvMatch())
 
 		gotLogMsg := hook.LastEntry().Message
-		wantLogMsg := fmt.Sprintf(fIPMatchFalseLog, file.smbName, file.id, file.fanIP, ip)
+		wantLogMsg := fmt.Sprintf(fIPMatchFalseLog, f.smbName, f.id, f.fanIP, ip)
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
 
 	t.Run("returns false if file.createTime is before time limit", func(t *testing.T) {
-		file = File{
+		f = file{
 			smbName:    testName,
 			id:         testFileID,
 			createTime: now,
@@ -234,14 +232,14 @@ func TestVerifyEnvMatch(t *testing.T) {
 			sysIP: ips[0],
 		}
 		ap.setEnv(e)
-		testLogger, hook = setupLogs()
-		assert.False(t, file.verifyEnvMatch(testLogger))
+		e.logger, hook = setupLogs()
+		assert.False(t, f.verifyEnvMatch())
 
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(fCreateTimeBeforeTimeLimitLog,
-			file.smbName,
-			file.id,
-			file.createTime.Round(time.Millisecond),
+			f.smbName,
+			f.id,
+			f.createTime.Round(time.Millisecond),
 			limit.Round(time.Millisecond))
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
@@ -253,31 +251,37 @@ func TestVerifyIP(t *testing.T) {
 	hostname, _ := os.Hostname()
 	ips, _ := net.LookupIP(hostname)
 	// set incorrect ip
-	ip := net.ParseIP("192.168.101.1")
+	testIP := net.ParseIP("192.168.101.1")
+
+	e = new(env)
+	files = []file{}
+	ap = NewAsyncProcessor(e, files)
 
 	t.Run("returns true if ip is same as the current machine", func(t *testing.T) {
-		file = File{
+		f = file{
 			smbName: testName,
 			id:      testFileID,
 			fanIP:   ips[0],
 		}
-		testLogger, hook = setupLogs()
-		assert.True(t, file.verifyIP(ips[0], testLogger))
+		e.logger, hook = setupLogs()
+		e.sysIP = ips[0]
+		assert.True(t, f.verifyIP())
 		gotLogMsg := hook.LastEntry().Message
-		wantLogMsg := fmt.Sprintf(fIPMatchTrueLog, file.smbName, file.id, file.fanIP, ips[0])
+		wantLogMsg := fmt.Sprintf(fIPMatchTrueLog, f.smbName, f.id, f.fanIP, ips[0])
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
 	t.Run("returns false if ip is not the same as the current machine", func(t *testing.T) {
-		file = File{
+		f = file{
 			smbName: testName,
 			id:      testFileID,
 			fanIP:   ips[0],
 		}
-		testLogger, hook = setupLogs()
-		assert.False(t, file.verifyIP(ip, testLogger))
+		e.logger, hook = setupLogs()
+		e.sysIP = testIP
+		assert.False(t, f.verifyIP())
 
 		gotLogMsg := hook.LastEntry().Message
-		wantLogMsg := fmt.Sprintf(fIPMatchFalseLog, file.smbName, file.id, file.fanIP, ip)
+		wantLogMsg := fmt.Sprintf(fIPMatchFalseLog, f.smbName, f.id, f.fanIP, testIP)
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
@@ -288,42 +292,46 @@ func TestVerifyTimeLimit(t *testing.T) {
 	hours := time.Duration(days * 24)
 	now := time.Now()
 
+	e = new(env)
+	files = []file{}
+	ap = NewAsyncProcessor(e, files)
+
 	t.Run("returns true if file.createTime is after time limit", func(t *testing.T) {
-		file = File{
+		f = file{
 			smbName:    testName,
 			id:         testFileID,
 			createTime: now,
 		}
-		testLogger, hook = setupLogs()
-		limit = now.Add(-((hours) * time.Hour))
-		assert.True(t, file.verifyTimeLimit(limit, testLogger))
+		e.logger, hook = setupLogs()
+		e.limit = now.Add(-((hours) * time.Hour))
+		assert.True(t, f.verifyTimeLimit())
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(
 			fCreateTimeAfterTimeLimitLog,
-			file.smbName,
-			file.id,
-			file.createTime.Round(time.Millisecond),
-			limit.Round(time.Millisecond),
+			f.smbName,
+			f.id,
+			f.createTime.Round(time.Millisecond),
+			e.limit.Round(time.Millisecond),
 		)
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
 	t.Run("returns false if file.createTime is before time limit", func(t *testing.T) {
-		file = File{
+		f = file{
 			smbName:    testName,
 			id:         testFileID,
 			createTime: now,
 		}
-		limit = now.Add(24 * time.Hour)
-		testLogger, hook = setupLogs()
-		assert.False(t, file.verifyTimeLimit(limit, testLogger))
+		e.limit = now.Add(24 * time.Hour)
+		e.logger, hook = setupLogs()
+		assert.False(t, f.verifyTimeLimit())
 
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(fCreateTimeBeforeTimeLimitLog,
-			file.smbName,
-			file.id,
-			file.createTime.Round(time.Millisecond),
-			limit.Round(time.Millisecond))
+			f.smbName,
+			f.id,
+			f.createTime.Round(time.Millisecond),
+			e.limit.Round(time.Millisecond))
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
@@ -343,43 +351,52 @@ func TestVerifyGBMetadata(t *testing.T) {
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	defer out.Close()
+
+	e = new(env)
+	files = []file{}
+	ap = NewAsyncProcessor(e, files)
+
 	t.Run("returns true if file.datasetID matches DatasetID", func(t *testing.T) {
 		_, files := createFSTest(t, 1)
 		e = new(env)
 		e.datasetID = testDatasetID
 		ap.setEnv(e)
 
-		testLogger, hook = setupLogs()
-		assert.True(t, (*files)[0].verifyGBMetadata(testLogger))
+		e.logger, hook = setupLogs()
+		assert.True(t, files[0].verifyGBMetadata())
 		gotLogMsg := hook.LastEntry().Message
-		wantLogMsg := fmt.Sprintf(fDatasetMatchTrueLog, (*files)[0].smbName, (*files)[0].id, (*files)[0].datasetID, testDatasetID)
+		wantLogMsg := fmt.Sprintf(
+			fDatasetMatchTrueLog,
+			files[0].smbName,
+			files[0].id,
+			files[0].datasetID,
+			testDatasetID)
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
 	t.Run("returns false if file.datasetID does not match DatasetID", func(t *testing.T) {
-		file = File{
+		f = file{
 			smbName:   testName,
 			id:        testFileID,
 			datasetID: testWrongDataset,
 		}
 
-		testLogger, hook = setupLogs()
-		assert.False(t, file.verifyGBMetadata(testLogger))
+		e.logger, hook = setupLogs()
+		assert.False(t, f.verifyGBMetadata())
 
 		gotLogMsg := hook.LastEntry().Message
-		wantLogMsg := fmt.Sprintf(fDatasetMatchFalseLog, file.smbName, file.id, file.datasetID, testDatasetID)
+		wantLogMsg := fmt.Sprintf(fDatasetMatchFalseLog, f.smbName, f.id, f.datasetID, testDatasetID)
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
 
 	t.Run("returns false if file.smbName does not match MB filename", func(t *testing.T) {
-		file = File{
+		f = file{
 			smbName:   testName,
 			id:        testFileID,
 			datasetID: testDatasetID,
 		}
-		testLogger, hook = setupLogs()
-		assert.False(t, file.verifyGBMetadata(testLogger))
+		e.logger, hook = setupLogs()
+		assert.False(t, f.verifyGBMetadata())
 
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(
@@ -388,15 +405,15 @@ func TestVerifyGBMetadata(t *testing.T) {
 	})
 
 	t.Run("returns false if file.datasetID does not match MB dataset", func(t *testing.T) {
-		file = File{
+		f = file{
 			smbName:   testSmbName,
 			id:        testFileIDInWrongDataset,
 			datasetID: testWrongDataset,
 		}
-		e = new(env)
+
 		e.datasetID = testWrongDataset
-		testLogger, hook = setupLogs()
-		assert.False(t, file.verifyGBMetadata(testLogger))
+		e.logger, hook = setupLogs()
+		assert.False(t, f.verifyGBMetadata())
 
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(
@@ -406,13 +423,17 @@ func TestVerifyGBMetadata(t *testing.T) {
 }
 
 func TestGetMBFilenameByFileID(t *testing.T) {
+	e = new(env)
+	files = []file{}
+	ap = NewAsyncProcessor(e, files)
+
 	t.Run("should return true if it exists", func(t *testing.T) {
-		file = File{
+		f = file{
 			smbName: testSmbName,
 			id:      testFileID,
 		}
-		testLogger, hook = setupLogs()
-		ok := file.verifyMBFileNameByFileID(testLogger)
+		e.logger, hook = setupLogs()
+		ok := f.verifyMBFileNameByFileID()
 		assert.True(t, ok)
 
 		gotLogMsg := hook.LastEntry().Message
@@ -422,12 +443,12 @@ func TestGetMBFilenameByFileID(t *testing.T) {
 	})
 
 	t.Run("should return false if MB file has different name", func(t *testing.T) {
-		file = File{
+		f = file{
 			smbName: testName,
 			id:      testFileID,
 		}
-		testLogger, hook = setupLogs()
-		ok := file.verifyMBFileNameByFileID(testLogger)
+		e.logger, hook = setupLogs()
+		ok := f.verifyMBFileNameByFileID()
 		assert.False(t, ok)
 
 		gotLogMsg := hook.LastEntry().Message
@@ -437,12 +458,12 @@ func TestGetMBFilenameByFileID(t *testing.T) {
 	})
 
 	t.Run("should return false if no MB file exists", func(t *testing.T) {
-		file = File{
+		f = file{
 			smbName: testSmbName,
 			id:      testBadFileID,
 		}
-		testLogger, hook = setupLogs()
-		ok := file.verifyMBFileNameByFileID(testLogger)
+		e.logger, hook = setupLogs()
+		ok := f.verifyMBFileNameByFileID()
 		assert.False(t, ok)
 
 		gotLogMsg := hook.LastEntry().Message
@@ -453,16 +474,20 @@ func TestGetMBFilenameByFileID(t *testing.T) {
 }
 
 func TestGetMBDatasetByFileID(t *testing.T) {
+	e = new(env)
+	files = []file{}
+	ap = NewAsyncProcessor(e, files)
+
 	t.Run("should return the dataset by id if it exists", func(t *testing.T) {
-		file = File{
+		f = file{
 			smbName:   testSmbName,
 			id:        testFileID,
 			datasetID: testDatasetID,
 		}
-		e = new(env)
+
 		e.datasetID = testDatasetID
-		testLogger, hook = setupLogs()
-		ok := file.verifyMBDatasetByFileID(testLogger)
+		e.logger, hook = setupLogs()
+		ok := f.verifyMBDatasetByFileID()
 		assert.True(t, ok)
 
 		gotLogMsg := hook.LastEntry().Message
@@ -472,12 +497,12 @@ func TestGetMBDatasetByFileID(t *testing.T) {
 	})
 
 	t.Run("should return empty if no file exists", func(t *testing.T) {
-		file = File{
+		f = file{
 			smbName: testSmbName,
 			id:      testBadFileID,
 		}
-		testLogger, hook = setupLogs()
-		ok := file.verifyMBDatasetByFileID(testLogger)
+		e.logger, hook = setupLogs()
+		ok := f.verifyMBDatasetByFileID()
 		assert.False(t, ok)
 
 		gotLogMsg := hook.LastEntry().Message
@@ -487,14 +512,18 @@ func TestGetMBDatasetByFileID(t *testing.T) {
 }
 
 func TestParseFileNameByID(t *testing.T) {
+	e = new(env)
+	files = []file{}
+	ap = NewAsyncProcessor(e, files)
+
 	t.Run("should parse output and return filename", func(t *testing.T) {
-		testLogger, hook = setupLogs()
-		file = File{
+		f = file{
 			smbName:   testSmbName,
 			id:        testFileID,
 			datasetID: testDatasetID,
 		}
-		got := file.parseMBFileNameByFileID(testGbrFileIDDetailOutLog, testLogger)
+		e.logger, hook = setupLogs()
+		got := f.parseMBFileNameByFileID(testGbrFileIDDetailOutLog)
 		want := testSmbName
 		assertCorrectString(t, got, want)
 
@@ -506,15 +535,18 @@ func TestParseFileNameByID(t *testing.T) {
 }
 
 func TestSetFileDatasetByID(t *testing.T) {
+	e = new(env)
+	files = []file{}
+	ap = NewAsyncProcessor(e, files)
+
 	t.Run("should set f.datasetID if it exists", func(t *testing.T) {
-		testLogger, hook = setupLogs()
-		file = File{
+		f = file{
 			smbName: testSmbName,
 			id:      testFileID,
 		}
-		testLogger, hook = setupLogs()
-		file.setMBDatasetByFileID(testGbrFileIDDetailOutLog, testLogger)
-		got := file.datasetID
+		e.logger, hook = setupLogs()
+		f.setMBDatasetByFileID(testGbrFileIDDetailOutLog)
+		got := f.datasetID
 		want := testDatasetID
 		assertCorrectString(t, got, want)
 
@@ -525,12 +557,13 @@ func TestSetFileDatasetByID(t *testing.T) {
 	})
 
 	t.Run("should return '' if the file does not exist", func(t *testing.T) {
-		testLogger, hook = setupLogs()
-		file = File{
+		f = file{
 			smbName: testSmbName,
 			id:      testBadFileID,
 		}
-		got := file.setMBDatasetByFileID("", testLogger)
+		e.logger, hook = setupLogs()
+		f.setMBDatasetByFileID("")
+		got := f.datasetID
 		want := ""
 		assertCorrectString(t, got, want)
 
@@ -542,19 +575,23 @@ func TestSetFileDatasetByID(t *testing.T) {
 }
 
 func TestGetByIDErrLog(t *testing.T) {
+	e = new(env)
+	files = []file{}
+	ap = NewAsyncProcessor(e, files)
+
 	t.Run("should log err and gbrNoFileNameByID on err", func(t *testing.T) {
-		testLogger, hook = setupLogs()
-		file = File{
+		f = file{
 			smbName: testSmbName,
 			id:      testFileID,
 		}
 		fakeLoggerError := func(args ...interface{}) {
 			panic(testGbrFileIDErrOut)
 		}
-		patch := monkey.Patch(testLogger.Error, fakeLoggerError)
+		patch := monkey.Patch(e.logger.Error, fakeLoggerError)
 		defer patch.Unpatch()
 
-		file.getByIDErrLog(errors.New(testGbrFileIDErrOut), testLogger)
+		e.logger, hook = setupLogs()
+		f.getByIDErrLog(errors.New(testGbrFileIDErrOut))
 
 		gotLogMsgs := hook.Entries
 		wantLogMsg := testGbrFileIDErrOutLog
@@ -567,58 +604,67 @@ func TestGetByIDErrLog(t *testing.T) {
 }
 
 func TestVerifyInProcessedDataset(t *testing.T) {
+	e = new(env)
+	files = []file{}
+	ap = NewAsyncProcessor(e, files)
+
 	t.Run("returns true if file.datasetID matches asyncProcessedDatasetID", func(t *testing.T) {
-		file = File{
+		f = file{
 			smbName:   testName,
 			id:        testFileID,
 			datasetID: testDatasetID,
 		}
-		testLogger, hook = setupLogs()
-		assert.True(t, file.verifyInDataset(testDatasetID, testLogger))
+		e.logger, hook = setupLogs()
+		assert.True(t, f.verifyInDataset(testDatasetID))
 		gotLogMsg := hook.LastEntry().Message
-		wantLogMsg := fmt.Sprintf(fDatasetMatchTrueLog, file.smbName, file.id, file.datasetID, testDatasetID)
+		wantLogMsg := fmt.Sprintf(fDatasetMatchTrueLog, f.smbName, f.id, f.datasetID, testDatasetID)
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
 	t.Run("returns false if file.datasetID does not match asyncProcessedDatasetID", func(t *testing.T) {
-		file = File{
+		f = file{
 			smbName:   testName,
 			id:        testFileID,
 			datasetID: testDatasetID,
 		}
 
-		testLogger, hook = setupLogs()
-		assert.False(t, file.verifyInDataset(testWrongDataset, testLogger))
+		e.logger, hook = setupLogs()
+		assert.False(t, f.verifyInDataset(testWrongDataset))
 
 		gotLogMsg := hook.LastEntry().Message
-		wantLogMsg := fmt.Sprintf(fDatasetMatchFalseLog, file.smbName, file.id, file.datasetID, testWrongDataset)
+		wantLogMsg := fmt.Sprintf(fDatasetMatchFalseLog, f.smbName, f.id, f.datasetID, testWrongDataset)
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
 }
 
 func TestVerifyStat(t *testing.T) {
+	e = new(env)
+	files = []file{}
+	ap = NewAsyncProcessor(e, files)
+
 	t.Run("returns true if file matches", func(t *testing.T) {
 		fsys = fstest.MapFS{
 			testPath: {Data: []byte(testContent)},
 		}
 		info, _ := fsys.Stat(testPath)
 		size := int64(4)
-		file = File{
+		f = file{
 			smbName:     testName,
 			id:          testFileID,
 			stagingPath: testPath,
 			size:        size,
 			fileInfo:    info,
 		}
-		testLogger, hook = setupLogs()
-		assert.True(t, file.verifyStat(fsys, testLogger))
+		e.logger, hook = setupLogs()
+		e.fsys = fsys
+		assert.True(t, f.verifyStat())
 		gotLogMsg := hook.LastEntry().Message
-		wantLogMsg := fmt.Sprintf(fStatMatchLog, file.smbName, file.id, file.stagingPath)
+		wantLogMsg := fmt.Sprintf(fStatMatchLog, f.smbName, f.id, f.stagingPath)
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
 
 	t.Run("returns false if file does not exist", func(t *testing.T) {
-		file = File{
+		f = file{
 			smbName:     testName,
 			stagingPath: testMismatchPath,
 			id:          testFileID,
@@ -628,11 +674,12 @@ func TestVerifyStat(t *testing.T) {
 			testPath: {Data: []byte(testContent)},
 		}
 
-		testLogger, hook = setupLogs()
-		assert.False(t, file.verifyStat(fsys, testLogger))
+		e.logger, hook = setupLogs()
+		e.fsys = fsys
+		assert.False(t, f.verifyStat())
 
 		gotLogMsg := hook.LastEntry().Message
-		wantLogMsg := fmt.Sprintf(fExistsFalseLog, file.smbName, file.id, file.stagingPath)
+		wantLogMsg := fmt.Sprintf(fExistsFalseLog, f.smbName, f.id, f.stagingPath)
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
@@ -643,19 +690,19 @@ func TestVerifyStat(t *testing.T) {
 			testMismatchPath: {Data: []byte(testLongerContent)},
 		}
 		info, _ := fsys.Stat(testMismatchPath)
-		file = File{
+		f = file{
 			smbName:     testName,
 			id:          testFileID,
 			stagingPath: testPath,
 			size:        4,
 			fileInfo:    info,
 		}
-
-		testLogger, hook = setupLogs()
-		assert.False(t, file.verifyStat(fsys, testLogger))
+		e.logger, hook = setupLogs()
+		e.fsys = fsys
+		assert.False(t, f.verifyStat())
 
 		gotLogMsg := hook.LastEntry().Message
-		wantLogMsg := fmt.Sprintf(fSizeMatchFalseLog, file.smbName, file.id, file.size, file.fileInfo.Size())
+		wantLogMsg := fmt.Sprintf(fSizeMatchFalseLog, f.smbName, f.id, f.size, f.fileInfo.Size())
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
@@ -673,7 +720,7 @@ func TestVerifyStat(t *testing.T) {
 			fmt.Print(err.Error())
 		}
 
-		file = File{
+		f = file{
 			smbName:     testName,
 			id:          testFileID,
 			stagingPath: testName,
@@ -681,42 +728,47 @@ func TestVerifyStat(t *testing.T) {
 			fileInfo:    fileInfo,
 		}
 
-		testLogger, hook = setupLogs()
-		assert.False(t, file.verifyStat(fsys, testLogger))
+		e.logger, hook = setupLogs()
+		e.fsys = fsys
+		assert.False(t, f.verifyStat())
 
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(fCreateTimeMatchFalseLog,
-			file.smbName,
-			file.id,
-			file.createTime.Round(time.Millisecond),
-			file.fileInfo.ModTime().Round(time.Millisecond))
+			f.smbName,
+			f.id,
+			f.createTime.Round(time.Millisecond),
+			f.fileInfo.ModTime().Round(time.Millisecond))
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
 }
 
 func TestVerifyFileSize(t *testing.T) {
+	e = new(env)
+	files = []file{}
+	ap = NewAsyncProcessor(e, files)
+
 	t.Run("returns true if file.size matches comparator", func(t *testing.T) {
 		fsys = fstest.MapFS{
 			testPath: {Data: []byte(testContent)},
 		}
 		info, _ := fsys.Stat(testPath)
 		size := int64(4)
-		file = File{
+		f = file{
 			smbName:     testName,
 			id:          testFileID,
 			stagingPath: testPath,
 			size:        size,
 			fileInfo:    info,
 		}
-		testLogger, hook = setupLogs()
-		assert.True(t, file.verifyFileSize(size, testLogger))
+		e.logger, hook = setupLogs()
+		e.fsys = fsys
+		assert.True(t, f.verifyFileSize(size))
 		gotLogMsg := hook.LastEntry().Message
-		wantLogMsg := fmt.Sprintf(fSizeMatchTrueLog, file.smbName, file.id, file.size, file.fileInfo.Size())
+		wantLogMsg := fmt.Sprintf(fSizeMatchTrueLog, f.smbName, f.id, f.size, f.fileInfo.Size())
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
-
 	t.Run("returns false if file.size does not match comparator", func(t *testing.T) {
 		fsys = fstest.MapFS{
 			testPath:         {Data: []byte(testContent)},
@@ -724,25 +776,29 @@ func TestVerifyFileSize(t *testing.T) {
 		}
 		fileInfo, _ := fsys.Stat(testMismatchPath)
 		size := int64(4)
-		file = File{
+		f = file{
 			smbName:     testName,
 			id:          testFileID,
 			stagingPath: testPath,
 			size:        size,
 			fileInfo:    fileInfo,
 		}
-
-		testLogger, hook = setupLogs()
-		assert.False(t, file.verifyStat(fsys, testLogger))
+		e.logger, hook = setupLogs()
+		e.fsys = fsys
+		assert.False(t, f.verifyStat())
 
 		gotLogMsg := hook.LastEntry().Message
-		wantLogMsg := fmt.Sprintf(fSizeMatchFalseLog, file.smbName, file.id, file.size, file.fileInfo.Size())
+		wantLogMsg := fmt.Sprintf(fSizeMatchFalseLog, f.smbName, f.id, f.size, f.fileInfo.Size())
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
 }
 
 func TestVerifyFileCreateTime(t *testing.T) {
+	e = new(env)
+	files = []file{}
+	ap = NewAsyncProcessor(e, files)
+
 	t.Run("returns true if file.createTime matches comparator", func(t *testing.T) {
 		fsys = fstest.MapFS{}
 		now := time.Now()
@@ -755,25 +811,25 @@ func TestVerifyFileCreateTime(t *testing.T) {
 			fmt.Print(err.Error())
 		}
 
-		file = File{
+		f = file{
 			smbName:     testName,
 			id:          testFileID,
 			stagingPath: testName,
 			createTime:  now,
 			fileInfo:    fileInfo,
 		}
-		testLogger, hook = setupLogs()
-		assert.True(t, file.verifyCreateTime(now, testLogger))
+		e.logger, hook = setupLogs()
+		e.fsys = fsys
+		assert.True(t, f.verifyCreateTime(now))
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(fCreateTimeMatchTrueLog,
-			file.smbName,
-			file.id,
-			file.createTime.Round(time.Millisecond),
-			file.fileInfo.ModTime().Round(time.Millisecond))
+			f.smbName,
+			f.id,
+			f.createTime.Round(time.Millisecond),
+			f.fileInfo.ModTime().Round(time.Millisecond))
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
-
 	t.Run("returns false if file.CreateTime does not match comparator", func(t *testing.T) {
 		fsys = fstest.MapFS{}
 		now := time.Now()
@@ -787,56 +843,62 @@ func TestVerifyFileCreateTime(t *testing.T) {
 			fmt.Print(err.Error())
 		}
 
-		file = File{
+		f = file{
 			smbName:     testName,
 			id:          testFileID,
 			stagingPath: testName,
 			createTime:  now,
 			fileInfo:    fileInfo,
 		}
-
-		testLogger, hook = setupLogs()
-		assert.False(t, file.verifyCreateTime(afterNow, testLogger))
+		e.logger, hook = setupLogs()
+		e.fsys = fsys
+		assert.False(t, f.verifyCreateTime(afterNow))
 
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(fCreateTimeMatchFalseLog,
-			file.smbName,
-			file.id,
-			file.createTime.Round(time.Millisecond),
-			file.fileInfo.ModTime().Round(time.Millisecond))
+			f.smbName,
+			f.id,
+			f.createTime.Round(time.Millisecond),
+			f.fileInfo.ModTime().Round(time.Millisecond))
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
 }
 
 func TestVerifyFileIDName(t *testing.T) {
+	e = new(env)
+	files = []file{}
+	ap = NewAsyncProcessor(e, files)
+
 	t.Run("returns true if file.smbname matches file.id filename", func(t *testing.T) {
-		file = File{
+		f = file{
 			smbName: testName,
 			id:      testFileID,
 		}
-		testLogger, hook = setupLogs()
-		assert.True(t, file.verifyFileIDName(testName, testLogger))
+		e.logger, hook = setupLogs()
+		e.fsys = fsys
+		assert.True(t, f.verifyFileIDName(testName))
 		gotLogMsg := hook.LastEntry().Message
-		wantLogMsg := fmt.Sprintf(fSmbNameMatchFileIDNameTrueLog, file.smbName, file.id, file.smbName, testName)
+		wantLogMsg := fmt.Sprintf(fSmbNameMatchFileIDNameTrueLog, f.smbName, f.id, f.smbName, testName)
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
 	t.Run("returns false if file.smbname matches file.id filename", func(t *testing.T) {
-		file = File{
+		f = file{
 			smbName: testSmbName,
 			id:      testFileID,
 		}
 
-		testLogger, hook = setupLogs()
-		assert.False(t, file.verifyFileIDName(testName, testLogger))
+		e.logger, hook = setupLogs()
+		e.fsys = fsys
+		assert.False(t, f.verifyFileIDName(testName))
 
 		gotLogMsg := hook.LastEntry().Message
-		wantLogMsg := fmt.Sprintf(fSmbNameMatchFileIDNameFalseLog, file.smbName, file.id, file.smbName, testName)
+		wantLogMsg := fmt.Sprintf(fSmbNameMatchFileIDNameFalseLog, f.smbName, f.id, f.smbName, testName)
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
 }
 
-func createFSTest(t *testing.T, numFiles int) (fstest.MapFS, *[]File) {
+func createFSTest(t *testing.T, numFiles int) (fstest.MapFS, []file) {
 	// Create gbrList file
 	var list string
 
@@ -859,7 +921,7 @@ func createFSTest(t *testing.T, numFiles int) (fstest.MapFS, *[]File) {
 
 	fsys = fstest.MapFS{}
 
-	var files []File
+	var files []file
 
 	var dirs = []string{}
 
@@ -872,7 +934,7 @@ func createFSTest(t *testing.T, numFiles int) (fstest.MapFS, *[]File) {
 	}
 
 	for i := 0; i < numFiles; i++ {
-		f := File{}
+		f := file{}
 		// set name
 		guid := genGUID()
 		f.smbName = guid
@@ -920,7 +982,7 @@ func createFSTest(t *testing.T, numFiles int) (fstest.MapFS, *[]File) {
 		}
 	}
 
-	return fsys, &files
+	return fsys, files
 }
 
 func genRandom(i int64, s string) (random []byte) {

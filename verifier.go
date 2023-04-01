@@ -4,13 +4,10 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
-	"net"
 	"os/exec"
 	"reflect"
 	"strings"
 	"time"
-
-	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -38,91 +35,101 @@ const (
 
 // verify all
 
-func (f *File) verify(logger *logrus.Logger) bool {
-	if !f.verifyEnvMatch(logger) {
+func (f *file) verify() bool {
+	e = ap.getEnv()
+
+	if !f.verifyEnvMatch() {
 		return false
 	}
 
-	if !f.verifyGBMetadata(logger) {
+	if !f.verifyGBMetadata() {
 		return false
 	}
 
-	if !f.verifyStat(e.fsys, logger) {
+	if !f.verifyStat() {
 		return false
 	}
 
-	logger.Info(fmt.Sprintf(fVerifiedLog, f.smbName, f.id))
+	e.logger.Info(fmt.Sprintf(fVerifiedLog, f.smbName, f.id))
 
 	return true
 }
 
 // verify config metadata
-func (f *File) verifyEnvMatch(logger *logrus.Logger) bool {
+func (f *file) verifyEnvMatch() bool {
 	e = ap.getEnv()
-	if !f.verifyIP(e.sysIP, logger) {
+
+	if !f.verifyIP() {
 		return false
 	}
 
-	if !f.verifyTimeLimit(e.limit, logger) {
+	if !f.verifyTimeLimit() {
 		return false
 	}
 
-	logger.Info(fmt.Sprintf(fEnvMatchLog, f.smbName, f.id, f.stagingPath))
+	e.logger.Info(fmt.Sprintf(fEnvMatchLog, f.smbName, f.id, f.stagingPath))
 
 	return true
 }
 
-func (f *File) verifyIP(ip net.IP, logger *logrus.Logger) bool {
-	if reflect.DeepEqual(f.fanIP, ip) {
-		logger.Info(fmt.Sprintf(fIPMatchTrueLog, f.smbName, f.id, f.fanIP, ip))
+func (f *file) verifyIP() bool {
+	e = ap.getEnv()
+
+	if reflect.DeepEqual(f.fanIP, e.sysIP) {
+		e.logger.Info(fmt.Sprintf(fIPMatchTrueLog, f.smbName, f.id, f.fanIP, e.sysIP))
 	} else {
-		logger.Warn(fmt.Sprintf(fIPMatchFalseLog, f.smbName, f.id, f.fanIP, ip))
+		e.logger.Warn(fmt.Sprintf(fIPMatchFalseLog, f.smbName, f.id, f.fanIP, e.sysIP))
 	}
 
-	return reflect.DeepEqual(f.fanIP, ip)
+	return reflect.DeepEqual(f.fanIP, e.sysIP)
 }
 
-func (f *File) verifyTimeLimit(limit time.Time, logger *logrus.Logger) bool {
-	if f.createTime.After(limit) {
-		logger.Info(fmt.Sprintf(
+func (f *file) verifyTimeLimit() bool {
+	e = ap.getEnv()
+	if f.createTime.After(e.limit) {
+		e.logger.Info(fmt.Sprintf(
 			fCreateTimeAfterTimeLimitLog,
 			f.smbName,
 			f.id,
 			f.createTime.Round(time.Millisecond),
-			limit.Round(time.Millisecond)))
+			e.limit.Round(time.Millisecond)))
 	} else {
-		logger.Warn(fmt.Sprintf(
+		e.logger.Warn(fmt.Sprintf(
 			fCreateTimeBeforeTimeLimitLog,
 			f.smbName,
 			f.id,
 			f.createTime.Round(time.Millisecond),
-			limit.Round(time.Millisecond)))
+			e.limit.Round(time.Millisecond)))
 	}
 
-	return f.createTime.After(limit)
+	return f.createTime.After(e.limit)
 }
 
 // Verify GB internal metadata
-func (f *File) verifyGBMetadata(logger *logrus.Logger) bool {
-	ds := getAsyncProcessedDSID(logger)
-	if !f.verifyInDataset(ds, logger) {
+func (f *file) verifyGBMetadata() bool {
+	e = ap.getEnv()
+	ds := getAsyncProcessedDSID(e.logger)
+
+	if !f.verifyInDataset(ds) {
 		return false
 	}
 
-	if !f.verifyMBFileNameByFileID(logger) {
+	if !f.verifyMBFileNameByFileID() {
 		return false
 	}
 
-	return f.verifyMBDatasetByFileID(logger)
+	return f.verifyMBDatasetByFileID()
 }
 
-func (f *File) verifyMBFileNameByFileID(logger *logrus.Logger) bool {
+func (f *file) verifyMBFileNameByFileID() bool {
+	e = ap.getEnv()
+
 	id := f.id
 	cmd := exec.Command("/usr/bin/gbr", "file", "ls", "-i", id)
 	cmdOut, err := cmd.CombinedOutput()
 
 	if err != nil {
-		f.getByIDErrLog(err, logger)
+		f.getByIDErrLog(err)
 		return false
 	}
 
@@ -130,87 +137,94 @@ func (f *File) verifyMBFileNameByFileID(logger *logrus.Logger) bool {
 	out = cleanGbrOut(out)
 
 	if out == "" {
-		logger.Warn(fmt.Sprintf(fGbrNoFileNameByFileIDLog, f.smbName, id, id))
+		e.logger.Warn(fmt.Sprintf(fGbrNoFileNameByFileIDLog, f.smbName, id, id))
 		return false
 	}
 
-	filename := f.parseMBFileNameByFileID(out, logger)
+	filename := f.parseMBFileNameByFileID(out)
 
-	return f.verifyFileIDName(filename, logger)
+	return f.verifyFileIDName(filename)
 }
 
-func (f *File) verifyMBDatasetByFileID(logger *logrus.Logger) bool {
+func (f *file) verifyMBDatasetByFileID() bool {
 	e = ap.getEnv()
 	id := f.id
 	cmd := exec.Command("/usr/bin/gbr", "file", "ls", "-i", id, "-d")
 	cmdOut, err := cmd.CombinedOutput()
 
 	if err != nil {
-		f.getByIDErrLog(err, logger)
+		f.getByIDErrLog(err)
 	}
 
 	out := string(cmdOut)
 	out = cleanGbrOut(out)
 
 	if out == "" {
-		logger.Warn(fmt.Sprintf(fGbrNoFileNameByFileIDLog, f.smbName, id, id))
+		e.logger.Warn(fmt.Sprintf(fGbrNoFileNameByFileIDLog, f.smbName, id, id))
 		return false
 	}
 
-	f.setMBDatasetByFileID(out, logger)
+	// set f.datasetID
+	f.setMBDatasetByFileID(out)
 
+	// get env datasetID
 	datasetID := e.datasetID
 
-	return f.verifyInDataset(datasetID, logger)
+	// Compare f.datasetID & env.datasetID
+	return f.verifyInDataset(datasetID)
 }
 
-func (f *File) parseMBFileNameByFileID(cmdOut string, logger *logrus.Logger) (filename string) {
+func (f *file) parseMBFileNameByFileID(cmdOut string) (filename string) {
+	e = ap.getEnv()
 	line := strings.Split(cmdOut, " ")
 	filename = line[2]
-	logger.Info(fmt.Sprintf(fGbrFileNameByFileIDLog, f.smbName, f.id, f.id, filename))
+	e.logger.Info(fmt.Sprintf(fGbrFileNameByFileIDLog, f.smbName, f.id, f.id, filename))
 
 	return
 }
 
-func (f *File) setMBDatasetByFileID(cmdOut string, logger *logrus.Logger) (parentDS string) {
+func (f *file) setMBDatasetByFileID(cmdOut string) {
+	e = ap.getEnv()
 	lines := strings.Split(string(cmdOut), ";")
+
 	for _, line := range lines {
 		if strings.Contains(line, "parent id") {
-			parentDS = line[len(line)-32:]
+			parentDS := line[len(line)-32:]
 			f.datasetID = parentDS
-			logger.Info(fmt.Sprintf(fGbrDatasetByFileIDLog, f.smbName, f.id, f.id, parentDS))
+			e.logger.Info(fmt.Sprintf(fGbrDatasetByFileIDLog, f.smbName, f.id, f.id, parentDS))
 
 			return
 		}
 	}
 	// Should never happen as caught with previous checks
-	logger.Warn(fmt.Sprintf(fGbrNoFileNameByFileIDLog, f.smbName, f.id, f.id))
-
-	return
+	e.logger.Warn(fmt.Sprintf(fGbrNoFileNameByFileIDLog, f.smbName, f.id, f.id))
 }
 
-func (f *File) getByIDErrLog(err error, logger *logrus.Logger) {
+func (f *file) getByIDErrLog(err error) {
+	e = ap.getEnv()
 	err = errors.New(cleanGbrOut(err.Error()))
-	logger.Warn(err)
-	logger.Warn(fmt.Sprintf(fGbrNoFileNameByFileIDLog, f.smbName, f.id, f.id))
+	e.logger.Warn(err)
+	e.logger.Warn(fmt.Sprintf(fGbrNoFileNameByFileIDLog, f.smbName, f.id, f.id))
 }
 
-func (f *File) verifyInDataset(datasetID string, logger *logrus.Logger) bool {
+func (f *file) verifyInDataset(datasetID string) bool {
+	e = ap.getEnv()
 	if f.datasetID == datasetID {
-		logger.Info(fmt.Sprintf(fDatasetMatchTrueLog, f.smbName, f.id, f.datasetID, datasetID))
+		e.logger.Info(fmt.Sprintf(fDatasetMatchTrueLog, f.smbName, f.id, f.datasetID, datasetID))
 	} else {
-		logger.Warn(fmt.Sprintf(fDatasetMatchFalseLog, f.smbName, f.id, f.datasetID, datasetID))
+		e.logger.Warn(fmt.Sprintf(fDatasetMatchFalseLog, f.smbName, f.id, f.datasetID, datasetID))
 	}
 
 	return f.datasetID == datasetID
 }
 
-func (f *File) verifyFileIDName(fileName string, logger *logrus.Logger) bool {
+func (f *file) verifyFileIDName(fileName string) bool {
+	e = ap.getEnv()
 	if f.smbName == fileName {
-		logger.Info(fmt.Sprintf(
+		e.logger.Info(fmt.Sprintf(
 			fSmbNameMatchFileIDNameTrueLog, f.smbName, f.id, f.smbName, fileName))
 	} else {
-		logger.Warn(fmt.Sprintf(
+		e.logger.Warn(fmt.Sprintf(
 			fSmbNameMatchFileIDNameFalseLog, f.smbName, f.id, f.smbName, fileName))
 	}
 
@@ -218,42 +232,46 @@ func (f *File) verifyFileIDName(fileName string, logger *logrus.Logger) bool {
 }
 
 // Verify local FS metadata
-func (f *File) verifyStat(fsys fs.FS, logger *logrus.Logger) bool {
-	fileInfo, err := fs.Stat(fsys, f.stagingPath)
+func (f *file) verifyStat() bool {
+	e = ap.getEnv()
+	fileInfo, err := fs.Stat(e.fsys, f.stagingPath)
+
 	if err != nil {
-		logger.Warn(fmt.Sprintf(fExistsFalseLog, f.smbName, f.id, f.stagingPath))
+		e.logger.Warn(fmt.Sprintf(fExistsFalseLog, f.smbName, f.id, f.stagingPath))
 		return false
 	}
 
-	logger.Info(fmt.Sprintf(fExistsTrueLog, f.smbName, f.id, f.stagingPath))
+	e.logger.Info(fmt.Sprintf(fExistsTrueLog, f.smbName, f.id, f.stagingPath))
 
-	if !f.verifyFileSize(fileInfo.Size(), logger) {
+	if !f.verifyFileSize(fileInfo.Size()) {
 		return false
 	}
 
-	if !f.verifyCreateTime(fileInfo.ModTime(), logger) {
+	if !f.verifyCreateTime(fileInfo.ModTime()) {
 		return false
 	}
 
-	logger.Info(fmt.Sprintf(fStatMatchLog, f.smbName, f.id, f.stagingPath))
+	e.logger.Info(fmt.Sprintf(fStatMatchLog, f.smbName, f.id, f.stagingPath))
 
 	return true
 }
 
-func (f *File) verifyFileSize(size int64, logger *logrus.Logger) bool {
+func (f *file) verifyFileSize(size int64) bool {
+	e = ap.getEnv()
 	if size != f.fileInfo.Size() {
-		logger.Warn(fmt.Sprintf(fSizeMatchFalseLog, f.smbName, f.id, f.size, f.fileInfo.Size()))
+		e.logger.Warn(fmt.Sprintf(fSizeMatchFalseLog, f.smbName, f.id, f.size, f.fileInfo.Size()))
 		return false
 	}
 
-	logger.Info(fmt.Sprintf(fSizeMatchTrueLog, f.smbName, f.id, f.size, f.fileInfo.Size()))
+	e.logger.Info(fmt.Sprintf(fSizeMatchTrueLog, f.smbName, f.id, f.size, f.fileInfo.Size()))
 
 	return true
 }
 
-func (f *File) verifyCreateTime(t time.Time, logger *logrus.Logger) bool {
+func (f *file) verifyCreateTime(t time.Time) bool {
+	e = ap.getEnv()
 	if !t.Equal(f.createTime) {
-		logger.Warn(fmt.Sprintf(fCreateTimeMatchFalseLog,
+		e.logger.Warn(fmt.Sprintf(fCreateTimeMatchFalseLog,
 			f.smbName,
 			f.id,
 			f.createTime.Round(time.Millisecond),
@@ -262,7 +280,7 @@ func (f *File) verifyCreateTime(t time.Time, logger *logrus.Logger) bool {
 		return false
 	}
 
-	logger.Info(fmt.Sprintf(
+	e.logger.Info(fmt.Sprintf(
 		fCreateTimeMatchTrueLog,
 		f.smbName,
 		f.id,
