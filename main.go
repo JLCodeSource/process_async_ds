@@ -313,6 +313,11 @@ func (ap *asyncProcessor) setFiles() {
 }
 
 func init() {
+	// set os.Arg to help if empty
+	if len(os.Args) <= 1 {
+		os.Args = append(os.Args, "--help")
+	}
+
 	// Get pointer to new Env
 	e = new(env)
 
