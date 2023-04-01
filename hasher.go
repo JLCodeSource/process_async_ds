@@ -11,7 +11,7 @@ const (
 	fHashLog = "%v (file.id:%v) %v-move file.hash: %x"
 )
 
-func (f *file) hasher() {
+func (f *file) hasher() error {
 	var prePost string
 
 	e = ap.getEnv()
@@ -22,6 +22,7 @@ func (f *file) hasher() {
 	if err != nil {
 		// NB No need for fatal as if hash does not match, it will fail later
 		logger.Error(err)
+		return err
 	}
 
 	sha := sha256.Sum256(content)
@@ -35,4 +36,6 @@ func (f *file) hasher() {
 	}
 
 	logger.Info(fmt.Sprintf(fHashLog, f.smbName, f.id, prePost, f.hash))
+
+	return nil
 }

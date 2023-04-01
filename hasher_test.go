@@ -17,7 +17,7 @@ const (
 
 func TestHasher(t *testing.T) {
 	e = new(env)
-	afs, files := createAferoTest(t, 1, false)
+	afs, files := createAferoTest(t, 10, false)
 	e.afs = afs
 	ap = NewAsyncProcessor(e, files)
 	t.Run("should return the hash of 'pre'file & log it", func(t *testing.T) {
@@ -29,7 +29,8 @@ func TestHasher(t *testing.T) {
 			}
 			prePost := "pre"
 			sha := sha256.Sum256(content)
-			f.hasher()
+			err = f.hasher()
+			assert.Nil(t, err)
 			assert.Equal(t, sha, f.hash)
 
 			gotLogMsg := hook.LastEntry().Message
@@ -45,12 +46,12 @@ func TestHasher(t *testing.T) {
 		patch := monkey.Patch(afero.ReadFile, fakeFsReadFile)
 		defer patch.Unpatch()
 
-		afs, files := createAferoTest(t, 10, false)
-		e.afs = afs
 		for _, f := range files {
+
 			e.logger, hook = setupLogs()
 
-			f.hasher()
+			err := f.hasher()
+			assert.Error(t, err)
 
 			gotLogMsg := hook.Entries[0].Message
 			wantLogMsg := testFsReadFileErr
