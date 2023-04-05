@@ -116,12 +116,12 @@ func (f *file) getGBMetadata() string {
 	}
 
 	out := string(cmdOut)
+
 	return cleanGbrOut(out)
 }
 
 // Verify GB internal metadata
 func (f *file) verifyGBMetadata() bool {
-
 	out := f.getGBMetadata()
 	// Gets file MBDS & compares with e.DS
 	if !f.verifyMBDatasetByFileID(out) {
