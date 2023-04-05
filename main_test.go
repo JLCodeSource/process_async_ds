@@ -491,7 +491,7 @@ func TestGetFilesFromSourceFile(t *testing.T) {
 		dir := getWorkDir()
 
 		e.sourceFile = fmt.Sprintf(testSourceFile, dir)
-		got := getFilesFromSourceFile()
+		got := getFilesFromSourceFile(e)
 
 		for i := range got {
 			assert.Equal(t, want[i].smbName, got[i].smbName)
@@ -516,7 +516,7 @@ func TestGetFilesFromSourceFile(t *testing.T) {
 		dir := getWorkDir()
 
 		e.sourceFile = fmt.Sprintf(testSourceFile, dir)
-		getFilesFromSourceFile()
+		getFilesFromSourceFile(e)
 
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(fAddedToListLog,
@@ -547,7 +547,7 @@ func TestGetFilesFromSourceFile(t *testing.T) {
 		e.sourceFile = testDoesNotExistFile
 		ap = NewAsyncProcessor(e, files)
 
-		panicFunc := func() { getFilesFromSourceFile() }
+		panicFunc := func() { getFilesFromSourceFile(e) }
 
 		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
 

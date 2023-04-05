@@ -277,10 +277,9 @@ func (ap *asyncProcessor) setEnv(env *env) {
 	ap.env = env
 }
 
-func getFilesFromSourceFile() []file {
+func getFilesFromSourceFile(e *env) []file {
 	var files []file
 
-	e = ap.getEnv()
 	afs := e.afs
 	logger := e.logger
 
