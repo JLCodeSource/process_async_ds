@@ -363,6 +363,8 @@ func main() {
 
 	ap.setFiles()
 
+	// verify here?
+	// add check for dryrun
 	ap.processFiles()
 }
 
