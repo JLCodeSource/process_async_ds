@@ -2,7 +2,7 @@ FROM golang:alpine AS build
 
 WORKDIR /usr/src/app
 
-RUN apk update && apk upgrade && apk add bash
+RUN apk update && apk upgrade && apk add bash && apk add --update alpine-sdk
 
 COPY gbr /usr/bin/gbr
 
