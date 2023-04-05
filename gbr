@@ -95,7 +95,7 @@ function get_pool {
     echo "$POOL"
 }
 
-function get_file {
+function get_file_detail {
     local ID="$1"
     if [[ "$ID" == "$FILEID" ]]
     then
@@ -116,10 +116,10 @@ function get_file {
 
 
 
-function get_file_detail {
-    local ID="$1"
-    echo "$FILE_DETAIL" | sed "s/FILEID/"$ID"/g"
-}
+#function get_file_detail {
+#    local ID="$1"
+#    echo "$FILE_DETAIL" | sed "s/FILEID/"$ID"/g"
+#}
 
 function get_file_in_wrong_ds {
     echo "$FILE_IN_WRONG_DS"
@@ -151,7 +151,7 @@ then
         get_file_err
     elif [ "$NUMARGS" = "4" ] 
     then
-        get_file $ID
+        get_file_detail $ID
     elif [ "$NUMARGS" = "5" ]
     then
         get_file_detail $ID
