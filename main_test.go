@@ -203,7 +203,6 @@ func TestNewAsyncProcessor(t *testing.T) {
 			files: files,
 		}
 		getEnv := ap.getEnv()
-		ap.setFiles()
 
 		assert.Equal(t, testLogger, getEnv.logger)
 		assert.Equal(t, e, getEnv)
@@ -476,23 +475,23 @@ func TestGetFiles(t *testing.T) {
 	})
 }
 
-func TestSetFiles(t *testing.T) {
+func TestParsedFileList(t *testing.T) {
 	e = new(env)
 
-	t.Run("ap.setFiles should return a list of files", func(t *testing.T) {
+	t.Run("parsedFileList should return a list of files", func(t *testing.T) {
 		e.logger, hook = setupLogs()
 
 		afs, want := createAferoTest(t, 10, true)
 		files := []file{}
 
 		e.afs = afs
+		e.datasetID = testDatasetID
 
-		ap := NewAsyncProcessor(e, files)
+		ap = NewAsyncProcessor(e, files)
 		dir := getWorkDir()
 
 		e.sourceFile = fmt.Sprintf(testSourceFile, dir)
-		ap.setFiles()
-		got := ap.getFiles()
+		got := parsedFileList()
 
 		for i := range got {
 			assert.Equal(t, want[i].smbName, got[i].smbName)
@@ -501,22 +500,23 @@ func TestSetFiles(t *testing.T) {
 			assert.Equal(t, want[i].size, got[i].size)
 			assert.Equal(t, want[i].id, got[i].id)
 			assert.Equal(t, want[i].fanIP, got[i].fanIP)
-			assert.Equal(t, want[i].fileInfo, got[i].fileInfo)
+			//assert.Equal(t, want[i].fileInfo, got[i].fileInfo)
 		}
 	})
-	t.Run("ap.setFiles should log properly", func(t *testing.T) {
+	t.Run("parsedFileList should log properly", func(t *testing.T) {
+
 		e.logger, hook = setupLogs()
 
 		afs, want := createAferoTest(t, 1, true)
 		files := []file{}
 
 		e.afs = afs
-		ap := NewAsyncProcessor(e, files)
+		ap = NewAsyncProcessor(e, files)
 
 		dir := getWorkDir()
 
 		e.sourceFile = fmt.Sprintf(testSourceFile, dir)
-		ap.setFiles()
+		parsedFileList()
 
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(fAddedToListLog,
@@ -526,11 +526,13 @@ func TestSetFiles(t *testing.T) {
 			want[0].createTime.Unix(),
 			want[0].size,
 			want[0].fanIP,
-			want[0].fileInfo.Name())
+			want[0].datasetID,
+		)
+		//want[0].fileInfo.Name())
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
-	t.Run("ap.setFiles should fatal if sourcefile does not exist", func(t *testing.T) {
+	t.Run("parsedFileList should fatal if sourcefile does not exist", func(t *testing.T) {
 		fakeExit := func(int) {
 			panic(osPanicTrue)
 		}
@@ -540,12 +542,12 @@ func TestSetFiles(t *testing.T) {
 		e.logger, hook = setupLogs()
 		afs, _ := createAferoTest(t, 1, true)
 		files := []file{}
-		ap := NewAsyncProcessor(e, files)
 
 		e.afs = afs
-
 		e.sourceFile = testDoesNotExistFile
-		panicFunc := func() { ap.setFiles() }
+		ap = NewAsyncProcessor(e, files)
+
+		panicFunc := func() { parsedFileList() }
 
 		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
 

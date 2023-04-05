@@ -40,7 +40,7 @@ const (
 	eMatchAsyncProcessedDSTrueLog  = "env.datasetID:%v matches asyncProcessedDataset: %v"
 	eMatchAsyncProcessedDSFalseLog = "env.datasetID:%v does not match asyncProcessedDataset: %v"
 
-	fAddedToListLog = "%v (file.id:%v) added to list with file.stagingPath:%v, file.createTime:%v, file.size:%v, file.fanIP:%v, file.fileInfo:%v"
+	fAddedToListLog = "%v (file.id:%v) added to list with file.stagingPath:%v, file.createTime:%v, file.size:%v, file.fanIP:%v, file.datasetID:%v" //, file.fileInfo:%v"
 
 	regexDatasetMatch = "^[A-F0-9]{32}$"
 
@@ -91,7 +91,6 @@ type AsyncProcessor interface {
 	getEnv() *env
 	getFiles() []file
 	setEnv(*env)
-	setFiles()
 	processFiles()
 	//parseSourceFile() []string
 	//parseLine(string) file
@@ -278,8 +277,10 @@ func (ap *asyncProcessor) setEnv(env *env) {
 	ap.env = env
 }
 
-func (ap *asyncProcessor) setFiles() {
-	e = ap.env
+func parsedFileList() []file {
+	var files []file
+
+	e = ap.getEnv()
 	afs := e.afs
 	logger := e.logger
 
@@ -292,15 +293,15 @@ func (ap *asyncProcessor) setFiles() {
 
 	for _, line := range lines {
 		newFile := parseLine(line, e)
-		newFile.fileInfo, err = afs.Stat(newFile.stagingPath)
+		/* newFile.fileInfo, err = afs.Stat(newFile.stagingPath)
 
 		if err != nil {
 			// Need to add testing
 			logger.Error(err)
 			continue
-		}
-
-		ap.files = append(ap.files, newFile)
+		} */
+		newFile.datasetID = e.datasetID
+		files = append(files, newFile)
 		logger.Info(fmt.Sprintf(fAddedToListLog,
 			newFile.smbName,
 			newFile.id,
@@ -308,8 +309,10 @@ func (ap *asyncProcessor) setFiles() {
 			newFile.createTime.Unix(),
 			newFile.size,
 			newFile.fanIP,
-			newFile.fileInfo.Name()))
+			newFile.datasetID))
 	}
+
+	return files
 }
 
 func init() {
@@ -360,8 +363,6 @@ func main() {
 	e.setSysIP()
 
 	e.verifyDataset()
-
-	ap.setFiles()
 
 	// verify here?
 	// add check for dryrun
