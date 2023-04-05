@@ -475,10 +475,10 @@ func TestGetFiles(t *testing.T) {
 	})
 }
 
-func TestParsedFileList(t *testing.T) {
+func TestGetFilesFromSourceFile(t *testing.T) {
 	e = new(env)
 
-	t.Run("parsedFileList should return a list of files", func(t *testing.T) {
+	t.Run("getFilesFromSF should return a list of files", func(t *testing.T) {
 		e.logger, hook = setupLogs()
 
 		afs, want := createAferoTest(t, 10, true)
@@ -491,7 +491,7 @@ func TestParsedFileList(t *testing.T) {
 		dir := getWorkDir()
 
 		e.sourceFile = fmt.Sprintf(testSourceFile, dir)
-		got := parsedFileList()
+		got := getFilesFromSourceFile()
 
 		for i := range got {
 			assert.Equal(t, want[i].smbName, got[i].smbName)
@@ -503,7 +503,7 @@ func TestParsedFileList(t *testing.T) {
 			//assert.Equal(t, want[i].fileInfo, got[i].fileInfo)
 		}
 	})
-	t.Run("parsedFileList should log properly", func(t *testing.T) {
+	t.Run("getFilesFromSF should log properly", func(t *testing.T) {
 
 		e.logger, hook = setupLogs()
 
@@ -516,7 +516,7 @@ func TestParsedFileList(t *testing.T) {
 		dir := getWorkDir()
 
 		e.sourceFile = fmt.Sprintf(testSourceFile, dir)
-		parsedFileList()
+		getFilesFromSourceFile()
 
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(fAddedToListLog,
@@ -532,7 +532,7 @@ func TestParsedFileList(t *testing.T) {
 
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
-	t.Run("parsedFileList should fatal if sourcefile does not exist", func(t *testing.T) {
+	t.Run("getFilesFromSF should fatal if sourcefile does not exist", func(t *testing.T) {
 		fakeExit := func(int) {
 			panic(osPanicTrue)
 		}
@@ -547,7 +547,7 @@ func TestParsedFileList(t *testing.T) {
 		e.sourceFile = testDoesNotExistFile
 		ap = NewAsyncProcessor(e, files)
 
-		panicFunc := func() { parsedFileList() }
+		panicFunc := func() { getFilesFromSourceFile() }
 
 		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
 

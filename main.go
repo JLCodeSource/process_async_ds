@@ -277,7 +277,7 @@ func (ap *asyncProcessor) setEnv(env *env) {
 	ap.env = env
 }
 
-func parsedFileList() []file {
+func getFilesFromSourceFile() []file {
 	var files []file
 
 	e = ap.getEnv()
@@ -363,6 +363,8 @@ func main() {
 	e.setSysIP()
 
 	e.verifyDataset()
+
+	//files := getFilesFromSourceFile()
 
 	// verify here?
 	// add check for dryrun
