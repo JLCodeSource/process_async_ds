@@ -21,3 +21,9 @@ type file struct {
 	fileInfo       fs.FileInfo
 	success        bool
 }
+
+// validatedFile is a struct which holds validated files
+type validatedFile struct {
+	file    file
+	isValid bool
+}
