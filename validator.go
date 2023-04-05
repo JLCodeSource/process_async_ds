@@ -6,19 +6,22 @@ func statFiles(files []file) map[string]file {
 
 	m := make(map[string]file)
 
-	fi, err := afs.Stat(files[0].stagingPath)
+	for _, f := range files {
+		fi, err := afs.Stat(f.stagingPath)
 
-	if err != nil {
-		e.logger.Warn(err)
-	}
+		if err != nil {
+			e.logger.Warn(err)
+		}
 
-	m[files[0].id] = file{
-		id:          files[0].id,
-		smbName:     fi.Name(),
-		createTime:  fi.ModTime(),
-		size:        fi.Size(),
-		stagingPath: files[0].stagingPath,
-		fileInfo:    fi,
+		m[f.id] = file{
+			id:          f.id,
+			smbName:     fi.Name(),
+			createTime:  fi.ModTime(),
+			size:        fi.Size(),
+			stagingPath: f.stagingPath,
+			fileInfo:    fi,
+		}
+
 	}
 
 	return m
