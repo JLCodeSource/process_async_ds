@@ -16,7 +16,9 @@ RUN go mod download
 
 RUN go test -v ./...
 
-RUN go test -cover .
+RUN go test -race ./...
+
+RUN go test -cover ./...
 
 RUN gocloc .
 
