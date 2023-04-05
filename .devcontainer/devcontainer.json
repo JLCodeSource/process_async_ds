@@ -11,7 +11,7 @@
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	// "forwardPorts": [],
 	// Use 'postCreateCommand' to run commands after the container is created.
-	"postCreateCommand": "sudo cp /workspaces/process_async_ds/gbr /usr/bin/gbr"
+	"postCreateCommand": "/workspaces/process_async_ds/.devcontainer/postCreateCommand.sh"
 	// Configure tool-specific properties.
 	// "customizations": {},
 	// Uncomment to connect as root insteap. More info: https://aka.ms/dev-containers-non-root.
