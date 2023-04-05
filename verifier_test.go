@@ -357,7 +357,7 @@ func TestVerifyGBMetadata(t *testing.T) {
 	files = []file{}
 	ap = NewAsyncProcessor(e, files)
 
-	t.Run("returns true if file.datasetID matches DatasetID", func(t *testing.T) {
+	t.Run("returns true if file.smbName matches filename", func(t *testing.T) {
 		_, files := createFSTest(t, 1)
 		e = new(env)
 		e.datasetID = testDatasetID
@@ -367,11 +367,11 @@ func TestVerifyGBMetadata(t *testing.T) {
 		assert.True(t, files[0].verifyGBMetadata())
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(
-			fDatasetMatchTrueLog,
+			fSmbNameMatchFileIDNameTrueLog,
 			files[0].smbName,
 			files[0].id,
-			files[0].datasetID,
-			testDatasetID)
+			files[0].smbName,
+			files[0].smbName)
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
 	})
 	t.Run("returns false if file.datasetID does not match DatasetID", func(t *testing.T) {
@@ -411,7 +411,7 @@ func TestVerifyGBMetadata(t *testing.T) {
 			datasetID: testWrongDataset,
 		}
 
-		e.datasetID = testWrongDataset
+		e.datasetID = testDatasetID
 		e.logger, hook = setupLogs()
 		assert.False(t, f.verifyGBMetadata())
 
@@ -433,7 +433,7 @@ func TestGetMBFilenameByFileID(t *testing.T) {
 			id:      testFileID,
 		}
 		e.logger, hook = setupLogs()
-		ok := f.verifyMBFileNameByFileID()
+		ok := f.verifyMBFileNameByFileID(f.getGBMetadata())
 		assert.True(t, ok)
 
 		gotLogMsg := hook.LastEntry().Message
@@ -448,7 +448,7 @@ func TestGetMBFilenameByFileID(t *testing.T) {
 			id:      testFileID,
 		}
 		e.logger, hook = setupLogs()
-		ok := f.verifyMBFileNameByFileID()
+		ok := f.verifyMBFileNameByFileID(f.getGBMetadata())
 		assert.False(t, ok)
 
 		gotLogMsg := hook.LastEntry().Message
@@ -463,7 +463,7 @@ func TestGetMBFilenameByFileID(t *testing.T) {
 			id:      testBadFileID,
 		}
 		e.logger, hook = setupLogs()
-		ok := f.verifyMBFileNameByFileID()
+		ok := f.verifyMBFileNameByFileID(f.getGBMetadata())
 		assert.False(t, ok)
 
 		gotLogMsg := hook.LastEntry().Message
@@ -487,7 +487,7 @@ func TestGetMBDatasetByFileID(t *testing.T) {
 
 		e.datasetID = testDatasetID
 		e.logger, hook = setupLogs()
-		ok := f.verifyMBDatasetByFileID()
+		ok := f.verifyMBDatasetByFileID(f.getGBMetadata())
 		assert.True(t, ok)
 
 		gotLogMsg := hook.LastEntry().Message
@@ -502,7 +502,7 @@ func TestGetMBDatasetByFileID(t *testing.T) {
 			id:      testBadFileID,
 		}
 		e.logger, hook = setupLogs()
-		ok := f.verifyMBDatasetByFileID()
+		ok := f.verifyMBDatasetByFileID(f.getGBMetadata())
 		assert.False(t, ok)
 
 		gotLogMsg := hook.LastEntry().Message
