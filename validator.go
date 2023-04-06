@@ -1,12 +1,12 @@
 package main
 
-func statFiles(files []file) map[string]file {
+func statFiles(tmpFiles []file) map[string]file {
 	e = ap.getEnv()
 	afs = e.afs
 
 	m := make(map[string]file)
 
-	for _, f := range files {
+	for _, f := range tmpFiles {
 		fi, err := afs.Stat(f.stagingPath)
 
 		if err != nil {
@@ -22,6 +22,27 @@ func statFiles(files []file) map[string]file {
 			fileInfo:    fi,
 		}
 
+	}
+
+	return m
+}
+
+func getCheckFileMapMBMetadata(tmpFiles []file) map[string]file {
+	e = ap.getEnv()
+	afs = e.afs
+
+	m := make(map[string]file)
+
+	for _, f := range tmpFiles {
+		out := f.getGBMetadata()
+		f.setMBDatasetByFileID(out)
+		f.smbName = f.parseMBFileNameByFileID(out)
+
+		m[f.id] = file{
+			id:        f.id,
+			datasetID: f.datasetID,
+			smbName:   f.smbName,
+		}
 	}
 
 	return m
