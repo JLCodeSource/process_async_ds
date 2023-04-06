@@ -27,7 +27,7 @@ func statFiles(tmpFiles []file) map[string]file {
 	return m
 }
 
-func getCheckFileMapMBMetadata(tmpFiles []file) map[string]file {
+func getCheckFilesMapMBMetadata(tmpFiles []file) map[string]file {
 	e = ap.getEnv()
 	afs = e.afs
 

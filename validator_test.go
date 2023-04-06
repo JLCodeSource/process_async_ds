@@ -57,7 +57,7 @@ func TestGetCheckFileMapMBMetadata(t *testing.T) {
 			}
 		}
 
-		filesMap := getCheckFileMapMBMetadata(files)
+		filesMap := getCheckFilesMapMBMetadata(files)
 
 		assert.Equal(t, testMap, filesMap)
 	})
