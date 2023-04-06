@@ -10,8 +10,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/spf13/afero"
 	log "github.com/JLCodeSource/process_async_ds/logger"
+	"github.com/spf13/afero"
 
 	"flag"
 	"time"
