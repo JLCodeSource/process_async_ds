@@ -130,7 +130,7 @@ func TestVerify(t *testing.T) {
 	afterNow := now.Add(-10000 * time.Hour)
 
 	fsys = fstest.MapFS{
-		testShortPath: {Data: []byte(testContent),
+		testShortPath: &fstest.MapFile{Data: []byte(testContent),
 			ModTime: now},
 	}
 
@@ -643,7 +643,7 @@ func TestVerifyStat(t *testing.T) {
 
 	t.Run("returns true if file matches", func(t *testing.T) {
 		fsys = fstest.MapFS{
-			testPath: {Data: []byte(testContent)},
+			testPath: &fstest.MapFile{Data: []byte(testContent)},
 		}
 		info, _ := fsys.Stat(testPath)
 		size := int64(4)
@@ -671,7 +671,7 @@ func TestVerifyStat(t *testing.T) {
 		}
 
 		fsys = fstest.MapFS{
-			testPath: {Data: []byte(testContent)},
+			testPath: &fstest.MapFile{Data: []byte(testContent)},
 		}
 
 		e.logger, hook = setupLogs()
@@ -686,8 +686,8 @@ func TestVerifyStat(t *testing.T) {
 
 	t.Run("returns false if file.size does not match comparator", func(t *testing.T) {
 		fsys = fstest.MapFS{
-			testPath:         {Data: []byte(testContent)},
-			testMismatchPath: {Data: []byte(testLongerContent)},
+			testPath:         &fstest.MapFile{Data: []byte(testContent)},
+			testMismatchPath: &fstest.MapFile{Data: []byte(testLongerContent)},
 		}
 		info, _ := fsys.Stat(testMismatchPath)
 		f = file{
@@ -750,7 +750,7 @@ func TestVerifyFileSize(t *testing.T) {
 
 	t.Run("returns true if file.size matches comparator", func(t *testing.T) {
 		fsys = fstest.MapFS{
-			testPath: {Data: []byte(testContent)},
+			testPath: &fstest.MapFile{Data: []byte(testContent)},
 		}
 		info, _ := fsys.Stat(testPath)
 		size := int64(4)
@@ -771,8 +771,8 @@ func TestVerifyFileSize(t *testing.T) {
 	})
 	t.Run("returns false if file.size does not match comparator", func(t *testing.T) {
 		fsys = fstest.MapFS{
-			testPath:         {Data: []byte(testContent)},
-			testMismatchPath: {Data: []byte(testLongerContent)},
+			testPath:         &fstest.MapFile{Data: []byte(testContent)},
+			testMismatchPath: &fstest.MapFile{Data: []byte(testLongerContent)},
 		}
 		fileInfo, _ := fsys.Stat(testMismatchPath)
 		size := int64(4)

@@ -361,7 +361,7 @@ func TestSetSourceFile(t *testing.T) {
 	t.Run("check for source file", func(t *testing.T) {
 		e.logger, hook = setupLogs()
 		e.fsys = fstest.MapFS{
-			testPath: {Data: []byte(testContent)},
+			testPath: &fstest.MapFile{Data: []byte(testContent)},
 		}
 		files := []file{}
 		NewAsyncProcessor(e, files)
@@ -379,7 +379,7 @@ func TestSetSourceFile(t *testing.T) {
 	t.Run("should handle full path", func(t *testing.T) {
 		e.logger, hook = setupLogs()
 		e.fsys = fstest.MapFS{
-			testPath: {Data: []byte(testContent)},
+			testPath: &fstest.MapFile{Data: []byte(testContent)},
 		}
 		fullpath := string(os.PathSeparator) + testPath
 		files := []file{}
@@ -402,7 +402,7 @@ func TestSetSourceFile(t *testing.T) {
 		path := dir + testName
 		path = path[1:]
 		e.fsys = fstest.MapFS{
-			path: {Data: []byte(testContent)},
+			path: &fstest.MapFile{Data: []byte(testContent)},
 		}
 		files := []file{}
 		NewAsyncProcessor(e, files)
@@ -447,7 +447,7 @@ func TestSetSourceFile(t *testing.T) {
 
 		e.logger, hook = setupLogs()
 		e.fsys = fstest.MapFS{
-			testMismatchPath: {Data: []byte(testContent)},
+			testMismatchPath: &fstest.MapFile{Data: []byte(testContent)},
 		}
 		files := []file{}
 		NewAsyncProcessor(e, files)
@@ -947,7 +947,7 @@ func TestFileMetadata(t *testing.T) {
 		datetime, _ := time.ParseInLocation(time.UnixDate, datestring, loc)
 		fanIP := net.ParseIP(testIP)
 		fsys = fstest.MapFS{
-			testPath: {Data: []byte(testContent)},
+			testPath: &fstest.MapFile{Data: []byte(testContent)},
 		}
 		fileInfo, _ := fs.Stat(fsys, testPath)
 		f = file{
