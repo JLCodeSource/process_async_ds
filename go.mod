@@ -1,6 +1,8 @@
 module github.com/JLCodeSource/process_async_ds
 
-go 1.20
+go 1.23.0
+
+toolchain go1.23.9
 
 require (
 	github.com/sirupsen/logrus v1.9.3
