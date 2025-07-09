@@ -193,7 +193,9 @@ func TestVerifyEnvMatch(t *testing.T) {
 			fanIP:       ips[0],
 		}
 		e.logger, hook = setupLogs()
+
 		assert.True(t, f.verifyEnvMatch())
+
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(fEnvMatchLog, f.smbName, f.id, f.stagingPath)
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
@@ -204,12 +206,14 @@ func TestVerifyEnvMatch(t *testing.T) {
 			sysIP: ip,
 		}
 		ap.setEnv(e)
+
 		f = file{
 			smbName: testName,
 			id:      testFileID,
 			fanIP:   ips[0],
 		}
 		e.logger, hook = setupLogs()
+
 		assert.False(t, f.verifyEnvMatch())
 
 		gotLogMsg := hook.LastEntry().Message
@@ -233,6 +237,7 @@ func TestVerifyEnvMatch(t *testing.T) {
 		}
 		ap.setEnv(e)
 		e.logger, hook = setupLogs()
+
 		assert.False(t, f.verifyEnvMatch())
 
 		gotLogMsg := hook.LastEntry().Message
@@ -265,7 +270,9 @@ func TestVerifyIP(t *testing.T) {
 		}
 		e.logger, hook = setupLogs()
 		e.sysIP = ips[0]
+
 		assert.True(t, f.verifyIP())
+
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(fIPMatchTrueLog, f.smbName, f.id, f.fanIP, ips[0])
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
@@ -278,6 +285,7 @@ func TestVerifyIP(t *testing.T) {
 		}
 		e.logger, hook = setupLogs()
 		e.sysIP = testIP
+
 		assert.False(t, f.verifyIP())
 
 		gotLogMsg := hook.LastEntry().Message
@@ -304,7 +312,9 @@ func TestVerifyTimeLimit(t *testing.T) {
 		}
 		e.logger, hook = setupLogs()
 		e.limit = now.Add(-((hours) * time.Hour))
+
 		assert.True(t, f.verifyTimeLimit())
+
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(
 			fCreateTimeAfterTimeLimitLog,
@@ -324,6 +334,7 @@ func TestVerifyTimeLimit(t *testing.T) {
 		}
 		e.limit = now.Add(24 * time.Hour)
 		e.logger, hook = setupLogs()
+
 		assert.False(t, f.verifyTimeLimit())
 
 		gotLogMsg := hook.LastEntry().Message
@@ -364,7 +375,9 @@ func TestVerifyGBMetadata(t *testing.T) {
 		ap.setEnv(e)
 
 		e.logger, hook = setupLogs()
+
 		assert.True(t, files[0].verifyGBMetadata())
+
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(
 			fSmbNameMatchFileIDNameTrueLog,
@@ -382,6 +395,7 @@ func TestVerifyGBMetadata(t *testing.T) {
 		}
 
 		e.logger, hook = setupLogs()
+
 		assert.False(t, f.verifyGBMetadata())
 
 		gotLogMsg := hook.LastEntry().Message
@@ -396,6 +410,7 @@ func TestVerifyGBMetadata(t *testing.T) {
 			datasetID: testDatasetID,
 		}
 		e.logger, hook = setupLogs()
+
 		assert.False(t, f.verifyGBMetadata())
 
 		gotLogMsg := hook.LastEntry().Message
@@ -413,6 +428,7 @@ func TestVerifyGBMetadata(t *testing.T) {
 
 		e.datasetID = testDatasetID
 		e.logger, hook = setupLogs()
+
 		assert.False(t, f.verifyGBMetadata())
 
 		gotLogMsg := hook.LastEntry().Message
@@ -545,6 +561,7 @@ func TestSetFileDatasetByID(t *testing.T) {
 			id:      testFileID,
 		}
 		e.logger, hook = setupLogs()
+
 		f.setMBDatasetByFileID(testGbrFileIDDetailOutLog)
 		got := f.datasetID
 		want := testDatasetID
@@ -562,6 +579,7 @@ func TestSetFileDatasetByID(t *testing.T) {
 			id:      testBadFileID,
 		}
 		e.logger, hook = setupLogs()
+
 		f.setMBDatasetByFileID("")
 		got := f.datasetID
 		want := ""
@@ -584,13 +602,15 @@ func TestGetByIDErrLog(t *testing.T) {
 			smbName: testSmbName,
 			id:      testFileID,
 		}
-		fakeLoggerError := func(args ...interface{}) {
+		fakeLoggerError := func(_ ...interface{}) {
 			panic(testGbrFileIDErrOut)
 		}
+
 		patch := monkey.Patch(e.logger.Error, fakeLoggerError)
 		defer patch.Unpatch()
 
 		e.logger, hook = setupLogs()
+
 		f.getByIDErrLog(errors.New(testGbrFileIDErrOut))
 
 		gotLogMsgs := hook.Entries
@@ -615,7 +635,9 @@ func TestVerifyInProcessedDataset(t *testing.T) {
 			datasetID: testDatasetID,
 		}
 		e.logger, hook = setupLogs()
+
 		assert.True(t, f.verifyInDataset(testDatasetID))
+
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(fDatasetMatchTrueLog, f.smbName, f.id, f.datasetID, testDatasetID)
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
@@ -628,6 +650,7 @@ func TestVerifyInProcessedDataset(t *testing.T) {
 		}
 
 		e.logger, hook = setupLogs()
+
 		assert.False(t, f.verifyInDataset(testWrongDataset))
 
 		gotLogMsg := hook.LastEntry().Message
@@ -656,7 +679,9 @@ func TestVerifyStat(t *testing.T) {
 		}
 		e.logger, hook = setupLogs()
 		e.fsys = fsys
+
 		assert.True(t, f.verifyStat())
+
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(fStatMatchLog, f.smbName, f.id, f.stagingPath)
 
@@ -676,6 +701,7 @@ func TestVerifyStat(t *testing.T) {
 
 		e.logger, hook = setupLogs()
 		e.fsys = fsys
+
 		assert.False(t, f.verifyStat())
 
 		gotLogMsg := hook.LastEntry().Message
@@ -699,6 +725,7 @@ func TestVerifyStat(t *testing.T) {
 		}
 		e.logger, hook = setupLogs()
 		e.fsys = fsys
+
 		assert.False(t, f.verifyStat())
 
 		gotLogMsg := hook.LastEntry().Message
@@ -730,6 +757,7 @@ func TestVerifyStat(t *testing.T) {
 
 		e.logger, hook = setupLogs()
 		e.fsys = fsys
+
 		assert.False(t, f.verifyStat())
 
 		gotLogMsg := hook.LastEntry().Message
@@ -763,7 +791,9 @@ func TestVerifyFileSize(t *testing.T) {
 		}
 		e.logger, hook = setupLogs()
 		e.fsys = fsys
+
 		assert.True(t, f.verifyFileSize(size))
+
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(fSizeMatchTrueLog, f.smbName, f.id, f.size, f.fileInfo.Size())
 
@@ -785,6 +815,7 @@ func TestVerifyFileSize(t *testing.T) {
 		}
 		e.logger, hook = setupLogs()
 		e.fsys = fsys
+
 		assert.False(t, f.verifyStat())
 
 		gotLogMsg := hook.LastEntry().Message
@@ -820,7 +851,9 @@ func TestVerifyFileCreateTime(t *testing.T) {
 		}
 		e.logger, hook = setupLogs()
 		e.fsys = fsys
+
 		assert.True(t, f.verifyCreateTime(now))
+
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(fCreateTimeMatchTrueLog,
 			f.smbName,
@@ -852,6 +885,7 @@ func TestVerifyFileCreateTime(t *testing.T) {
 		}
 		e.logger, hook = setupLogs()
 		e.fsys = fsys
+
 		assert.False(t, f.verifyCreateTime(afterNow))
 
 		gotLogMsg := hook.LastEntry().Message
@@ -877,7 +911,9 @@ func TestVerifyFileIDName(t *testing.T) {
 		}
 		e.logger, hook = setupLogs()
 		e.fsys = fsys
+
 		assert.True(t, f.verifyFileIDName(testName))
+
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(fSmbNameMatchFileIDNameTrueLog, f.smbName, f.id, f.smbName, testName)
 		assertCorrectString(t, gotLogMsg, wantLogMsg)
@@ -890,6 +926,7 @@ func TestVerifyFileIDName(t *testing.T) {
 
 		e.logger, hook = setupLogs()
 		e.fsys = fsys
+
 		assert.False(t, f.verifyFileIDName(testName))
 
 		gotLogMsg := hook.LastEntry().Message

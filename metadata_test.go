@@ -62,6 +62,7 @@ func TestParseAsyncProcessedDSID(t *testing.T) {
 		fakeExit := func(int) {
 			panic(osPanicTrue)
 		}
+
 		patch := monkey.Patch(os.Exit, fakeExit)
 		defer patch.Unpatch()
 
@@ -83,6 +84,7 @@ func TestAsyncProcessedDSIDErrLog(t *testing.T) {
 		fakeExit := func(int) {
 			panic(osPanicTrue)
 		}
+
 		patch := monkey.Patch(os.Exit, fakeExit)
 		defer patch.Unpatch()
 
@@ -90,6 +92,7 @@ func TestAsyncProcessedDSIDErrLog(t *testing.T) {
 		panicFunc := func() { asyncProcessedDSIDErrLog(errors.New(osPanicTrue), testLogger) }
 
 		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
+
 		gotLogMsgs := hook.Entries
 		wantLogMsg := osPanicTrue
 		assertCorrectString(t, gotLogMsgs[0].Message, wantLogMsg)

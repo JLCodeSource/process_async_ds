@@ -79,10 +79,12 @@ func TestParseFile(t *testing.T) {
 				fs := afero.NewMemMapFs()
 				e.afs = &afero.Afero{Fs: fs}
 				dir, _ := path.Split(testProcessedFilesOut)
+
 				err := fs.MkdirAll(dir, 0755)
 				if err != nil {
 					t.Fatal(err)
 				}
+
 				err = afero.WriteFile(e.afs, testProcessedFilesOut, []byte(tt.content), 0755)
 				if err != nil {
 					t.Fatal(err)
@@ -110,6 +112,7 @@ func TestParseFile(t *testing.T) {
 		fakeExit := func(int) {
 			panic(osPanicTrue)
 		}
+
 		patch := monkey.Patch(os.Exit, fakeExit)
 		defer patch.Unpatch()
 
@@ -125,6 +128,7 @@ func TestParseFile(t *testing.T) {
 		}
 
 		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
+
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(testFsysDoesNotExistErr, testDoesNotExistFile)
 
@@ -213,6 +217,7 @@ func TestParseLine(t *testing.T) {
 		fakeExit := func(int) {
 			panic(osPanicTrue)
 		}
+
 		patch := monkey.Patch(os.Exit, fakeExit)
 		defer patch.Unpatch()
 
@@ -220,6 +225,7 @@ func TestParseLine(t *testing.T) {
 			err := errors.New(testTimeLoadLocError)
 			return nil, err
 		}
+
 		patch2 := monkey.Patch(time.LoadLocation, fakeLoadLoc)
 		defer patch2.Unpatch()
 
@@ -239,6 +245,7 @@ func TestParseLine(t *testing.T) {
 		fakeExit := func(int) {
 			panic(osPanicTrue)
 		}
+
 		patch := monkey.Patch(os.Exit, fakeExit)
 		defer patch.Unpatch()
 
@@ -246,6 +253,7 @@ func TestParseLine(t *testing.T) {
 			err := errors.New(testTimeParseInLocErr)
 			return time.Time{}, err
 		}
+
 		patch2 := monkey.Patch(time.ParseInLocation, fakeParseInLoc)
 		defer patch2.Unpatch()
 

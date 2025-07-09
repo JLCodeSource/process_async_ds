@@ -24,10 +24,12 @@ func TestHasher(t *testing.T) {
 	t.Run("should return the hash of 'pre'file & log it", func(t *testing.T) {
 		for _, f := range files {
 			e.logger, hook = setupLogs()
+
 			content, err := afero.ReadFile(afs, f.stagingPath)
 			if err != nil {
 				t.Fatal(err)
 			}
+
 			prePost := "pre"
 			sha := sha256.Sum256(content)
 			err = f.hasher()
@@ -40,10 +42,11 @@ func TestHasher(t *testing.T) {
 		}
 	})
 	t.Run("should log an error on failure to hash", func(t *testing.T) {
-		fakeFsReadFile := func(afs afero.Fs, name string) ([]byte, error) {
+		fakeFsReadFile := func(_ afero.Fs, _ string) ([]byte, error) {
 			err := errors.New(testFsReadFileErr)
 			return nil, err
 		}
+
 		patch := monkey.Patch(afero.ReadFile, fakeFsReadFile)
 		defer patch.Unpatch()
 

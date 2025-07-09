@@ -154,6 +154,7 @@ func TestMainFunc(t *testing.T) {
 		fakeExit := func(int) {
 			panic(osPanicTrue)
 		}
+
 		patch := monkey.Patch(os.Exit, fakeExit)
 		defer patch.Unpatch()
 
@@ -167,6 +168,7 @@ func TestMainFunc(t *testing.T) {
 		fakeExit := func(int) {
 			panic(osPanicTrue)
 		}
+
 		patch := monkey.Patch(os.Exit, fakeExit)
 		defer patch.Unpatch()
 
@@ -174,6 +176,7 @@ func TestMainFunc(t *testing.T) {
 			err := errors.New(testHostnameErr)
 			return "", err
 		}
+
 		patch2 := monkey.Patch(os.Hostname, fakeHostname)
 		defer patch2.Unpatch()
 
@@ -229,6 +232,7 @@ func TestOsWrapper(t *testing.T) {
 		fakeExit := func(int) {
 			panic(osPanicTrue)
 		}
+
 		patch := monkey.Patch(os.Exit, fakeExit)
 		defer patch.Unpatch()
 
@@ -236,6 +240,7 @@ func TestOsWrapper(t *testing.T) {
 			err := errors.New(testOsExecutableErr)
 			return "", err
 		}
+
 		patch2 := monkey.Patch(os.Executable, fakeOsExecutable)
 		defer patch2.Unpatch()
 
@@ -264,6 +269,7 @@ func TestOsWrapper(t *testing.T) {
 		fakeExit := func(int) {
 			panic(osPanicTrue)
 		}
+
 		patch := monkey.Patch(os.Exit, fakeExit)
 		defer patch.Unpatch()
 
@@ -271,6 +277,7 @@ func TestOsWrapper(t *testing.T) {
 			err := errors.New(testHostnameErr)
 			return "", err
 		}
+
 		patch2 := monkey.Patch(os.Hostname, fakeHostname)
 		defer patch2.Unpatch()
 
@@ -304,6 +311,7 @@ func TestWrapLookupIP(t *testing.T) {
 		fakeExit := func(int) {
 			panic(osPanicTrue)
 		}
+
 		patch := monkey.Patch(os.Exit, fakeExit)
 		defer patch.Unpatch()
 
@@ -311,6 +319,7 @@ func TestWrapLookupIP(t *testing.T) {
 			err := errors.New(testLookupIPErr)
 			return nil, err
 		}
+
 		patch2 := monkey.Patch(net.LookupIP, fakeLookupIP)
 		defer patch2.Unpatch()
 
@@ -329,17 +338,22 @@ func TestWrapLookupIP(t *testing.T) {
 		fakeExit := func(int) {
 			panic(osPanicTrue)
 		}
+
 		patch := monkey.Patch(os.Exit, fakeExit)
 		defer patch.Unpatch()
 
 		fakeLookupIP := func(string) ([]net.IP, error) {
 			var ips []net.IP
+
 			ip1 := net.ParseIP("192.168.101.1")
 			ip2 := net.ParseIP("192.168.101.2")
+
 			ips = append(ips, ip1)
 			ips = append(ips, ip2)
+
 			return ips, nil
 		}
+
 		patch2 := monkey.Patch(net.LookupIP, fakeLookupIP)
 		defer patch2.Unpatch()
 
@@ -420,6 +434,7 @@ func TestSetSourceFile(t *testing.T) {
 		fakeExit := func(int) {
 			panic(osPanicTrue)
 		}
+
 		patch := monkey.Patch(os.Exit, fakeExit)
 		defer patch.Unpatch()
 
@@ -433,6 +448,7 @@ func TestSetSourceFile(t *testing.T) {
 		}
 
 		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
+
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(testEmptyRootErr, testDoesNotExistFile)
 
@@ -442,6 +458,7 @@ func TestSetSourceFile(t *testing.T) {
 		fakeExit := func(int) {
 			panic(osPanicTrue)
 		}
+
 		patch := monkey.Patch(os.Exit, fakeExit)
 		defer patch.Unpatch()
 
@@ -457,6 +474,7 @@ func TestSetSourceFile(t *testing.T) {
 		}
 
 		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
+
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(testOpenDoesNotExistErr, testDoesNotExistFile)
 
@@ -491,6 +509,7 @@ func TestSetFiles(t *testing.T) {
 		dir := getWorkDir()
 
 		e.sourceFile = fmt.Sprintf(testSourceFile, dir)
+
 		ap.setFiles()
 		got := ap.getFiles()
 
@@ -516,6 +535,7 @@ func TestSetFiles(t *testing.T) {
 		dir := getWorkDir()
 
 		e.sourceFile = fmt.Sprintf(testSourceFile, dir)
+
 		ap.setFiles()
 
 		gotLogMsg := hook.LastEntry().Message
@@ -534,6 +554,7 @@ func TestSetFiles(t *testing.T) {
 		fakeExit := func(int) {
 			panic(osPanicTrue)
 		}
+
 		patch := monkey.Patch(os.Exit, fakeExit)
 		defer patch.Unpatch()
 
@@ -592,6 +613,7 @@ func TestSetDatasetID(t *testing.T) {
 	t.Run("verify it returns the right dataset id", func(t *testing.T) {
 		e.logger, _ = setupLogs()
 		e.setDatasetID(testDatasetID)
+
 		got := ap.getEnv().datasetID
 		want := testDatasetID
 
@@ -613,6 +635,7 @@ func TestSetDatasetID(t *testing.T) {
 		fakeExit := func(int) {
 			panic(osPanicTrue)
 		}
+
 		patch := monkey.Patch(os.Exit, fakeExit)
 		defer patch.Unpatch()
 
@@ -621,6 +644,7 @@ func TestSetDatasetID(t *testing.T) {
 		panicFunc := func() { e.setDatasetID(testNotADataset) }
 
 		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
+
 		gotLogMsg := hook.LastEntry().Message
 		err := fmt.Sprintf(datasetRegexLog, testNotADataset, regexDatasetMatch)
 		wantLogMsg := err
@@ -632,12 +656,15 @@ func TestSetDatasetID(t *testing.T) {
 		fakeExit := func(int) {
 			panic(osPanicTrue)
 		}
+
 		patch := monkey.Patch(os.Exit, fakeExit)
 		defer patch.Unpatch()
+
 		fakeRegexMatch := func(string, string) (bool, error) {
 			err := errors.New(testRegexMatchErr)
 			return false, err
 		}
+
 		patch2 := monkey.Patch(regexp.MatchString, fakeRegexMatch)
 		defer patch2.Unpatch()
 
@@ -645,6 +672,7 @@ func TestSetDatasetID(t *testing.T) {
 		panicFunc := func() { e.setDatasetID(testNotADataset) }
 
 		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
+
 		gotLogMsg := hook.LastEntry().Message
 		err := testRegexMatchErr
 		wantLogMsg := err
@@ -655,6 +683,7 @@ func TestSetDatasetID(t *testing.T) {
 		fakeExit := func(int) {
 			panic(osPanicTrue)
 		}
+
 		patch := monkey.Patch(os.Exit, fakeExit)
 		defer patch.Unpatch()
 
@@ -662,6 +691,7 @@ func TestSetDatasetID(t *testing.T) {
 		panicFunc := func() { e.setDatasetID(testID) }
 
 		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
+
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := fmt.Sprintf(compareDatasetIDNotMatchLog, testID, testDatasetID)
 
@@ -686,6 +716,7 @@ func TestCompareDatasetId(t *testing.T) {
 		fakeExit := func(int) {
 			panic(osPanicTrue)
 		}
+
 		patch := monkey.Patch(os.Exit, fakeExit)
 		defer patch.Unpatch()
 
@@ -708,6 +739,7 @@ func TestSetTimeLimit(t *testing.T) {
 		e.logger, hook = setupLogs()
 
 		var days = int64(0)
+
 		e.setTimeLimit(days)
 
 		gotDays := e.limit
@@ -856,8 +888,10 @@ func TestSetPWD(t *testing.T) {
 		fakeExit := func(int) {
 			panic(osPanicTrue)
 		}
+
 		patch := monkey.Patch(os.Exit, fakeExit)
 		defer patch.Unpatch()
+
 		fakeChdir := func(string) error {
 			err := errors.New(testChdirErr)
 			return err
@@ -865,11 +899,13 @@ func TestSetPWD(t *testing.T) {
 
 		patch2 := monkey.Patch(os.Chdir, fakeChdir)
 		defer patch2.Unpatch()
+
 		e.logger, hook = setupLogs()
 
 		panicFunc := func() { e.setPWD(testBadPath) }
 
 		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
+
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := testChdirErr
 
@@ -880,6 +916,7 @@ func TestSetPWD(t *testing.T) {
 		fakeExit := func(int) {
 			panic(osPanicTrue)
 		}
+
 		patch := monkey.Patch(os.Exit, fakeExit)
 		defer patch.Unpatch()
 
@@ -890,11 +927,13 @@ func TestSetPWD(t *testing.T) {
 
 		patch2 := monkey.Patch(os.Getwd, fakeGetwd)
 		defer patch2.Unpatch()
+
 		e.logger, hook = setupLogs()
 
 		panicFunc := func() { e.setPWD(testBadPath) }
 
 		assert.PanicsWithValue(t, osPanicTrue, panicFunc, osPanicFalse)
+
 		gotLogMsg := hook.LastEntry().Message
 		wantLogMsg := testGetwdErr
 
@@ -920,6 +959,7 @@ func TestVerifyDataset(t *testing.T) {
 		fakeExit := func(int) {
 			panic(osPanicTrue)
 		}
+
 		patch := monkey.Patch(os.Exit, fakeExit)
 		defer patch.Unpatch()
 
@@ -941,9 +981,11 @@ func TestFileMetadata(t *testing.T) {
 	t.Run("Initial struct test", func(t *testing.T) {
 		loc, err := time.LoadLocation(easternTime)
 		datestring := testOldDate
+
 		if err != nil {
-			t.Fatalf(err.Error())
+			t.Fatal(err.Error())
 		}
+
 		datetime, _ := time.ParseInLocation(time.UnixDate, datestring, loc)
 		fanIP := net.ParseIP(testIP)
 		fsys = fstest.MapFS{
@@ -1006,9 +1048,11 @@ func TestFileMetadata(t *testing.T) {
 	t.Run("PKT struct test", func(t *testing.T) {
 		loc, err := time.LoadLocation(testKarachiTime)
 		datestring := testKarachiDate
+
 		if err != nil {
-			t.Fatalf(err.Error())
+			t.Fatal(err.Error())
 		}
+
 		datetime, _ := time.ParseInLocation(time.UnixDate, datestring, loc)
 		f = file{
 			stagingPath: testPath,
