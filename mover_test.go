@@ -61,6 +61,7 @@ func TestMoveFile(t *testing.T) {
 			f.move()
 
 			assert.NotEqual(t, oldPath, newPath)
+
 			_, err := afs.Stat(newPath)
 			if err != nil {
 				t.Fatal(err)
@@ -83,6 +84,7 @@ func TestMoveFile(t *testing.T) {
 		for _, f := range files {
 			fs := afero.NewMemMapFs()
 			afs := &afero.Afero{Fs: fs}
+
 			err := afero.WriteFile(afs, f.stagingPath, []byte{}, 0755)
 			if err != nil {
 				t.Fatal(err)
@@ -107,6 +109,7 @@ func TestMoveFile(t *testing.T) {
 		for _, f := range files {
 			fs := afero.NewMemMapFs()
 			afs := &afero.Afero{Fs: fs}
+
 			err := afero.WriteFile(afs, f.stagingPath, []byte{}, 0755)
 			if err != nil {
 				t.Fatal(err)
@@ -129,6 +132,7 @@ func TestMoveFile(t *testing.T) {
 		for _, f := range files {
 			fs := afero.NewMemMapFs()
 			afs := &afero.Afero{Fs: fs}
+
 			err := afero.WriteFile(afs, f.stagingPath, []byte{}, 0755)
 			if err != nil {
 				t.Fatal(err)
@@ -151,6 +155,7 @@ func TestMoveFile(t *testing.T) {
 func TestWrapAferoMkdirAll(t *testing.T) {
 	t.Run("wrapAferoMkdirAll should return & log the path", func(t *testing.T) {
 		var appFs = afero.NewMemMapFs()
+
 		path := tempdir1 + tempdir2
 		testLogger, hook = setupLogs()
 		ok := wrapAferoMkdirAll(appFs, path, testLogger)
@@ -159,6 +164,7 @@ func TestWrapAferoMkdirAll(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+
 		assert.True(t, ok)
 	})
 
@@ -166,12 +172,14 @@ func TestWrapAferoMkdirAll(t *testing.T) {
 		fakeExit := func(int) {
 			panic(osPanicTrue)
 		}
+
 		patch := monkey.Patch(os.Exit, fakeExit)
 		defer patch.Unpatch()
 
 		path := tempdir1 + tempdir2
 		// Make the fs readonly to force error
 		var appFs = afero.NewReadOnlyFs(afero.NewMemMapFs())
+
 		testLogger, hook = setupLogs()
 
 		panicFunc := func() { wrapAferoMkdirAll(appFs, path, testLogger) }

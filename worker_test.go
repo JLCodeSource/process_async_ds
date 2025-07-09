@@ -20,16 +20,20 @@ func TestWorker(t *testing.T) {
 		ap = NewAsyncProcessor(e, files)
 
 		var oldPaths []string
+
 		var newPaths []string
+
 		var oldHashes []string
 
 		for i := range files {
 			oldPaths = append(oldPaths, files[i].stagingPath)
 			newPaths = append(newPaths, newPath(files[i]))
+
 			content, err := afero.ReadFile(afs, files[i].stagingPath)
 			if err != nil {
 				t.Fatal(err)
 			}
+
 			b := sha256.Sum256(content)
 			s := string(b[:])
 			oldHashes = append(oldHashes, s)
@@ -78,6 +82,7 @@ func TestWorker(t *testing.T) {
 func TestCompareHashes(t *testing.T) {
 	t.Run("matching hashes should return true", func(t *testing.T) {
 		var f file
+
 		var hash [32]byte
 
 		b := []byte("test")
@@ -88,7 +93,9 @@ func TestCompareHashes(t *testing.T) {
 	})
 	t.Run("non-matching hashes should return false", func(t *testing.T) {
 		var f file
+
 		var hash [32]byte
+
 		var b []byte
 
 		b = []byte("test")
