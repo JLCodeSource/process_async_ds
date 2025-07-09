@@ -28,16 +28,20 @@ func (f *file) move() {
 		logger.Info(fmt.Sprintf(fMoveDryRunTrueLog, f.smbName, f.id))
 	} else {
 		logger.Warn(fmt.Sprintf(fMoveDryRunFalseLog, f.smbName, f.id))
+
 		dir, _ := path.Split(newLocation)
+
 		_, err := afs.Stat(dir)
 		if err != nil {
 			logger.Warn(err)
 			wrapAferoMkdirAll(afs, dir, logger)
 		}
+
 		err = afs.Rename(oldLocation, newLocation)
 		if err != nil {
 			logger.Fatal(err)
 		}
+
 		f.stagingPath = newLocation
 	}
 }
