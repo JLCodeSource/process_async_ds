@@ -7,7 +7,7 @@ toolchain go1.23.9
 require (
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/afero v1.14.0
-	github.com/stretchr/testify v1.10.0
+	github.com/stretchr/testify v1.11.0
 )
 
 require (
